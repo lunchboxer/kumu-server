@@ -1,0 +1,96 @@
+type User {
+  id: ID! @unique
+  username: String! @unique
+  password: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+  role: Role
+}
+
+enum Role {
+  Admin
+}
+
+type Student {
+  id: ID! @unique
+  chineseName: String!
+  englishName: String!
+  pinyinName: String
+  dateOfBirth: DateTime
+  gender: Gender
+  groups: [Group!]!
+  points: [Point!]!
+  attendances: [Attendance!]!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum Gender {
+  M
+  F
+}
+
+type Group {
+  # a group of students attending class together
+  id: ID! @unique
+  name: String!
+  students: [Student!]!
+  classSessions: [ClassSession!]!
+  semester: Semester!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ClassSession {
+  id: ID! @unique
+  startsAt: DateTime!
+  endsAt: DateTime!
+  group: Group!
+  points: [Point!]!
+  attendances: [Attendance!]!
+  stage: Stage! @default(value: "Inactive")
+}
+
+type Semester {
+  id: ID! @unique
+  createdAt: DateTime!
+  startDate: DateTime!
+  endDate: DateTime!
+  name: String!
+  groups: [Group!]!
+}
+
+type Point {
+  # points awarded to students during the lesson, can be positive or negative
+  id: ID! @unique
+  value: Int!
+  student: Student!
+  classSession: ClassSession!
+  createdAt: DateTime!
+}
+
+# used in ClassSession
+enum Stage {
+  Inactive # scheduled, but teacher hasn't viewed
+  Active # preclass, time for attendance
+  Started # class time
+  Ended # teacher has ended the class
+}
+
+type Attendance {
+  classSession: ClassSession!
+  createdAt: DateTime!
+  id: ID! @unique
+  student: Student!
+  status: AttendanceStatus!
+  arrivedAt: DateTime
+}
+
+# used in Attendance
+enum AttendanceStatus {
+  LeftEarly
+  Present
+  Late
+  Absent
+  LateLeftEarly
+}

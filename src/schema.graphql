@@ -1,0 +1,174 @@
+scalar DateTime
+
+type Query {
+  me: User
+  user(id: ID!): User
+  users: [User!]!
+  student(id: ID!): Student
+  students: [Student!]!
+  group(id: ID!): Group
+  groups: [Group!]!
+  semester(id: ID!): Semester
+  semesters: [Semester!]!
+  classSession(id: ID!): ClassSession
+  classSessions: [ClassSession!]!
+  points: [Point!]!
+}
+
+type Mutation {
+  # signup(username: String!, password: String!): AuthPayload!
+  ## User and Auth
+  createUser(username: String!, password: String!): User
+  updateUser(id: ID!, input: UserInput!): User
+  deleteUser(id: ID!): User
+  login(username: String!, password: String!): AuthPayload!
+  changePassword(id: ID!, newPassword: String!): User
+
+  ## Student
+  createStudent(input: StudentInput!, groupId: ID): Student
+  updateStudent(id: ID!, input: StudentInput!): Student
+  deleteStudent(id: ID!): Student
+
+  ## Student-Group
+  addStudentToGroup(studentId: ID!, groupId: ID!): Student
+  removeStudentFromGroup(studentId: ID!, groupId: ID!): Student
+
+  ## Group
+  createGroup(name: String!, semesterId: ID!): Group
+  updateGroup(id: ID!, name: String, semesterId: ID): Group
+  deleteGroup(id: ID!): Group
+
+  ## Semester
+  createSemester(input: SemesterInput!): Semester
+  updateSemester(id: ID!, input: SemesterInput!): Semester
+  deleteSemester(id: ID!): Semester
+
+  ## Point
+  addPoint(input: PointInput!): Point
+  undoPoint(id: ID!): Point
+
+  ## ClassSession
+  createClassSession(input: ClassSessionInput!, groupId: ID!): ClassSession
+  updateClassSession(
+    id: ID!
+    input: ClassSessionInput!
+    groupId: ID
+  ): ClassSession
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+type User {
+  id: ID!
+  username: String!
+  role: Role
+}
+
+enum Role {
+  Admin
+}
+
+type Student {
+  id: ID!
+  chineseName: String!
+  englishName: String!
+  pinyinName: String
+  gender: Gender
+  groups: [Group!]!
+  points: [Point!]!
+  pointsTally: Int
+}
+
+enum Gender {
+  M
+  F
+}
+
+type Group {
+  id: ID!
+  name: String!
+  semester: Semester!
+  students: [Student!]!
+}
+
+type Point {
+  # points awarded to students during the lesson, can be positive or negative
+  id: ID!
+  value: Int!
+  student: Student!
+  classSession: ClassSession!
+}
+
+type ClassSession {
+  id: ID!
+  startsAt: DateTime!
+  endsAt: DateTime!
+  group: Group!
+  points: [Point!]!
+  attendances: [Attendance!]!
+  stage: Stage!
+}
+
+enum Stage {
+  Inactive # scheduled, but teacher hasn't viewed
+  Active # preclass, time for attendance
+  Started # class time
+  Ended # teacher has ended the class
+}
+
+type Attendance {
+  classSession: ClassSession!
+  id: ID!
+  student: Student!
+  status: AttendanceStatus!
+  arrivedAt: DateTime
+}
+
+enum AttendanceStatus {
+  LeftEarly
+  Present
+  Late
+  Absent
+  LateLeftEarly
+}
+
+type Semester {
+  id: ID!
+  startDate: DateTime!
+  endDate: DateTime!
+  name: String!
+  groups: [Group!]!
+}
+
+input StudentInput {
+  chineseName: String
+  englishName: String
+  pinyinName: String
+  dateOfBirth: DateTime
+}
+
+input SemesterInput {
+  startDate: DateTime
+  endDate: DateTime
+  name: String
+}
+
+input PointInput {
+  value: Int!
+  studentId: ID!
+  classSessionId: ID!
+}
+
+input ClassSessionInput {
+  startsAt: DateTime!
+  endsAt: DateTime!
+  stage: Stage
+}
+
+input UserInput {
+  username: String
+  role: Role
+}

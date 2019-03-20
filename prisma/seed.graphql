@@ -1,0 +1,11 @@
+mutation {
+  user1: createUser(
+    data: {
+      username: "james"
+      password: "$2a$10$FvmhqiOFsHDwu3d0ceIBCelA2BRCoRdLQnfsyyL1O7wGDJLJ9i0xG" # "secret"
+      role: Admin
+    }
+  ) {
+    id
+  }
+}
