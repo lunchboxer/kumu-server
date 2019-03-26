@@ -1,9 +1,19 @@
 mutation {
   user1: createUser(
     data: {
-      username: "james"
+      username: "admin"
       password: "$2a$10$FvmhqiOFsHDwu3d0ceIBCelA2BRCoRdLQnfsyyL1O7wGDJLJ9i0xG" # "secret"
       role: Admin
+    }
+  ) {
+    id
+  }
+  semester1: createSemester(
+    data: {
+      name: "Autumn 2018"
+      startDate: "2018-09-19T16:00:01.000Z" # 00:01 local time CST sept 20
+      endDate: "2019-01-20T15:59:59.000Z" # 23:59:59 local time CST jan 20
+      groups: { create: [{ name: "A class" }] }
     }
   ) {
     id
