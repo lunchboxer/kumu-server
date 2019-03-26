@@ -143,6 +143,12 @@ type Semester {
   groups: [Group!]!
 }
 
+enum MutationType {
+  CREATED
+  UPDATED
+  DELETED
+}
+
 input StudentInput {
   chineseName: String
   englishName: String
