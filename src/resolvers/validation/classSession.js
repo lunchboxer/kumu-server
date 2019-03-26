@@ -35,7 +35,7 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
     const endConflicts = await prisma.classSessions({
       where: {
         // new endsAt is during existing session
-        AND: [{ startDate_lte: endsAt }, { endsAt_gte: endsAt }, { id_not: id }]
+        AND: [{ startsAt_lte: endsAt }, { endsAt_gte: endsAt }, { id_not: id }]
       }
     })
     if (endConflicts.length) {
@@ -72,4 +72,30 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
       )
     }
   }
+}
+
+exports.withinYear = async (startsAt, endsAt) => {
+  if (!startsAt && !endsAt) return false
+  const now = new Date()
+  const aYearFromNow = new Date(now.valueOf() + 3.154e10).toJSON()
+  if (startsAt && startsAt > aYearFromNow) {
+    throw new Error('Start time cannot be more than a year ahead.')
+  }
+  if (endsAt && endsAt > aYearFromNow) {
+    throw new Error('End time cannot be more than a year ahead.')
+  }
+}
+
+exports.duringSemester = async (startsAt, endsAt, { prisma }) => {
+  if (!startsAt && !endsAt) return false
+  const sameTimeSemesters = async date => {
+    if (!date) return
+    const startsinSemester = await prisma.$exists.semester({
+      AND: [{ startDate_lte: date }, { endDate_gte: date }]
+    })
+    if (!startsinSemester) {
+      throw new Error('Session must occur during an existing semester.')
+    }
+  }
+  return Promise.all([sameTimeSemesters(startsAt), sameTimeSemesters(endsAt)])
 }
