@@ -32,7 +32,7 @@ exports.checkConflicts = async (startDate, endDate, id, { prisma }) => {
   if (endDate) {
     const endConflicts = await prisma.semesters({
       where: {
-        // new startDate is during existing semester
+        // new endDate is during existing semester
         AND: [
           { startDate_lte: endDate },
           { endDate_gte: endDate },
@@ -57,7 +57,6 @@ exports.checkConflicts = async (startDate, endDate, id, { prisma }) => {
   if (endDate && startDate) {
     const insideConflicts = await prisma.semesters({
       where: {
-        // new startDate is during existing semester
         AND: [
           { startDate_gte: startDate },
           { endDate_lte: endDate },
