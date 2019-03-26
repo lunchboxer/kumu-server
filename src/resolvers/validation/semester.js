@@ -1,3 +1,15 @@
+exports.checkOrder = async (startDate, endDate, id, { prisma }) => {
+  if (!startDate && !endDate) return false
+  if (id && (!startDate || !endDate)) {
+    const thisSemester = await prisma.semester({ id })
+    startDate = !startDate ? thisSemester.startDate : startDate
+    endDate = !endDate ? thisSemester.endDate : endDate
+  }
+  if (startDate >= endDate) {
+    throw new Error(`Start date (${startDate}) is after end date (${endDate})`)
+  }
+}
+
 exports.checkConflicts = async (startDate, endDate, id, { prisma }) => {
   if (!startDate && !endDate) return false
   if (startDate) {
