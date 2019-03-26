@@ -1,7 +1,8 @@
-const { checkConflicts } = require('../validation/semester-date-conflicts')
+const { checkConflicts, checkOrder } = require('../validation/semester')
 
 exports.semester = {
-  async createSemester (root, args, context) {
+  async createSemester (_, args, context) {
+    await checkOrder(args.input.startDate, args.input.endDate, null, context)
     await checkConflicts(
       args.input.startDate,
       args.input.endDate,
@@ -10,7 +11,8 @@ exports.semester = {
     )
     return context.prisma.createSemester(args.input)
   },
-  async updateSemester (root, args, context) {
+  async updateSemester (_, args, context) {
+    await checkOrder(args.input.startDate, args.input.endDate, args.id, context)
     await checkConflicts(
       args.input.startDate,
       args.input.endDate,
@@ -22,7 +24,7 @@ exports.semester = {
       where: { id: args.id }
     })
   },
-  deleteSemester (root, args, context) {
+  deleteSemester (_, args, context) {
     return context.prisma.deleteSemester({ id: args.id })
   }
 }
