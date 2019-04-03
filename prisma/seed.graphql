@@ -8,12 +8,43 @@ mutation {
   ) {
     id
   }
+  user2: createUser(
+    data: {
+      username: "gabby"
+      password: "$2a$10$FvmhqiOFsHDwu3d0ceIBCelA2BRCoRdLQnfsyyL1O7wGDJLJ9i0xG" # "secret"
+    }
+  ) {
+    id
+  }
   semester1: createSemester(
     data: {
       name: "Autumn 2018"
       startDate: "2018-09-19T16:00:01.000Z" # 00:01 local time CST sept 20
       endDate: "2019-01-20T15:59:59.000Z" # 23:59:59 local time CST jan 20
-      groups: { create: [{ name: "A class" }] }
+      groups: { create: [
+        { 
+          name: "A class",
+          students: { create: [
+            { 
+              chineseName: "程全安",
+              englishName: "David",
+              birthdate: "2012-09-30"
+            },
+            { 
+              chineseName: "祝帆",
+              englishName: "Ted",
+              birthdate: "2012-08-01"
+            },
+            { 
+              chineseName: "岳秀梅",
+              englishName: "Sarah",
+              birthdate: "2012-07-20"
+            },
+          ]}
+         }.
+        { name: "B class" },
+        { name: "C class" }
+        ] }
     }
   ) {
     id
