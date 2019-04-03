@@ -45,7 +45,7 @@ var models = [
     embedded: false
   },
   {
-    name: "AttendanceStatus",
+    name: "AttendanceEvent",
     embedded: false
   }
 ];

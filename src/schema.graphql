@@ -5,7 +5,7 @@ type Query {
   user(id: ID!): User
   users: [User!]!
   student(id: ID!): Student
-  students: [Student!]!
+  students(orderBy: StudentOrderByInput, searchString: String): [Student!]!
   group(id: ID!): Group
   groups: [Group!]!
   semester(id: ID!): Semester
@@ -13,6 +13,10 @@ type Query {
   classSession(id: ID!): ClassSession
   classSessions: [ClassSession!]!
   points: [Point!]!
+  attendances: [Attendance!]!
+  activeGroups: [Group!]!
+  currentSemester: Semester
+  nextSemester: Semester
 }
 
 type Mutation {
@@ -32,6 +36,12 @@ type Mutation {
   ## Student-Group
   addStudentToGroup(studentId: ID!, groupId: ID!): Student
   removeStudentFromGroup(studentId: ID!, groupId: ID!): Student
+  # if student is already in a group this semester, remove and add
+  moveStudentToDifferentGroup(
+    studentId: ID!
+    oldGroupId: ID!
+    newGroupId: ID!
+  ): Student
 
   ## Group
   createGroup(name: String!, semesterId: ID!): Group
@@ -47,6 +57,11 @@ type Mutation {
   addPoint(input: PointInput!): Point
   undoPoint(id: ID!): Point
 
+  ## Attendance
+  # markAllPresent(classSessionId: ID!): Boolean
+  # markPresent(classSessionId: ID!, studentID: ID!): Attendance
+  # markLeftEarly(classSessionId: ID!, studentID: ID!): Attendance
+
   ## ClassSession
   createClassSession(input: ClassSessionInput!, groupId: ID!): ClassSession
   updateClassSession(
@@ -54,6 +69,10 @@ type Mutation {
     input: ClassSessionInput!
     groupId: ID
   ): ClassSession
+}
+
+type Subscription {
+  semesters: Semester
 }
 
 type AuthPayload {
@@ -77,14 +96,48 @@ type Student {
   englishName: String!
   pinyinName: String
   gender: Gender
+  birthdate: DateTime!
   groups: [Group!]!
   points: [Point!]!
   pointsTally: Int
 }
 
+enum StudentOrderByInput {
+  id_ASC
+  id_DESC
+  chineseName_ASC
+  chineseName_DESC
+  englishName_ASC
+  englishName_DESC
+  pinyinName_ASC
+  pinyinName_DESC
+  birthdate_ASC
+  birthdate_DESC
+  gender_ASC
+  gender_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+}
+
 enum Gender {
   M
   F
+}
+
+type Attendance {
+  id: ID!
+  classSession: ClassSession!
+  createdAt: DateTime!
+  student: Student!
+  event: AttendanceEvent!
+}
+
+# used in Attendance
+enum AttendanceEvent {
+  Arrived
+  Left
 }
 
 type Group {
@@ -119,22 +172,6 @@ enum Stage {
   Ended # teacher has ended the class
 }
 
-type Attendance {
-  classSession: ClassSession!
-  id: ID!
-  student: Student!
-  status: AttendanceStatus!
-  arrivedAt: DateTime
-}
-
-enum AttendanceStatus {
-  LeftEarly
-  Present
-  Late
-  Absent
-  LateLeftEarly
-}
-
 type Semester {
   id: ID!
   startDate: DateTime!
@@ -153,7 +190,8 @@ input StudentInput {
   chineseName: String
   englishName: String
   pinyinName: String
-  dateOfBirth: DateTime
+  birthdate: DateTime
+  gender: Gender
 }
 
 input SemesterInput {
