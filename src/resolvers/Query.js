@@ -1,41 +1,92 @@
 const { getUserId } = require('../utils')
 
 exports.Query = {
-  me (root, args, context) {
+  me (_, args, context) {
     const id = getUserId(context)
     return context.prisma.user({ id })
   },
-  users (root, args, context) {
+  users (_, args, context) {
     return context.prisma.users()
   },
-  user (root, args, context) {
+  user (_, args, context) {
     return context.prisma.user({ id: args.id })
   },
-  student (root, args, context) {
+  student (_, args, context) {
     return context.prisma.student({ id: args.id })
   },
-  students (root, args, context) {
-    return context.prisma.students()
+  students (_, args, context) {
+    const { orderBy, searchString } = args
+    if (searchString) {
+      return context.prisma.students({
+        orderBy,
+        where: {
+          OR: [
+            { chineseName_contains: searchString },
+            { englishName_contains: searchString },
+            { pinyinName_contains: searchString }
+          ]
+        }
+      })
+    }
+    return context.prisma.students({ orderBy })
   },
-  group (root, args, context) {
+  group (_, args, context) {
     return context.prisma.group({ id: args.id })
   },
-  groups (root, args, context) {
+  groups (_, args, context) {
     return context.prisma.groups()
   },
-  semester (root, args, context) {
+  semester (_, args, context) {
     return context.prisma.group({ id: args.id })
   },
-  semesters (root, args, context) {
-    return context.prisma.semesters()
+  semesters (_, args, context) {
+    return context.prisma.semesters({ orderBy: 'startDate_ASC' })
   },
-  classSession (root, args, context) {
+  classSession (_, args, context) {
     return context.prisma.classSession({ id: args.id })
   },
-  classSessions (root, args, context) {
+  classSessions (_, args, context) {
     return context.prisma.classSessions()
   },
-  points (root, args, context) {
+  points (_, args, context) {
     return context.prisma.points({ orderBy: 'createdAt_DESC' })
+  },
+  attendances (_, args, context) {
+    return context.prisma.attendances({ orderBy: 'createdAt_DESC' })
+  },
+  // All the groups from the current and upcoming semester
+  async activeGroups (_, args, context) {
+    const now = new Date().toJSON()
+    const current = await context.prisma.semesters({
+      where: { AND: [{ startDate_lt: now }, { endDate_gt: now }] }
+    })
+    const next = await context.prisma.semesters({
+      orderBy: 'startDate_ASC',
+      first: 1,
+      where: {
+        startDate_gt: now
+      }
+    })
+    return context.prisma.groups({
+      where: { semester: { id_in: [current[0].id, next[0].id] } }
+    })
+  },
+  async currentSemester (_, args, context) {
+    const now = new Date().toJSON()
+    const current = await context.prisma.semesters({
+      where: { startDate_lt: now, endDate_gt: now }
+    })
+    return current[0]
+  },
+  async nextSemester (_, args, context) {
+    const now = new Date().toJSON()
+    const next = await context.prisma.semesters({
+      orderBy: 'startDate_ASC',
+      first: 1,
+      where: {
+        startDate_gt: now
+      }
+    })
+    return next[0]
   }
 }

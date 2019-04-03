@@ -1,5 +1,6 @@
 const { Query } = require('./Query')
 const { Mutation } = require('./Mutation')
+const { Subscription } = require('./Subscription')
 const { Student } = require('./Student')
 const { Group } = require('./Group')
 const { Semester } = require('./Semester')
@@ -9,6 +10,7 @@ const { Point } = require('./Point')
 exports.resolvers = {
   Query,
   Mutation,
+  Subscription,
   Student,
   Group,
   Semester,
