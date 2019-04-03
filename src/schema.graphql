@@ -1,3 +1,4 @@
+# import * from './generated/graphql/prisma.graphql'
 scalar DateTime
 
 type Query {
@@ -86,10 +87,6 @@ type User {
   role: Role
 }
 
-enum Role {
-  Admin
-}
-
 type Student {
   id: ID!
   chineseName: String!
@@ -102,42 +99,12 @@ type Student {
   pointsTally: Int
 }
 
-enum StudentOrderByInput {
-  id_ASC
-  id_DESC
-  chineseName_ASC
-  chineseName_DESC
-  englishName_ASC
-  englishName_DESC
-  pinyinName_ASC
-  pinyinName_DESC
-  birthdate_ASC
-  birthdate_DESC
-  gender_ASC
-  gender_DESC
-  createdAt_ASC
-  createdAt_DESC
-  updatedAt_ASC
-  updatedAt_DESC
-}
-
-enum Gender {
-  M
-  F
-}
-
 type Attendance {
   id: ID!
   classSession: ClassSession!
   createdAt: DateTime!
   student: Student!
   event: AttendanceEvent!
-}
-
-# used in Attendance
-enum AttendanceEvent {
-  Arrived
-  Left
 }
 
 type Group {
@@ -165,25 +132,12 @@ type ClassSession {
   stage: Stage!
 }
 
-enum Stage {
-  Inactive # scheduled, but teacher hasn't viewed
-  Active # preclass, time for attendance
-  Started # class time
-  Ended # teacher has ended the class
-}
-
 type Semester {
   id: ID!
   startDate: DateTime!
   endDate: DateTime!
   name: String!
   groups: [Group!]!
-}
-
-enum MutationType {
-  CREATED
-  UPDATED
-  DELETED
 }
 
 input StudentInput {
