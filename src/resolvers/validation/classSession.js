@@ -78,7 +78,8 @@ exports.withinYear = async (startsAt, endsAt) => {
   }
 }
 
-exports.duringSemester = async (startsAt, endsAt, { prisma }) => {
+exports.duringSemester = async (startsAt, endsAt, groupId, { prisma }) => {
+  if (groupId) return // duringGroupSemester will catch same thing
   if (!startsAt && !endsAt) return false
   const sameTimeSemesters = async date => {
     if (!date) return
@@ -91,4 +92,14 @@ exports.duringSemester = async (startsAt, endsAt, { prisma }) => {
     }
   }
   return Promise.all([sameTimeSemesters(startsAt), sameTimeSemesters(endsAt)])
+}
+
+exports.duringGroupSemester = async (startsAt, endsAt, groupId, { prisma }) => {
+  if (!groupId) return
+  const groupSemester = await prisma.group({ id: groupId }).semester()
+  if (!groupSemester.startDate < startsAt && groupSemester.endDate > endsAt) {
+    throw new Error(
+      "Session must occur during the group's current enrolled semester"
+    )
+  }
 }
