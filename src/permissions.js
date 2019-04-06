@@ -33,6 +33,7 @@ exports.permissions = shield({
     changePassword: or(isThisUser, isAdmin),
     createClassSession: isAuthenticatedUser,
     updateClassSession: isAuthenticatedUser,
+    deleteClassSession: isAuthenticatedUser,
     addPoint: isAuthenticatedUser,
     undoPoint: isAuthenticatedUser,
     updateSemester: isAdmin,
