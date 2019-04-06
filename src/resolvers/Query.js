@@ -45,8 +45,8 @@ exports.Query = {
   classSession (_, args, context) {
     return context.prisma.classSession({ id: args.id })
   },
-  classSessions (_, args, context) {
-    return context.prisma.classSessions()
+  classSessions (_, { orderBy = 'startsAt_DESC', where }, context) {
+    return context.prisma.classSessions({ orderBy, where })
   },
   points (_, args, context) {
     return context.prisma.points({ orderBy: 'createdAt_DESC' })
