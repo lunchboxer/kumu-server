@@ -42,5 +42,8 @@ exports.classSession = {
       data: input,
       where: { id }
     })
+  },
+  deleteClassSession (_, { id }, context) {
+    return context.prisma.deleteClassSession({ id })
   }
 }
