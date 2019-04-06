@@ -15,17 +15,14 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
   if (startsAt) {
     const startConflicts = await prisma.classSessions({
       where: {
-        // new startsAt is during existing session
-        AND: [
-          { startsAt_lte: startsAt },
-          { endsAt_gte: startsAt },
-          { id_not: id }
-        ]
+        startsAt_lte: startsAt,
+        endsAt_gte: startsAt,
+        id_not: id
       }
     })
     if (startConflicts.length) {
-      const startDate = new Date(startsAt)
-      const endDate = new Date(endsAt)
+      const startDate = new Date(startConflicts[0].startsAt)
+      const endDate = new Date(startConflicts[0].endsAt)
       throw new Error(
         `Start time overlaps with a session on ${startDate.toDateString()} from ${startDate.toLocaleTimeString()} to ${endDate.toLocaleTimeString()}`
       )
