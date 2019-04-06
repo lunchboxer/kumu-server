@@ -12,7 +12,10 @@ type Query {
   semester(id: ID!): Semester
   semesters: [Semester!]!
   classSession(id: ID!): ClassSession
-  classSessions: [ClassSession!]!
+  classSessions(
+    where: ClassSessionWhereInput
+    orderBy: ClassSessionOrderByInput
+  ): [ClassSession!]!
   points: [Point!]!
   attendances: [Attendance!]!
   activeGroups: [Group!]!
