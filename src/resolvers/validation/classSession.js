@@ -33,8 +33,8 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
       where: { startsAt_lte: endsAt, endsAt_gte: endsAt, id_not: id }
     })
     if (endConflicts.length) {
-      const startDate = new Date(startsAt)
-      const endDate = new Date(endsAt)
+      const startDate = new Date(endConflicts[0].startsAt)
+      const endDate = new Date(endConflicts[0].endsAt)
       throw new Error(
         `End time overlaps with a session on ${endDate.toDateString()} from ${startDate.toLocaleTimeString()} to ${endDate.toLocaleTimeString()}`
       )
@@ -57,8 +57,8 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
       }
     })
     if (insideConflicts.length) {
-      const startDate = new Date(startsAt)
-      const endDate = new Date(endsAt)
+      const startDate = new Date(insideConflicts[0].startsAt)
+      const endDate = new Date(insideConflicts[0].endsAt)
       throw new Error(
         `Class session time include a session on ${startDate.toDateString()} from ${startDate.toLocaleTimeString()} to ${endDate.toLocaleTimeString()}`
       )
