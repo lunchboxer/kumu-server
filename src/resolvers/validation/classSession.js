@@ -30,10 +30,7 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
   }
   if (endsAt) {
     const endConflicts = await prisma.classSessions({
-      where: {
-        // new endsAt is during existing session
-        AND: [{ startsAt_lte: endsAt }, { endsAt_gte: endsAt }, { id_not: id }]
-      }
+      where: { startsAt_lte: endsAt, endsAt_gte: endsAt, id_not: id }
     })
     if (endConflicts.length) {
       const startDate = new Date(startsAt)
@@ -54,11 +51,9 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
   if (endsAt && startsAt) {
     const insideConflicts = await prisma.classSessions({
       where: {
-        AND: [
-          { startsAt_gte: startsAt },
-          { endsAt_lte: endsAt },
-          { id_not: id }
-        ]
+        startsAt_gte: startsAt,
+        endsAt_lte: endsAt,
+        id_not: id
       }
     })
     if (insideConflicts.length) {
@@ -88,7 +83,8 @@ exports.duringSemester = async (startsAt, endsAt, { prisma }) => {
   const sameTimeSemesters = async date => {
     if (!date) return
     const startsinSemester = await prisma.$exists.semester({
-      AND: [{ startDate_lte: date }, { endDate_gte: date }]
+      startDate_lte: date,
+      endDate_gte: date
     })
     if (!startsinSemester) {
       throw new Error('Session must occur during an existing semester.')
