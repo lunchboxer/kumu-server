@@ -73,6 +73,7 @@ type Mutation {
     input: ClassSessionInput!
     groupId: ID
   ): ClassSession
+  deleteClassSession(id: ID!): ClassSession
 }
 
 type Subscription {
