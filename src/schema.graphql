@@ -134,6 +134,7 @@ type ClassSession {
   points: [Point!]!
   attendances: [Attendance!]!
   stage: Stage!
+  number: Int
 }
 
 type Semester {
