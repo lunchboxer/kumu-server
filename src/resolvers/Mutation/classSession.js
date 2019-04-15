@@ -23,6 +23,17 @@ exports.classSession = {
       }
     })
   },
+  // to avoid running every validation
+  async activateSession (_, { id }, context) {
+    return context.prisma.updateClassSession({
+      data: {
+        stage: 'Active'
+      },
+      where: {
+        id
+      }
+    })
+  },
   async updateClassSession (_, { id, input, groupId }, context) {
     await Promise.all([
       withinYear(input.startsAt, input.endsAt),
