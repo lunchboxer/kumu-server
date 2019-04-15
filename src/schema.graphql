@@ -70,10 +70,11 @@ type Mutation {
   createClassSession(input: ClassSessionInput!, groupId: ID!): ClassSession
   updateClassSession(
     id: ID!
-    input: ClassSessionInput!
+    input: ClassSessionInput
     groupId: ID
   ): ClassSession
   deleteClassSession(id: ID!): ClassSession
+  activateSession(id: ID!): ClassSession
 }
 
 type Subscription {
@@ -170,8 +171,8 @@ input PointInput {
 }
 
 input ClassSessionInput {
-  startsAt: DateTime!
-  endsAt: DateTime!
+  startsAt: DateTime
+  endsAt: DateTime
   stage: Stage
 }
 

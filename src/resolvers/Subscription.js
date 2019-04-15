@@ -1,7 +1,7 @@
 exports.Subscription = {
   classSession: {
     subscribe: async (_, { id }, { prisma }) => {
-      return prisma.$subscribe.classSession({ where: { node: id } }).node()
+      return prisma.$subscribe.classSession({ node: { id } }).node()
     },
     resolve: payload => {
       return payload
@@ -9,7 +9,7 @@ exports.Subscription = {
   },
   classSessions: {
     subscribe: async (_, { where }, { prisma }) => {
-      return prisma.$subscribe.classSession({ where })
+      return prisma.$subscribe.classSession({ ...where })
     },
     resolve: payload => {
       return payload
