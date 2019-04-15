@@ -67,8 +67,11 @@ exports.Query = {
         startDate_gt: now
       }
     })
+    let ids = []
+    current[0] && ids.push(current[0].id)
+    next[0] && ids.push(next[0].id)
     return context.prisma.groups({
-      where: { semester: { id_in: [current[0].id, next[0].id] } }
+      where: { semester: { id_in: ids } }
     })
   },
   async currentSemester (_, args, context) {
