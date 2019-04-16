@@ -62,9 +62,13 @@ type Mutation {
   undoPoint(id: ID!): Point
 
   ## Attendance
-  # markAllPresent(classSessionId: ID!): Boolean
-  # markPresent(classSessionId: ID!, studentID: ID!): Attendance
-  # markLeftEarly(classSessionId: ID!, studentID: ID!): Attendance
+  markAllPresent(classSessionId: ID!): Boolean
+  updateAttendance(
+    classSessionId: ID!
+    studentId: ID!
+    status: String!
+  ): Boolean
+  markRestAbsent(classSessionId: ID!): Boolean
 
   ## ClassSession
   createClassSession(input: ClassSessionInput!, groupId: ID!): ClassSession
@@ -106,14 +110,6 @@ type Student {
   groups: [Group!]!
   points: [Point!]!
   pointsTally: Int
-}
-
-type Attendance {
-  id: ID!
-  classSession: ClassSession!
-  createdAt: DateTime!
-  student: Student!
-  event: AttendanceEvent!
 }
 
 type Group {

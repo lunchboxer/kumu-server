@@ -31,7 +31,9 @@ type Attendance {
   createdAt: DateTime!
   id: ID!
   student: Student!
-  event: AttendanceEvent!
+  status: AttendanceStatus!
+  updatedAt: DateTime!
+  arrivedAt: DateTime
 }
 
 type AttendanceConnection {
@@ -43,7 +45,8 @@ type AttendanceConnection {
 input AttendanceCreateInput {
   classSession: ClassSessionCreateOneWithoutAttendancesInput!
   student: StudentCreateOneWithoutAttendancesInput!
-  event: AttendanceEvent!
+  status: AttendanceStatus!
+  arrivedAt: DateTime
 }
 
 input AttendanceCreateManyWithoutClassSessionInput {
@@ -58,12 +61,14 @@ input AttendanceCreateManyWithoutStudentInput {
 
 input AttendanceCreateWithoutClassSessionInput {
   student: StudentCreateOneWithoutAttendancesInput!
-  event: AttendanceEvent!
+  status: AttendanceStatus!
+  arrivedAt: DateTime
 }
 
 input AttendanceCreateWithoutStudentInput {
   classSession: ClassSessionCreateOneWithoutAttendancesInput!
-  event: AttendanceEvent!
+  status: AttendanceStatus!
+  arrivedAt: DateTime
 }
 
 type AttendanceEdge {
@@ -71,26 +76,25 @@ type AttendanceEdge {
   cursor: String!
 }
 
-enum AttendanceEvent {
-  Arrived
-  Left
-}
-
 enum AttendanceOrderByInput {
   createdAt_ASC
   createdAt_DESC
   id_ASC
   id_DESC
-  event_ASC
-  event_DESC
+  status_ASC
+  status_DESC
   updatedAt_ASC
   updatedAt_DESC
+  arrivedAt_ASC
+  arrivedAt_DESC
 }
 
 type AttendancePreviousValues {
   createdAt: DateTime!
   id: ID!
-  event: AttendanceEvent!
+  status: AttendanceStatus!
+  updatedAt: DateTime!
+  arrivedAt: DateTime
 }
 
 input AttendanceScalarWhereInput {
@@ -116,13 +120,37 @@ input AttendanceScalarWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
-  event: AttendanceEvent
-  event_not: AttendanceEvent
-  event_in: [AttendanceEvent!]
-  event_not_in: [AttendanceEvent!]
+  status: AttendanceStatus
+  status_not: AttendanceStatus
+  status_in: [AttendanceStatus!]
+  status_not_in: [AttendanceStatus!]
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
+  arrivedAt: DateTime
+  arrivedAt_not: DateTime
+  arrivedAt_in: [DateTime!]
+  arrivedAt_not_in: [DateTime!]
+  arrivedAt_lt: DateTime
+  arrivedAt_lte: DateTime
+  arrivedAt_gt: DateTime
+  arrivedAt_gte: DateTime
   AND: [AttendanceScalarWhereInput!]
   OR: [AttendanceScalarWhereInput!]
   NOT: [AttendanceScalarWhereInput!]
+}
+
+enum AttendanceStatus {
+  Absent
+  Present
+  Late
+  LeftEarly
+  LateLeftEarly
 }
 
 type AttendanceSubscriptionPayload {
@@ -146,15 +174,18 @@ input AttendanceSubscriptionWhereInput {
 input AttendanceUpdateInput {
   classSession: ClassSessionUpdateOneRequiredWithoutAttendancesInput
   student: StudentUpdateOneRequiredWithoutAttendancesInput
-  event: AttendanceEvent
+  status: AttendanceStatus
+  arrivedAt: DateTime
 }
 
 input AttendanceUpdateManyDataInput {
-  event: AttendanceEvent
+  status: AttendanceStatus
+  arrivedAt: DateTime
 }
 
 input AttendanceUpdateManyMutationInput {
-  event: AttendanceEvent
+  status: AttendanceStatus
+  arrivedAt: DateTime
 }
 
 input AttendanceUpdateManyWithoutClassSessionInput {
@@ -188,12 +219,14 @@ input AttendanceUpdateManyWithWhereNestedInput {
 
 input AttendanceUpdateWithoutClassSessionDataInput {
   student: StudentUpdateOneRequiredWithoutAttendancesInput
-  event: AttendanceEvent
+  status: AttendanceStatus
+  arrivedAt: DateTime
 }
 
 input AttendanceUpdateWithoutStudentDataInput {
   classSession: ClassSessionUpdateOneRequiredWithoutAttendancesInput
-  event: AttendanceEvent
+  status: AttendanceStatus
+  arrivedAt: DateTime
 }
 
 input AttendanceUpdateWithWhereUniqueWithoutClassSessionInput {
@@ -243,10 +276,26 @@ input AttendanceWhereInput {
   id_ends_with: ID
   id_not_ends_with: ID
   student: StudentWhereInput
-  event: AttendanceEvent
-  event_not: AttendanceEvent
-  event_in: [AttendanceEvent!]
-  event_not_in: [AttendanceEvent!]
+  status: AttendanceStatus
+  status_not: AttendanceStatus
+  status_in: [AttendanceStatus!]
+  status_not_in: [AttendanceStatus!]
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
+  arrivedAt: DateTime
+  arrivedAt_not: DateTime
+  arrivedAt_in: [DateTime!]
+  arrivedAt_not_in: [DateTime!]
+  arrivedAt_lt: DateTime
+  arrivedAt_lte: DateTime
+  arrivedAt_gt: DateTime
+  arrivedAt_gte: DateTime
   AND: [AttendanceWhereInput!]
   OR: [AttendanceWhereInput!]
   NOT: [AttendanceWhereInput!]

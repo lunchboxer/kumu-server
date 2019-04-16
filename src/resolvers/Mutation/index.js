@@ -4,6 +4,7 @@ const { group } = require('./group')
 const { semester } = require('./semester')
 const { point } = require('./point')
 const { classSession } = require('./classSession')
+const { attendance } = require('./attendance')
 
 exports.Mutation = {
   ...auth,
@@ -11,5 +12,6 @@ exports.Mutation = {
   ...group,
   ...semester,
   ...point,
-  ...classSession
+  ...classSession,
+  ...attendance
 }
