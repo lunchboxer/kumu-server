@@ -1,7 +1,8 @@
 exports.checkOrder = async (startsAt, endsAt, id, { prisma }) => {
   if (!startsAt && !endsAt) return false
   if (id && (!startsAt || !endsAt)) {
-    const thisSession = await prisma.semester({ id })
+    console.log('id', id)
+    const thisSession = prisma.classSession({ id })
     startsAt = !startsAt ? thisSession.startsAt : startsAt
     endsAt = !endsAt ? thisSession.endsAt : endsAt
   }
@@ -44,7 +45,7 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
   // updating only one date
   // need to get both to check if surrounds another semester
   if (id && (!startsAt || !endsAt)) {
-    const thisSession = await prisma.classSessions({ id })
+    const thisSession = await prisma.classSession({ id })
     startsAt = !startsAt ? thisSession.startsAt : startsAt
     endsAt = !endsAt ? thisSession.endsAt : endsAt
   }
