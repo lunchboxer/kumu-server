@@ -6,6 +6,7 @@ const { Group } = require('./Group')
 const { Semester } = require('./Semester')
 const { ClassSession } = require('./ClassSession')
 const { Point } = require('./Point')
+const { Attendance } = require('./Attendance')
 
 exports.resolvers = {
   Query,
@@ -15,5 +16,6 @@ exports.resolvers = {
   Group,
   Semester,
   ClassSession,
-  Point
+  Point,
+  Attendance
 }

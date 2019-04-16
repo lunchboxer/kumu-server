@@ -82,11 +82,16 @@ type Attendance {
   createdAt: DateTime!
   id: ID! @unique
   student: Student!
-  event: AttendanceEvent!
+  status: AttendanceStatus!
+  updatedAt: DateTime!
+  arrivedAt: DateTime
 }
 
 # used in Attendance
-enum AttendanceEvent {
-  Arrived
-  Left
+enum AttendanceStatus {
+  Absent
+  Present
+  Late
+  LeftEarly
+  LateLeftEarly
 }
