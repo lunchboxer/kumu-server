@@ -112,7 +112,7 @@ type Student {
   englishName: String!
   pinyinName: String
   gender: Gender
-  birthdate: DateTime!
+  birthdate: DateTime
   groups: [Group!]!
   points: [Point!]!
   pointsTally: Int

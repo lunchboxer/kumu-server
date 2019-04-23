@@ -36,7 +36,7 @@ type Group {
   name: String!
   students: [Student!]!
   classSessions: [ClassSession!]!
-  semester: Semester!
+  semester: Semester! @relation(link: INLINE)
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
 }
@@ -47,7 +47,7 @@ type ClassSession {
   startedAt: DateTime
   endsAt: DateTime!
   endedAt: DateTime
-  group: Group!
+  group: Group! @relation(link: INLINE)
   points: [Point!]!
   attendances: [Attendance!]!
   stage: Stage! @default(value: Inactive)
@@ -69,8 +69,8 @@ type Point {
   # points awarded to students during the lesson, can be positive or negative
   id: ID! @id
   value: Int!
-  student: Student!
-  classSession: ClassSession!
+  student: Student! @relation(link: INLINE)
+  classSession: ClassSession! @relation(link: INLINE)
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
 }
@@ -86,8 +86,8 @@ enum Stage {
 type Attendance {
   classSession: ClassSession!
   id: ID! @id
-  student: Student!
-  status: AttendanceStatus!
+  student: Student! @relation(link: INLINE)
+  status: AttendanceStatus! @relation(link: INLINE)
   arrivedAt: DateTime
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
