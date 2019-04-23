@@ -44,7 +44,9 @@ type Group {
 type ClassSession {
   id: ID! @unique
   startsAt: DateTime!
+  startedAt: DateTime
   endsAt: DateTime!
+  endedAt: DateTime
   group: Group!
   points: [Point!]!
   attendances: [Attendance!]!

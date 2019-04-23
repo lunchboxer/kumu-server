@@ -1,4 +1,7 @@
 exports.ClassSession = {
+  attendances (root, args, context) {
+    return context.prisma.classSession({ id: root.id }).attendances()
+  },
   group (root, args, context) {
     return context.prisma.classSession({ id: root.id }).group()
   },

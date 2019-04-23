@@ -6,7 +6,11 @@ type Query {
   user(id: ID!): User
   users: [User!]!
   student(id: ID!): Student
-  students(orderBy: StudentOrderByInput, searchString: String): [Student!]!
+  students(
+    orderBy: StudentOrderByInput
+    where: StudentWhereInput
+    searchString: String
+  ): [Student!]!
   group(id: ID!): Group
   groups: [Group!]!
   semester(id: ID!): Semester
@@ -16,8 +20,8 @@ type Query {
     where: ClassSessionWhereInput
     orderBy: ClassSessionOrderByInput
   ): [ClassSession!]!
-  points: [Point!]!
-  attendances: [Attendance!]!
+  points(where: PointWhereInput): [Point!]!
+  attendances(where: AttendanceWhereInput): [Attendance!]!
   activeGroups: [Group!]!
   currentSemester: Semester
   nextSemester: Semester
@@ -58,7 +62,7 @@ type Mutation {
   deleteSemester(id: ID!): Semester
 
   ## Point
-  addPoint(input: PointInput!): Point
+  addPoint(value: Int!, studentId: ID!, classSessionId: ID!): Point
   undoPoint(id: ID!): Point
 
   ## Attendance
@@ -67,7 +71,7 @@ type Mutation {
     classSessionId: ID!
     studentId: ID!
     status: String!
-  ): Boolean
+  ): Attendance
   markRestAbsent(classSessionId: ID!): Boolean
 
   ## ClassSession
@@ -82,11 +86,13 @@ type Mutation {
 }
 
 type Subscription {
+  attendances(classSessionId: ID): Attendance
   classSession(id: ID!): ClassSession
   semesters: Semester
   classSessions(
     where: ClassSessionSubscriptionWhereInput
   ): ClassSessionSubscriptionPayload
+  points(classSessionId: ID): PointSubscriptionPayload
 }
 
 type AuthPayload {
@@ -130,7 +136,9 @@ type Point {
 type ClassSession {
   id: ID!
   startsAt: DateTime!
+  startedAt: DateTime
   endsAt: DateTime!
+  endedAt: DateTime
   group: Group!
   points: [Point!]!
   attendances: [Attendance!]!
@@ -170,6 +178,8 @@ input ClassSessionInput {
   startsAt: DateTime
   endsAt: DateTime
   stage: Stage
+  startedAt: DateTime
+  endedAt: DateTime
 }
 
 input UserInput {

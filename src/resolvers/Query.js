@@ -15,7 +15,7 @@ exports.Query = {
     return context.prisma.student({ id: args.id })
   },
   students (_, args, context) {
-    const { orderBy, searchString } = args
+    const { orderBy, searchString, where } = args
     if (searchString) {
       return context.prisma.students({
         orderBy,
@@ -28,7 +28,7 @@ exports.Query = {
         }
       })
     }
-    return context.prisma.students({ orderBy })
+    return context.prisma.students({ orderBy, where })
   },
   group (_, args, context) {
     return context.prisma.group({ id: args.id })
@@ -48,11 +48,11 @@ exports.Query = {
   classSessions (_, { orderBy = 'startsAt_DESC', where }, context) {
     return context.prisma.classSessions({ orderBy, where })
   },
-  points (_, args, context) {
-    return context.prisma.points({ orderBy: 'createdAt_DESC' })
+  points (_, { where }, context) {
+    return context.prisma.points({ orderBy: 'createdAt_DESC', where })
   },
-  attendances (_, args, context) {
-    return context.prisma.attendances({ orderBy: 'createdAt_DESC' })
+  attendances (_, { where }, context) {
+    return context.prisma.attendances({ orderBy: 'createdAt_DESC', where })
   },
   // All the groups from the current and upcoming semester
   async activeGroups (_, args, context) {

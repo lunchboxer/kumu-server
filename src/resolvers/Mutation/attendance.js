@@ -46,21 +46,24 @@ const attendance = {
     let arrivedAt
     if (['Present', 'Late'].includes(status)) arrivedAt = new Date()
     if (status === 'Absent') arrivedAt = null
-    const updated = await context.prisma.updateManyAttendances({
-      data: { status, arrivedAt },
+    const toUpdate = await context.prisma.attendances({
       where: {
         student: { id: studentId },
         classSession: { id: classSessionId }
       }
     })
-    if (updated.count > 0) return true
-    const result = await context.prisma.createAttendance({
+    if (toUpdate.length > 0) {
+      return context.prisma.updateAttendance({
+        data: { status, arrivedAt },
+        where: { id: toUpdate[0].id }
+      })
+    }
+    return context.prisma.createAttendance({
       classSession: { connect: { id: classSessionId } },
       student: { connect: { id: studentId } },
       status,
       arrivedAt
     })
-    return !!result
   }
 }
 
