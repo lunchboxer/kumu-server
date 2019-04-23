@@ -10,6 +10,10 @@ type AggregateGroup {
   count: Int!
 }
 
+type AggregateMessage {
+  count: Int!
+}
+
 type AggregatePoint {
   count: Int!
 }
@@ -26,14 +30,18 @@ type AggregateUser {
   count: Int!
 }
 
+type AggregateViewer {
+  count: Int!
+}
+
 type Attendance {
   classSession: ClassSession!
-  createdAt: DateTime!
   id: ID!
   student: Student!
   status: AttendanceStatus!
-  updatedAt: DateTime!
   arrivedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type AttendanceConnection {
@@ -44,6 +52,7 @@ type AttendanceConnection {
 
 input AttendanceCreateInput {
   classSession: ClassSessionCreateOneWithoutAttendancesInput!
+  id: ID
   student: StudentCreateOneWithoutAttendancesInput!
   status: AttendanceStatus!
   arrivedAt: DateTime
@@ -60,6 +69,7 @@ input AttendanceCreateManyWithoutStudentInput {
 }
 
 input AttendanceCreateWithoutClassSessionInput {
+  id: ID
   student: StudentCreateOneWithoutAttendancesInput!
   status: AttendanceStatus!
   arrivedAt: DateTime
@@ -67,6 +77,7 @@ input AttendanceCreateWithoutClassSessionInput {
 
 input AttendanceCreateWithoutStudentInput {
   classSession: ClassSessionCreateOneWithoutAttendancesInput!
+  id: ID
   status: AttendanceStatus!
   arrivedAt: DateTime
 }
@@ -77,35 +88,27 @@ type AttendanceEdge {
 }
 
 enum AttendanceOrderByInput {
-  createdAt_ASC
-  createdAt_DESC
   id_ASC
   id_DESC
   status_ASC
   status_DESC
-  updatedAt_ASC
-  updatedAt_DESC
   arrivedAt_ASC
   arrivedAt_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
 }
 
 type AttendancePreviousValues {
-  createdAt: DateTime!
   id: ID!
   status: AttendanceStatus!
-  updatedAt: DateTime!
   arrivedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 input AttendanceScalarWhereInput {
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
   id: ID
   id_not: ID
   id_in: [ID!]
@@ -124,14 +127,6 @@ input AttendanceScalarWhereInput {
   status_not: AttendanceStatus
   status_in: [AttendanceStatus!]
   status_not_in: [AttendanceStatus!]
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   arrivedAt: DateTime
   arrivedAt_not: DateTime
   arrivedAt_in: [DateTime!]
@@ -140,6 +135,22 @@ input AttendanceScalarWhereInput {
   arrivedAt_lte: DateTime
   arrivedAt_gt: DateTime
   arrivedAt_gte: DateTime
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   AND: [AttendanceScalarWhereInput!]
   OR: [AttendanceScalarWhereInput!]
   NOT: [AttendanceScalarWhereInput!]
@@ -253,14 +264,6 @@ input AttendanceUpsertWithWhereUniqueWithoutStudentInput {
 
 input AttendanceWhereInput {
   classSession: ClassSessionWhereInput
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
   id: ID
   id_not: ID
   id_in: [ID!]
@@ -280,14 +283,6 @@ input AttendanceWhereInput {
   status_not: AttendanceStatus
   status_in: [AttendanceStatus!]
   status_not_in: [AttendanceStatus!]
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   arrivedAt: DateTime
   arrivedAt_not: DateTime
   arrivedAt_in: [DateTime!]
@@ -296,6 +291,22 @@ input AttendanceWhereInput {
   arrivedAt_lte: DateTime
   arrivedAt_gt: DateTime
   arrivedAt_gte: DateTime
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   AND: [AttendanceWhereInput!]
   OR: [AttendanceWhereInput!]
   NOT: [AttendanceWhereInput!]
@@ -319,6 +330,8 @@ type ClassSession {
   points(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Point!]
   attendances(where: AttendanceWhereInput, orderBy: AttendanceOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Attendance!]
   stage: Stage!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type ClassSessionConnection {
@@ -328,6 +341,7 @@ type ClassSessionConnection {
 }
 
 input ClassSessionCreateInput {
+  id: ID
   startsAt: DateTime!
   startedAt: DateTime
   endsAt: DateTime!
@@ -354,6 +368,7 @@ input ClassSessionCreateOneWithoutPointsInput {
 }
 
 input ClassSessionCreateWithoutAttendancesInput {
+  id: ID
   startsAt: DateTime!
   startedAt: DateTime
   endsAt: DateTime!
@@ -364,6 +379,7 @@ input ClassSessionCreateWithoutAttendancesInput {
 }
 
 input ClassSessionCreateWithoutGroupInput {
+  id: ID
   startsAt: DateTime!
   startedAt: DateTime
   endsAt: DateTime!
@@ -374,6 +390,7 @@ input ClassSessionCreateWithoutGroupInput {
 }
 
 input ClassSessionCreateWithoutPointsInput {
+  id: ID
   startsAt: DateTime!
   startedAt: DateTime
   endsAt: DateTime!
@@ -414,6 +431,8 @@ type ClassSessionPreviousValues {
   endsAt: DateTime!
   endedAt: DateTime
   stage: Stage!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 input ClassSessionScalarWhereInput {
@@ -467,6 +486,22 @@ input ClassSessionScalarWhereInput {
   stage_not: Stage
   stage_in: [Stage!]
   stage_not_in: [Stage!]
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   AND: [ClassSessionScalarWhereInput!]
   OR: [ClassSessionScalarWhereInput!]
   NOT: [ClassSessionScalarWhereInput!]
@@ -657,6 +692,22 @@ input ClassSessionWhereInput {
   stage_not: Stage
   stage_in: [Stage!]
   stage_not_in: [Stage!]
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   AND: [ClassSessionWhereInput!]
   OR: [ClassSessionWhereInput!]
   NOT: [ClassSessionWhereInput!]
@@ -690,6 +741,7 @@ type GroupConnection {
 }
 
 input GroupCreateInput {
+  id: ID
   name: String!
   students: StudentCreateManyWithoutGroupsInput
   classSessions: ClassSessionCreateManyWithoutGroupInput
@@ -712,18 +764,21 @@ input GroupCreateOneWithoutClassSessionsInput {
 }
 
 input GroupCreateWithoutClassSessionsInput {
+  id: ID
   name: String!
   students: StudentCreateManyWithoutGroupsInput
   semester: SemesterCreateOneWithoutGroupsInput!
 }
 
 input GroupCreateWithoutSemesterInput {
+  id: ID
   name: String!
   students: StudentCreateManyWithoutGroupsInput
   classSessions: ClassSessionCreateManyWithoutGroupInput
 }
 
 input GroupCreateWithoutStudentsInput {
+  id: ID
   name: String!
   classSessions: ClassSessionCreateManyWithoutGroupInput
   semester: SemesterCreateOneWithoutGroupsInput!
@@ -977,7 +1032,104 @@ input GroupWhereUniqueInput {
   id: ID
 }
 
+scalar Json
+
 scalar Long
+
+type Message {
+  id: ID!
+  data: Json
+  createdAt: DateTime!
+}
+
+type MessageConnection {
+  pageInfo: PageInfo!
+  edges: [MessageEdge]!
+  aggregate: AggregateMessage!
+}
+
+input MessageCreateInput {
+  id: ID
+  data: Json
+}
+
+type MessageEdge {
+  node: Message!
+  cursor: String!
+}
+
+enum MessageOrderByInput {
+  id_ASC
+  id_DESC
+  data_ASC
+  data_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type MessagePreviousValues {
+  id: ID!
+  data: Json
+  createdAt: DateTime!
+}
+
+type MessageSubscriptionPayload {
+  mutation: MutationType!
+  node: Message
+  updatedFields: [String!]
+  previousValues: MessagePreviousValues
+}
+
+input MessageSubscriptionWhereInput {
+  mutation_in: [MutationType!]
+  updatedFields_contains: String
+  updatedFields_contains_every: [String!]
+  updatedFields_contains_some: [String!]
+  node: MessageWhereInput
+  AND: [MessageSubscriptionWhereInput!]
+  OR: [MessageSubscriptionWhereInput!]
+  NOT: [MessageSubscriptionWhereInput!]
+}
+
+input MessageUpdateInput {
+  data: Json
+}
+
+input MessageUpdateManyMutationInput {
+  data: Json
+}
+
+input MessageWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  AND: [MessageWhereInput!]
+  OR: [MessageWhereInput!]
+  NOT: [MessageWhereInput!]
+}
+
+input MessageWhereUniqueInput {
+  id: ID
+}
 
 type Mutation {
   createAttendance(data: AttendanceCreateInput!): Attendance!
@@ -998,6 +1150,12 @@ type Mutation {
   upsertGroup(where: GroupWhereUniqueInput!, create: GroupCreateInput!, update: GroupUpdateInput!): Group!
   deleteGroup(where: GroupWhereUniqueInput!): Group
   deleteManyGroups(where: GroupWhereInput): BatchPayload!
+  createMessage(data: MessageCreateInput!): Message!
+  updateMessage(data: MessageUpdateInput!, where: MessageWhereUniqueInput!): Message
+  updateManyMessages(data: MessageUpdateManyMutationInput!, where: MessageWhereInput): BatchPayload!
+  upsertMessage(where: MessageWhereUniqueInput!, create: MessageCreateInput!, update: MessageUpdateInput!): Message!
+  deleteMessage(where: MessageWhereUniqueInput!): Message
+  deleteManyMessages(where: MessageWhereInput): BatchPayload!
   createPoint(data: PointCreateInput!): Point!
   updatePoint(data: PointUpdateInput!, where: PointWhereUniqueInput!): Point
   updateManyPoints(data: PointUpdateManyMutationInput!, where: PointWhereInput): BatchPayload!
@@ -1022,6 +1180,12 @@ type Mutation {
   upsertUser(where: UserWhereUniqueInput!, create: UserCreateInput!, update: UserUpdateInput!): User!
   deleteUser(where: UserWhereUniqueInput!): User
   deleteManyUsers(where: UserWhereInput): BatchPayload!
+  createViewer(data: ViewerCreateInput!): Viewer!
+  updateViewer(data: ViewerUpdateInput!, where: ViewerWhereUniqueInput!): Viewer
+  updateManyViewers(data: ViewerUpdateManyMutationInput!, where: ViewerWhereInput): BatchPayload!
+  upsertViewer(where: ViewerWhereUniqueInput!, create: ViewerCreateInput!, update: ViewerUpdateInput!): Viewer!
+  deleteViewer(where: ViewerWhereUniqueInput!): Viewer
+  deleteManyViewers(where: ViewerWhereInput): BatchPayload!
 }
 
 enum MutationType {
@@ -1047,6 +1211,7 @@ type Point {
   student: Student!
   classSession: ClassSession!
   createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type PointConnection {
@@ -1056,6 +1221,7 @@ type PointConnection {
 }
 
 input PointCreateInput {
+  id: ID
   value: Int!
   student: StudentCreateOneWithoutPointsInput!
   classSession: ClassSessionCreateOneWithoutPointsInput!
@@ -1072,11 +1238,13 @@ input PointCreateManyWithoutStudentInput {
 }
 
 input PointCreateWithoutClassSessionInput {
+  id: ID
   value: Int!
   student: StudentCreateOneWithoutPointsInput!
 }
 
 input PointCreateWithoutStudentInput {
+  id: ID
   value: Int!
   classSession: ClassSessionCreateOneWithoutPointsInput!
 }
@@ -1101,6 +1269,7 @@ type PointPreviousValues {
   id: ID!
   value: Int!
   createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 input PointScalarWhereInput {
@@ -1134,6 +1303,14 @@ input PointScalarWhereInput {
   createdAt_lte: DateTime
   createdAt_gt: DateTime
   createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   AND: [PointScalarWhereInput!]
   OR: [PointScalarWhereInput!]
   NOT: [PointScalarWhereInput!]
@@ -1265,6 +1442,14 @@ input PointWhereInput {
   createdAt_lte: DateTime
   createdAt_gt: DateTime
   createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   AND: [PointWhereInput!]
   OR: [PointWhereInput!]
   NOT: [PointWhereInput!]
@@ -1284,6 +1469,9 @@ type Query {
   group(where: GroupWhereUniqueInput!): Group
   groups(where: GroupWhereInput, orderBy: GroupOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Group]!
   groupsConnection(where: GroupWhereInput, orderBy: GroupOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): GroupConnection!
+  message(where: MessageWhereUniqueInput!): Message
+  messages(where: MessageWhereInput, orderBy: MessageOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Message]!
+  messagesConnection(where: MessageWhereInput, orderBy: MessageOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): MessageConnection!
   point(where: PointWhereUniqueInput!): Point
   points(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Point]!
   pointsConnection(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): PointConnection!
@@ -1296,6 +1484,9 @@ type Query {
   user(where: UserWhereUniqueInput!): User
   users(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [User]!
   usersConnection(where: UserWhereInput, orderBy: UserOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): UserConnection!
+  viewer(where: ViewerWhereUniqueInput!): Viewer
+  viewers(where: ViewerWhereInput, orderBy: ViewerOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Viewer]!
+  viewersConnection(where: ViewerWhereInput, orderBy: ViewerOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): ViewerConnection!
   node(id: ID!): Node
 }
 
@@ -1305,11 +1496,12 @@ enum Role {
 
 type Semester {
   id: ID!
-  createdAt: DateTime!
   startDate: DateTime!
   endDate: DateTime!
   name: String!
   groups(where: GroupWhereInput, orderBy: GroupOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Group!]
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type SemesterConnection {
@@ -1319,6 +1511,7 @@ type SemesterConnection {
 }
 
 input SemesterCreateInput {
+  id: ID
   startDate: DateTime!
   endDate: DateTime!
   name: String!
@@ -1331,6 +1524,7 @@ input SemesterCreateOneWithoutGroupsInput {
 }
 
 input SemesterCreateWithoutGroupsInput {
+  id: ID
   startDate: DateTime!
   endDate: DateTime!
   name: String!
@@ -1344,24 +1538,25 @@ type SemesterEdge {
 enum SemesterOrderByInput {
   id_ASC
   id_DESC
-  createdAt_ASC
-  createdAt_DESC
   startDate_ASC
   startDate_DESC
   endDate_ASC
   endDate_DESC
   name_ASC
   name_DESC
+  createdAt_ASC
+  createdAt_DESC
   updatedAt_ASC
   updatedAt_DESC
 }
 
 type SemesterPreviousValues {
   id: ID!
-  createdAt: DateTime!
   startDate: DateTime!
   endDate: DateTime!
   name: String!
+  createdAt: DateTime!
+  updatedAt: DateTime!
 }
 
 type SemesterSubscriptionPayload {
@@ -1428,14 +1623,6 @@ input SemesterWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
   startDate: DateTime
   startDate_not: DateTime
   startDate_in: [DateTime!]
@@ -1469,6 +1656,22 @@ input SemesterWhereInput {
   groups_every: GroupWhereInput
   groups_some: GroupWhereInput
   groups_none: GroupWhereInput
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   AND: [SemesterWhereInput!]
   OR: [SemesterWhereInput!]
   NOT: [SemesterWhereInput!]
@@ -1507,6 +1710,7 @@ type StudentConnection {
 }
 
 input StudentCreateInput {
+  id: ID
   chineseName: String!
   englishName: String!
   pinyinName: String
@@ -1533,6 +1737,7 @@ input StudentCreateOneWithoutPointsInput {
 }
 
 input StudentCreateWithoutAttendancesInput {
+  id: ID
   chineseName: String!
   englishName: String!
   pinyinName: String
@@ -1543,6 +1748,7 @@ input StudentCreateWithoutAttendancesInput {
 }
 
 input StudentCreateWithoutGroupsInput {
+  id: ID
   chineseName: String!
   englishName: String!
   pinyinName: String
@@ -1553,6 +1759,7 @@ input StudentCreateWithoutGroupsInput {
 }
 
 input StudentCreateWithoutPointsInput {
+  id: ID
   chineseName: String!
   englishName: String!
   pinyinName: String
@@ -1921,10 +2128,12 @@ type Subscription {
   attendance(where: AttendanceSubscriptionWhereInput): AttendanceSubscriptionPayload
   classSession(where: ClassSessionSubscriptionWhereInput): ClassSessionSubscriptionPayload
   group(where: GroupSubscriptionWhereInput): GroupSubscriptionPayload
+  message(where: MessageSubscriptionWhereInput): MessageSubscriptionPayload
   point(where: PointSubscriptionWhereInput): PointSubscriptionPayload
   semester(where: SemesterSubscriptionWhereInput): SemesterSubscriptionPayload
   student(where: StudentSubscriptionWhereInput): StudentSubscriptionPayload
   user(where: UserSubscriptionWhereInput): UserSubscriptionPayload
+  viewer(where: ViewerSubscriptionWhereInput): ViewerSubscriptionPayload
 }
 
 type User {
@@ -1943,6 +2152,7 @@ type UserConnection {
 }
 
 input UserCreateInput {
+  id: ID
   username: String!
   password: String!
   role: Role
@@ -2078,4 +2288,113 @@ input UserWhereInput {
 input UserWhereUniqueInput {
   id: ID
   username: String
+}
+
+type Viewer {
+  id: ID!
+  name: String
+  createdAt: DateTime!
+}
+
+type ViewerConnection {
+  pageInfo: PageInfo!
+  edges: [ViewerEdge]!
+  aggregate: AggregateViewer!
+}
+
+input ViewerCreateInput {
+  id: ID
+  name: String
+}
+
+type ViewerEdge {
+  node: Viewer!
+  cursor: String!
+}
+
+enum ViewerOrderByInput {
+  id_ASC
+  id_DESC
+  name_ASC
+  name_DESC
+  createdAt_ASC
+  createdAt_DESC
+}
+
+type ViewerPreviousValues {
+  id: ID!
+  name: String
+  createdAt: DateTime!
+}
+
+type ViewerSubscriptionPayload {
+  mutation: MutationType!
+  node: Viewer
+  updatedFields: [String!]
+  previousValues: ViewerPreviousValues
+}
+
+input ViewerSubscriptionWhereInput {
+  mutation_in: [MutationType!]
+  updatedFields_contains: String
+  updatedFields_contains_every: [String!]
+  updatedFields_contains_some: [String!]
+  node: ViewerWhereInput
+  AND: [ViewerSubscriptionWhereInput!]
+  OR: [ViewerSubscriptionWhereInput!]
+  NOT: [ViewerSubscriptionWhereInput!]
+}
+
+input ViewerUpdateInput {
+  name: String
+}
+
+input ViewerUpdateManyMutationInput {
+  name: String
+}
+
+input ViewerWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  name: String
+  name_not: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  AND: [ViewerWhereInput!]
+  OR: [ViewerWhereInput!]
+  NOT: [ViewerWhereInput!]
+}
+
+input ViewerWhereUniqueInput {
+  id: ID
 }

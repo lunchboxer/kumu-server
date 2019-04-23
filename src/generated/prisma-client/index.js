@@ -47,6 +47,14 @@ var models = [
   {
     name: "AttendanceStatus",
     embedded: false
+  },
+  {
+    name: "Message",
+    embedded: false
+  },
+  {
+    name: "Viewer",
+    embedded: false
   }
 ];
 exports.Prisma = prisma_lib_1.makePrismaClientClass({
