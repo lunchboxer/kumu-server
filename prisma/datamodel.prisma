@@ -1,9 +1,9 @@
 type User {
-  id: ID! @unique
+  id: ID! @id
   username: String! @unique
   password: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
   role: Role
 }
 
@@ -12,7 +12,7 @@ enum Role {
 }
 
 type Student {
-  id: ID! @unique
+  id: ID! @id
   chineseName: String!
   englishName: String!
   pinyinName: String
@@ -21,8 +21,8 @@ type Student {
   groups: [Group!]!
   points: [Point!]!
   attendances: [Attendance!]!
-  createdAt: DateTime!
-  updatedAt: DateTime!
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
 }
 
 enum Gender {
@@ -32,17 +32,17 @@ enum Gender {
 
 type Group {
   # a group of students attending class together
-  id: ID! @unique
+  id: ID! @id
   name: String!
   students: [Student!]!
   classSessions: [ClassSession!]!
   semester: Semester!
-  createdAt: DateTime!
-  updatedAt: DateTime!
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
 }
 
 type ClassSession {
-  id: ID! @unique
+  id: ID! @id
   startsAt: DateTime!
   startedAt: DateTime
   endsAt: DateTime!
@@ -50,25 +50,29 @@ type ClassSession {
   group: Group!
   points: [Point!]!
   attendances: [Attendance!]!
-  stage: Stage! @default(value: "Inactive")
+  stage: Stage! @default(value: Inactive)
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
 }
 
 type Semester {
-  id: ID! @unique
-  createdAt: DateTime!
+  id: ID! @id
   startDate: DateTime!
   endDate: DateTime!
   name: String! @unique
   groups: [Group!]!
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
 }
 
 type Point {
   # points awarded to students during the lesson, can be positive or negative
-  id: ID! @unique
+  id: ID! @id
   value: Int!
   student: Student!
   classSession: ClassSession!
-  createdAt: DateTime!
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
 }
 
 # used in ClassSession
@@ -81,12 +85,12 @@ enum Stage {
 
 type Attendance {
   classSession: ClassSession!
-  createdAt: DateTime!
-  id: ID! @unique
+  id: ID! @id
   student: Student!
   status: AttendanceStatus!
-  updatedAt: DateTime!
   arrivedAt: DateTime
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
 }
 
 # used in Attendance
@@ -96,4 +100,16 @@ enum AttendanceStatus {
   Late
   LeftEarly
   LateLeftEarly
+}
+
+type Message {
+  id: ID! @id
+  data: Json
+  createdAt: DateTime! @createdAt
+}
+
+type Viewer {
+  id: ID! @id
+  name: String
+  createdAt: DateTime! @createdAt
 }
