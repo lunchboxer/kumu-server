@@ -312,7 +312,9 @@ type BatchPayload {
 type ClassSession {
   id: ID!
   startsAt: DateTime!
+  startedAt: DateTime
   endsAt: DateTime!
+  endedAt: DateTime
   group: Group!
   points(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Point!]
   attendances(where: AttendanceWhereInput, orderBy: AttendanceOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Attendance!]
@@ -327,7 +329,9 @@ type ClassSessionConnection {
 
 input ClassSessionCreateInput {
   startsAt: DateTime!
+  startedAt: DateTime
   endsAt: DateTime!
+  endedAt: DateTime
   group: GroupCreateOneWithoutClassSessionsInput!
   points: PointCreateManyWithoutClassSessionInput
   attendances: AttendanceCreateManyWithoutClassSessionInput
@@ -351,7 +355,9 @@ input ClassSessionCreateOneWithoutPointsInput {
 
 input ClassSessionCreateWithoutAttendancesInput {
   startsAt: DateTime!
+  startedAt: DateTime
   endsAt: DateTime!
+  endedAt: DateTime
   group: GroupCreateOneWithoutClassSessionsInput!
   points: PointCreateManyWithoutClassSessionInput
   stage: Stage
@@ -359,7 +365,9 @@ input ClassSessionCreateWithoutAttendancesInput {
 
 input ClassSessionCreateWithoutGroupInput {
   startsAt: DateTime!
+  startedAt: DateTime
   endsAt: DateTime!
+  endedAt: DateTime
   points: PointCreateManyWithoutClassSessionInput
   attendances: AttendanceCreateManyWithoutClassSessionInput
   stage: Stage
@@ -367,7 +375,9 @@ input ClassSessionCreateWithoutGroupInput {
 
 input ClassSessionCreateWithoutPointsInput {
   startsAt: DateTime!
+  startedAt: DateTime
   endsAt: DateTime!
+  endedAt: DateTime
   group: GroupCreateOneWithoutClassSessionsInput!
   attendances: AttendanceCreateManyWithoutClassSessionInput
   stage: Stage
@@ -383,8 +393,12 @@ enum ClassSessionOrderByInput {
   id_DESC
   startsAt_ASC
   startsAt_DESC
+  startedAt_ASC
+  startedAt_DESC
   endsAt_ASC
   endsAt_DESC
+  endedAt_ASC
+  endedAt_DESC
   stage_ASC
   stage_DESC
   createdAt_ASC
@@ -396,7 +410,9 @@ enum ClassSessionOrderByInput {
 type ClassSessionPreviousValues {
   id: ID!
   startsAt: DateTime!
+  startedAt: DateTime
   endsAt: DateTime!
+  endedAt: DateTime
   stage: Stage!
 }
 
@@ -423,6 +439,14 @@ input ClassSessionScalarWhereInput {
   startsAt_lte: DateTime
   startsAt_gt: DateTime
   startsAt_gte: DateTime
+  startedAt: DateTime
+  startedAt_not: DateTime
+  startedAt_in: [DateTime!]
+  startedAt_not_in: [DateTime!]
+  startedAt_lt: DateTime
+  startedAt_lte: DateTime
+  startedAt_gt: DateTime
+  startedAt_gte: DateTime
   endsAt: DateTime
   endsAt_not: DateTime
   endsAt_in: [DateTime!]
@@ -431,6 +455,14 @@ input ClassSessionScalarWhereInput {
   endsAt_lte: DateTime
   endsAt_gt: DateTime
   endsAt_gte: DateTime
+  endedAt: DateTime
+  endedAt_not: DateTime
+  endedAt_in: [DateTime!]
+  endedAt_not_in: [DateTime!]
+  endedAt_lt: DateTime
+  endedAt_lte: DateTime
+  endedAt_gt: DateTime
+  endedAt_gte: DateTime
   stage: Stage
   stage_not: Stage
   stage_in: [Stage!]
@@ -460,7 +492,9 @@ input ClassSessionSubscriptionWhereInput {
 
 input ClassSessionUpdateInput {
   startsAt: DateTime
+  startedAt: DateTime
   endsAt: DateTime
+  endedAt: DateTime
   group: GroupUpdateOneRequiredWithoutClassSessionsInput
   points: PointUpdateManyWithoutClassSessionInput
   attendances: AttendanceUpdateManyWithoutClassSessionInput
@@ -469,13 +503,17 @@ input ClassSessionUpdateInput {
 
 input ClassSessionUpdateManyDataInput {
   startsAt: DateTime
+  startedAt: DateTime
   endsAt: DateTime
+  endedAt: DateTime
   stage: Stage
 }
 
 input ClassSessionUpdateManyMutationInput {
   startsAt: DateTime
+  startedAt: DateTime
   endsAt: DateTime
+  endedAt: DateTime
   stage: Stage
 }
 
@@ -512,7 +550,9 @@ input ClassSessionUpdateOneRequiredWithoutPointsInput {
 
 input ClassSessionUpdateWithoutAttendancesDataInput {
   startsAt: DateTime
+  startedAt: DateTime
   endsAt: DateTime
+  endedAt: DateTime
   group: GroupUpdateOneRequiredWithoutClassSessionsInput
   points: PointUpdateManyWithoutClassSessionInput
   stage: Stage
@@ -520,7 +560,9 @@ input ClassSessionUpdateWithoutAttendancesDataInput {
 
 input ClassSessionUpdateWithoutGroupDataInput {
   startsAt: DateTime
+  startedAt: DateTime
   endsAt: DateTime
+  endedAt: DateTime
   points: PointUpdateManyWithoutClassSessionInput
   attendances: AttendanceUpdateManyWithoutClassSessionInput
   stage: Stage
@@ -528,7 +570,9 @@ input ClassSessionUpdateWithoutGroupDataInput {
 
 input ClassSessionUpdateWithoutPointsDataInput {
   startsAt: DateTime
+  startedAt: DateTime
   endsAt: DateTime
+  endedAt: DateTime
   group: GroupUpdateOneRequiredWithoutClassSessionsInput
   attendances: AttendanceUpdateManyWithoutClassSessionInput
   stage: Stage
@@ -578,6 +622,14 @@ input ClassSessionWhereInput {
   startsAt_lte: DateTime
   startsAt_gt: DateTime
   startsAt_gte: DateTime
+  startedAt: DateTime
+  startedAt_not: DateTime
+  startedAt_in: [DateTime!]
+  startedAt_not_in: [DateTime!]
+  startedAt_lt: DateTime
+  startedAt_lte: DateTime
+  startedAt_gt: DateTime
+  startedAt_gte: DateTime
   endsAt: DateTime
   endsAt_not: DateTime
   endsAt_in: [DateTime!]
@@ -586,6 +638,14 @@ input ClassSessionWhereInput {
   endsAt_lte: DateTime
   endsAt_gt: DateTime
   endsAt_gte: DateTime
+  endedAt: DateTime
+  endedAt_not: DateTime
+  endedAt_in: [DateTime!]
+  endedAt_not_in: [DateTime!]
+  endedAt_lt: DateTime
+  endedAt_lte: DateTime
+  endedAt_gt: DateTime
+  endedAt_gte: DateTime
   group: GroupWhereInput
   points_every: PointWhereInput
   points_some: PointWhereInput

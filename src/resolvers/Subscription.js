@@ -1,4 +1,27 @@
 exports.Subscription = {
+  points: {
+    subscribe: async (_, { classSessionId }, { prisma }) => {
+      return prisma.$subscribe.point({
+        node: { classSession: { id: classSessionId } }
+      })
+    },
+    resolve: payload => {
+      return payload
+    }
+  },
+  attendances: {
+    subscribe: async (_, { classSessionId }, { prisma }) => {
+      return prisma.$subscribe
+        .attendance({
+          mutation_in: ['CREATED', 'UPDATED'],
+          node: { classSession: { id: classSessionId } }
+        })
+        .node()
+    },
+    resolve: payload => {
+      return payload
+    }
+  },
   classSession: {
     subscribe: async (_, { id }, { prisma }) => {
       return prisma.$subscribe.classSession({ node: { id } }).node()

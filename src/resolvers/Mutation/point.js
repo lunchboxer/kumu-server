@@ -1,18 +1,18 @@
 exports.point = {
-  addPoint (_, { input }, context) {
-    if (input.value > 2 || input.value < -2) {
+  addPoint (_, { studentId, value, classSessionId }, context) {
+    if (value > 2 || value < -2) {
       throw new Error('Point values can range from -2 to 2')
     }
     return context.prisma.createPoint({
-      value: input.value,
+      value,
       student: {
         connect: {
-          id: input.studentId
+          id: studentId
         }
       },
       classSession: {
         connect: {
-          id: input.classSessionId
+          id: classSessionId
         }
       }
     })

@@ -455,8 +455,12 @@ export type ClassSessionOrderByInput =
   | "id_DESC"
   | "startsAt_ASC"
   | "startsAt_DESC"
+  | "startedAt_ASC"
+  | "startedAt_DESC"
   | "endsAt_ASC"
   | "endsAt_DESC"
+  | "endedAt_ASC"
+  | "endedAt_DESC"
   | "stage_ASC"
   | "stage_DESC"
   | "createdAt_ASC"
@@ -480,7 +484,9 @@ export type SemesterOrderByInput =
 
 export interface ClassSessionUpdateWithoutPointsDataInput {
   startsAt?: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt?: DateTimeInput;
+  endedAt?: DateTimeInput;
   group?: GroupUpdateOneRequiredWithoutClassSessionsInput;
   attendances?: AttendanceUpdateManyWithoutClassSessionInput;
   stage?: Stage;
@@ -703,7 +709,9 @@ export interface PointSubscriptionWhereInput {
 
 export interface ClassSessionUpdateWithoutAttendancesDataInput {
   startsAt?: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt?: DateTimeInput;
+  endedAt?: DateTimeInput;
   group?: GroupUpdateOneRequiredWithoutClassSessionsInput;
   points?: PointUpdateManyWithoutClassSessionInput;
   stage?: Stage;
@@ -881,7 +889,9 @@ export interface GroupCreateWithoutSemesterInput {
 
 export interface ClassSessionCreateInput {
   startsAt: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt: DateTimeInput;
+  endedAt?: DateTimeInput;
   group: GroupCreateOneWithoutClassSessionsInput;
   points?: PointCreateManyWithoutClassSessionInput;
   attendances?: AttendanceCreateManyWithoutClassSessionInput;
@@ -962,7 +972,9 @@ export interface StudentUpdateWithoutAttendancesDataInput {
 
 export interface ClassSessionUpdateManyMutationInput {
   startsAt?: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt?: DateTimeInput;
+  endedAt?: DateTimeInput;
   stage?: Stage;
 }
 
@@ -1065,6 +1077,14 @@ export interface ClassSessionWhereInput {
   startsAt_lte?: DateTimeInput;
   startsAt_gt?: DateTimeInput;
   startsAt_gte?: DateTimeInput;
+  startedAt?: DateTimeInput;
+  startedAt_not?: DateTimeInput;
+  startedAt_in?: DateTimeInput[] | DateTimeInput;
+  startedAt_not_in?: DateTimeInput[] | DateTimeInput;
+  startedAt_lt?: DateTimeInput;
+  startedAt_lte?: DateTimeInput;
+  startedAt_gt?: DateTimeInput;
+  startedAt_gte?: DateTimeInput;
   endsAt?: DateTimeInput;
   endsAt_not?: DateTimeInput;
   endsAt_in?: DateTimeInput[] | DateTimeInput;
@@ -1073,6 +1093,14 @@ export interface ClassSessionWhereInput {
   endsAt_lte?: DateTimeInput;
   endsAt_gt?: DateTimeInput;
   endsAt_gte?: DateTimeInput;
+  endedAt?: DateTimeInput;
+  endedAt_not?: DateTimeInput;
+  endedAt_in?: DateTimeInput[] | DateTimeInput;
+  endedAt_not_in?: DateTimeInput[] | DateTimeInput;
+  endedAt_lt?: DateTimeInput;
+  endedAt_lte?: DateTimeInput;
+  endedAt_gt?: DateTimeInput;
+  endedAt_gte?: DateTimeInput;
   group?: GroupWhereInput;
   points_every?: PointWhereInput;
   points_some?: PointWhereInput;
@@ -1106,7 +1134,9 @@ export interface ClassSessionCreateOneWithoutPointsInput {
 
 export interface ClassSessionUpdateWithoutGroupDataInput {
   startsAt?: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt?: DateTimeInput;
+  endedAt?: DateTimeInput;
   points?: PointUpdateManyWithoutClassSessionInput;
   attendances?: AttendanceUpdateManyWithoutClassSessionInput;
   stage?: Stage;
@@ -1557,7 +1587,9 @@ export interface PointUpdateManyWithWhereNestedInput {
 
 export interface ClassSessionUpdateInput {
   startsAt?: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt?: DateTimeInput;
+  endedAt?: DateTimeInput;
   group?: GroupUpdateOneRequiredWithoutClassSessionsInput;
   points?: PointUpdateManyWithoutClassSessionInput;
   attendances?: AttendanceUpdateManyWithoutClassSessionInput;
@@ -1570,7 +1602,9 @@ export interface PointUpdateManyDataInput {
 
 export interface ClassSessionCreateWithoutAttendancesInput {
   startsAt: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt: DateTimeInput;
+  endedAt?: DateTimeInput;
   group: GroupCreateOneWithoutClassSessionsInput;
   points?: PointCreateManyWithoutClassSessionInput;
   stage?: Stage;
@@ -1615,6 +1649,14 @@ export interface ClassSessionScalarWhereInput {
   startsAt_lte?: DateTimeInput;
   startsAt_gt?: DateTimeInput;
   startsAt_gte?: DateTimeInput;
+  startedAt?: DateTimeInput;
+  startedAt_not?: DateTimeInput;
+  startedAt_in?: DateTimeInput[] | DateTimeInput;
+  startedAt_not_in?: DateTimeInput[] | DateTimeInput;
+  startedAt_lt?: DateTimeInput;
+  startedAt_lte?: DateTimeInput;
+  startedAt_gt?: DateTimeInput;
+  startedAt_gte?: DateTimeInput;
   endsAt?: DateTimeInput;
   endsAt_not?: DateTimeInput;
   endsAt_in?: DateTimeInput[] | DateTimeInput;
@@ -1623,6 +1665,14 @@ export interface ClassSessionScalarWhereInput {
   endsAt_lte?: DateTimeInput;
   endsAt_gt?: DateTimeInput;
   endsAt_gte?: DateTimeInput;
+  endedAt?: DateTimeInput;
+  endedAt_not?: DateTimeInput;
+  endedAt_in?: DateTimeInput[] | DateTimeInput;
+  endedAt_not_in?: DateTimeInput[] | DateTimeInput;
+  endedAt_lt?: DateTimeInput;
+  endedAt_lte?: DateTimeInput;
+  endedAt_gt?: DateTimeInput;
+  endedAt_gte?: DateTimeInput;
   stage?: Stage;
   stage_not?: Stage;
   stage_in?: Stage[] | Stage;
@@ -1634,7 +1684,9 @@ export interface ClassSessionScalarWhereInput {
 
 export interface ClassSessionCreateWithoutPointsInput {
   startsAt: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt: DateTimeInput;
+  endedAt?: DateTimeInput;
   group: GroupCreateOneWithoutClassSessionsInput;
   attendances?: AttendanceCreateManyWithoutClassSessionInput;
   stage?: Stage;
@@ -1657,13 +1709,17 @@ export interface StudentCreateWithoutAttendancesInput {
 
 export interface ClassSessionUpdateManyDataInput {
   startsAt?: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt?: DateTimeInput;
+  endedAt?: DateTimeInput;
   stage?: Stage;
 }
 
 export interface ClassSessionCreateWithoutGroupInput {
   startsAt: DateTimeInput;
+  startedAt?: DateTimeInput;
   endsAt: DateTimeInput;
+  endedAt?: DateTimeInput;
   points?: PointCreateManyWithoutClassSessionInput;
   attendances?: AttendanceCreateManyWithoutClassSessionInput;
   stage?: Stage;
@@ -2355,7 +2411,9 @@ export interface AggregateAttendanceSubscription
 export interface ClassSession {
   id: ID_Output;
   startsAt: DateTimeOutput;
+  startedAt?: DateTimeOutput;
   endsAt: DateTimeOutput;
+  endedAt?: DateTimeOutput;
   stage: Stage;
 }
 
@@ -2364,7 +2422,9 @@ export interface ClassSessionPromise
     Fragmentable {
   id: () => Promise<ID_Output>;
   startsAt: () => Promise<DateTimeOutput>;
+  startedAt: () => Promise<DateTimeOutput>;
   endsAt: () => Promise<DateTimeOutput>;
+  endedAt: () => Promise<DateTimeOutput>;
   group: <T = GroupPromise>() => T;
   points: <T = FragmentableArray<Point>>(
     args?: {
@@ -2396,7 +2456,9 @@ export interface ClassSessionSubscription
     Fragmentable {
   id: () => Promise<AsyncIterator<ID_Output>>;
   startsAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  startedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
   endsAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  endedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
   group: <T = GroupSubscription>() => T;
   points: <T = Promise<AsyncIterator<PointSubscription>>>(
     args?: {
@@ -2710,7 +2772,9 @@ export interface PointConnectionSubscription
 export interface ClassSessionPreviousValues {
   id: ID_Output;
   startsAt: DateTimeOutput;
+  startedAt?: DateTimeOutput;
   endsAt: DateTimeOutput;
+  endedAt?: DateTimeOutput;
   stage: Stage;
 }
 
@@ -2719,7 +2783,9 @@ export interface ClassSessionPreviousValuesPromise
     Fragmentable {
   id: () => Promise<ID_Output>;
   startsAt: () => Promise<DateTimeOutput>;
+  startedAt: () => Promise<DateTimeOutput>;
   endsAt: () => Promise<DateTimeOutput>;
+  endedAt: () => Promise<DateTimeOutput>;
   stage: () => Promise<Stage>;
 }
 
@@ -2728,7 +2794,9 @@ export interface ClassSessionPreviousValuesSubscription
     Fragmentable {
   id: () => Promise<AsyncIterator<ID_Output>>;
   startsAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  startedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
   endsAt: () => Promise<AsyncIterator<DateTimeOutput>>;
+  endedAt: () => Promise<AsyncIterator<DateTimeOutput>>;
   stage: () => Promise<AsyncIterator<Stage>>;
 }
 
