@@ -13,14 +13,14 @@ enum Role {
 
 type Student {
   id: ID! @id
-  chineseName: String!
-  englishName: String!
+  chineseName: String
+  englishName: String
   pinyinName: String
   birthdate: DateTime
   gender: Gender
   groups: [Group!]!
-  points: [Point!]!
-  attendances: [Attendance!]!
+  points: [Point!]! @relation(onDelete: CASCADE)
+  attendances: [Attendance!]! @relation(onDelete: CASCADE)
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
 }
@@ -34,7 +34,7 @@ type Group {
   # a group of students attending class together
   id: ID! @id
   name: String!
-  students: [Student!]!
+  students: [Student!]! @relation(onDelete: SET_NULL)
   classSessions: [ClassSession!]!
   semester: Semester! @relation(link: INLINE)
   createdAt: DateTime! @createdAt
@@ -48,8 +48,8 @@ type ClassSession {
   endsAt: DateTime!
   endedAt: DateTime
   group: Group! @relation(link: INLINE)
-  points: [Point!]!
-  attendances: [Attendance!]!
+  points: [Point!]! @relation(onDelete: CASCADE)
+  attendances: [Attendance!]! @relation(onDelete: CASCADE)
   stage: Stage! @default(value: Inactive)
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
