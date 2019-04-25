@@ -1696,8 +1696,8 @@ enum Stage {
 
 type Student {
   id: ID!
-  chineseName: String!
-  englishName: String!
+  chineseName: String
+  englishName: String
   pinyinName: String
   birthdate: DateTime
   gender: Gender
@@ -1716,8 +1716,8 @@ type StudentConnection {
 
 input StudentCreateInput {
   id: ID
-  chineseName: String!
-  englishName: String!
+  chineseName: String
+  englishName: String
   pinyinName: String
   birthdate: DateTime
   gender: Gender
@@ -1743,8 +1743,8 @@ input StudentCreateOneWithoutPointsInput {
 
 input StudentCreateWithoutAttendancesInput {
   id: ID
-  chineseName: String!
-  englishName: String!
+  chineseName: String
+  englishName: String
   pinyinName: String
   birthdate: DateTime
   gender: Gender
@@ -1754,8 +1754,8 @@ input StudentCreateWithoutAttendancesInput {
 
 input StudentCreateWithoutGroupsInput {
   id: ID
-  chineseName: String!
-  englishName: String!
+  chineseName: String
+  englishName: String
   pinyinName: String
   birthdate: DateTime
   gender: Gender
@@ -1765,8 +1765,8 @@ input StudentCreateWithoutGroupsInput {
 
 input StudentCreateWithoutPointsInput {
   id: ID
-  chineseName: String!
-  englishName: String!
+  chineseName: String
+  englishName: String
   pinyinName: String
   birthdate: DateTime
   gender: Gender
@@ -1800,8 +1800,8 @@ enum StudentOrderByInput {
 
 type StudentPreviousValues {
   id: ID!
-  chineseName: String!
-  englishName: String!
+  chineseName: String
+  englishName: String
   pinyinName: String
   birthdate: DateTime
   gender: Gender

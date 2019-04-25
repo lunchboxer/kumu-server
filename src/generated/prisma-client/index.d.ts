@@ -783,8 +783,8 @@ export interface PointSubscriptionWhereInput {
 
 export interface StudentCreateWithoutPointsInput {
   id?: ID_Input;
-  chineseName: String;
-  englishName: String;
+  chineseName?: String;
+  englishName?: String;
   pinyinName?: String;
   birthdate?: DateTimeInput;
   gender?: Gender;
@@ -935,8 +935,8 @@ export interface GroupUpdateOneRequiredWithoutClassSessionsInput {
 
 export interface StudentCreateInput {
   id?: ID_Input;
-  chineseName: String;
-  englishName: String;
+  chineseName?: String;
+  englishName?: String;
   pinyinName?: String;
   birthdate?: DateTimeInput;
   gender?: Gender;
@@ -1309,8 +1309,8 @@ export interface ClassSessionUpdateManyWithoutGroupInput {
 
 export interface StudentCreateWithoutGroupsInput {
   id?: ID_Input;
-  chineseName: String;
-  englishName: String;
+  chineseName?: String;
+  englishName?: String;
   pinyinName?: String;
   birthdate?: DateTimeInput;
   gender?: Gender;
@@ -1384,8 +1384,8 @@ export interface PointUpdateWithWhereUniqueWithoutClassSessionInput {
 
 export interface StudentCreateWithoutAttendancesInput {
   id?: ID_Input;
-  chineseName: String;
-  englishName: String;
+  chineseName?: String;
+  englishName?: String;
   pinyinName?: String;
   birthdate?: DateTimeInput;
   gender?: Gender;
@@ -2426,8 +2426,8 @@ export interface GroupEdgeSubscription
 
 export interface Student {
   id: ID_Output;
-  chineseName: String;
-  englishName: String;
+  chineseName?: String;
+  englishName?: String;
   pinyinName?: String;
   birthdate?: DateTimeOutput;
   gender?: Gender;
@@ -2791,8 +2791,8 @@ export interface ClassSessionSubscription
 
 export interface StudentPreviousValues {
   id: ID_Output;
-  chineseName: String;
-  englishName: String;
+  chineseName?: String;
+  englishName?: String;
   pinyinName?: String;
   birthdate?: DateTimeOutput;
   gender?: Gender;
