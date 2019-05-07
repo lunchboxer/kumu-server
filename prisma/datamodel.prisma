@@ -51,6 +51,10 @@ type ClassSession {
   points: [Point!]! @relation(onDelete: CASCADE)
   attendances: [Attendance!]! @relation(onDelete: CASCADE)
   stage: Stage! @default(value: Inactive)
+  lesson: Lesson @relation(link: INLINE)
+  summary_EN: String
+  summary_ZH: String
+  published: Boolean! @default(value: false)
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
 }
@@ -91,6 +95,39 @@ type Attendance {
   arrivedAt: DateTime
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
+}
+
+type Tag {
+  id: ID! @id
+  name: String!
+}
+
+type Lesson {
+  id: ID! @id
+  name: String!
+  tags: [Tag!]!
+  words: [Word!]!
+  summary_EN: String
+  summary_ZH: String
+  materials: [Material!]!
+}
+
+type Material {
+  id: ID! @id
+  tags: [Tag!]!
+  type: String
+  url: String
+  title: String
+  notes: String
+}
+
+type Word {
+  id: ID! @id
+  english: String!
+  chinese: String
+  audio: String
+  lessons: [Lesson!]!
+  tags: [Tag!]!
 }
 
 # used in Attendance

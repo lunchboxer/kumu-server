@@ -45,6 +45,22 @@ var models = [
     embedded: false
   },
   {
+    name: "Tag",
+    embedded: false
+  },
+  {
+    name: "Lesson",
+    embedded: false
+  },
+  {
+    name: "Material",
+    embedded: false
+  },
+  {
+    name: "Word",
+    embedded: false
+  },
+  {
     name: "AttendanceStatus",
     embedded: false
   },
