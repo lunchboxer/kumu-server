@@ -1167,8 +1167,10 @@ type Lesson {
   name: String!
   tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
   words(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Word!]
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
   materials(where: MaterialWhereInput, orderBy: MaterialOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Material!]
 }
 
@@ -1183,8 +1185,10 @@ input LessonCreateInput {
   name: String!
   tags: TagCreateManyInput
   words: WordCreateManyWithoutLessonsInput
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
   materials: MaterialCreateManyInput
 }
 
@@ -1202,8 +1206,10 @@ input LessonCreateWithoutWordsInput {
   id: ID
   name: String!
   tags: TagCreateManyInput
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
   materials: MaterialCreateManyInput
 }
 
@@ -1217,17 +1223,23 @@ enum LessonOrderByInput {
   id_DESC
   name_ASC
   name_DESC
-  summary_EN_ASC
-  summary_EN_DESC
-  summary_ZH_ASC
-  summary_ZH_DESC
+  homeworkEN_ASC
+  homeworkEN_DESC
+  homeworkZH_ASC
+  homeworkZH_DESC
+  summaryEN_ASC
+  summaryEN_DESC
+  summaryZH_ASC
+  summaryZH_DESC
 }
 
 type LessonPreviousValues {
   id: ID!
   name: String!
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
 }
 
 input LessonScalarWhereInput {
@@ -1259,34 +1271,62 @@ input LessonScalarWhereInput {
   name_not_starts_with: String
   name_ends_with: String
   name_not_ends_with: String
-  summary_EN: String
-  summary_EN_not: String
-  summary_EN_in: [String!]
-  summary_EN_not_in: [String!]
-  summary_EN_lt: String
-  summary_EN_lte: String
-  summary_EN_gt: String
-  summary_EN_gte: String
-  summary_EN_contains: String
-  summary_EN_not_contains: String
-  summary_EN_starts_with: String
-  summary_EN_not_starts_with: String
-  summary_EN_ends_with: String
-  summary_EN_not_ends_with: String
-  summary_ZH: String
-  summary_ZH_not: String
-  summary_ZH_in: [String!]
-  summary_ZH_not_in: [String!]
-  summary_ZH_lt: String
-  summary_ZH_lte: String
-  summary_ZH_gt: String
-  summary_ZH_gte: String
-  summary_ZH_contains: String
-  summary_ZH_not_contains: String
-  summary_ZH_starts_with: String
-  summary_ZH_not_starts_with: String
-  summary_ZH_ends_with: String
-  summary_ZH_not_ends_with: String
+  homeworkEN: String
+  homeworkEN_not: String
+  homeworkEN_in: [String!]
+  homeworkEN_not_in: [String!]
+  homeworkEN_lt: String
+  homeworkEN_lte: String
+  homeworkEN_gt: String
+  homeworkEN_gte: String
+  homeworkEN_contains: String
+  homeworkEN_not_contains: String
+  homeworkEN_starts_with: String
+  homeworkEN_not_starts_with: String
+  homeworkEN_ends_with: String
+  homeworkEN_not_ends_with: String
+  homeworkZH: String
+  homeworkZH_not: String
+  homeworkZH_in: [String!]
+  homeworkZH_not_in: [String!]
+  homeworkZH_lt: String
+  homeworkZH_lte: String
+  homeworkZH_gt: String
+  homeworkZH_gte: String
+  homeworkZH_contains: String
+  homeworkZH_not_contains: String
+  homeworkZH_starts_with: String
+  homeworkZH_not_starts_with: String
+  homeworkZH_ends_with: String
+  homeworkZH_not_ends_with: String
+  summaryEN: String
+  summaryEN_not: String
+  summaryEN_in: [String!]
+  summaryEN_not_in: [String!]
+  summaryEN_lt: String
+  summaryEN_lte: String
+  summaryEN_gt: String
+  summaryEN_gte: String
+  summaryEN_contains: String
+  summaryEN_not_contains: String
+  summaryEN_starts_with: String
+  summaryEN_not_starts_with: String
+  summaryEN_ends_with: String
+  summaryEN_not_ends_with: String
+  summaryZH: String
+  summaryZH_not: String
+  summaryZH_in: [String!]
+  summaryZH_not_in: [String!]
+  summaryZH_lt: String
+  summaryZH_lte: String
+  summaryZH_gt: String
+  summaryZH_gte: String
+  summaryZH_contains: String
+  summaryZH_not_contains: String
+  summaryZH_starts_with: String
+  summaryZH_not_starts_with: String
+  summaryZH_ends_with: String
+  summaryZH_not_ends_with: String
   AND: [LessonScalarWhereInput!]
   OR: [LessonScalarWhereInput!]
   NOT: [LessonScalarWhereInput!]
@@ -1314,8 +1354,10 @@ input LessonUpdateDataInput {
   name: String
   tags: TagUpdateManyInput
   words: WordUpdateManyWithoutLessonsInput
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
   materials: MaterialUpdateManyInput
 }
 
@@ -1323,21 +1365,27 @@ input LessonUpdateInput {
   name: String
   tags: TagUpdateManyInput
   words: WordUpdateManyWithoutLessonsInput
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
   materials: MaterialUpdateManyInput
 }
 
 input LessonUpdateManyDataInput {
   name: String
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
 }
 
 input LessonUpdateManyMutationInput {
   name: String
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
 }
 
 input LessonUpdateManyWithoutWordsInput {
@@ -1369,8 +1417,10 @@ input LessonUpdateOneInput {
 input LessonUpdateWithoutWordsDataInput {
   name: String
   tags: TagUpdateManyInput
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
   materials: MaterialUpdateManyInput
 }
 
@@ -1425,34 +1475,62 @@ input LessonWhereInput {
   words_every: WordWhereInput
   words_some: WordWhereInput
   words_none: WordWhereInput
-  summary_EN: String
-  summary_EN_not: String
-  summary_EN_in: [String!]
-  summary_EN_not_in: [String!]
-  summary_EN_lt: String
-  summary_EN_lte: String
-  summary_EN_gt: String
-  summary_EN_gte: String
-  summary_EN_contains: String
-  summary_EN_not_contains: String
-  summary_EN_starts_with: String
-  summary_EN_not_starts_with: String
-  summary_EN_ends_with: String
-  summary_EN_not_ends_with: String
-  summary_ZH: String
-  summary_ZH_not: String
-  summary_ZH_in: [String!]
-  summary_ZH_not_in: [String!]
-  summary_ZH_lt: String
-  summary_ZH_lte: String
-  summary_ZH_gt: String
-  summary_ZH_gte: String
-  summary_ZH_contains: String
-  summary_ZH_not_contains: String
-  summary_ZH_starts_with: String
-  summary_ZH_not_starts_with: String
-  summary_ZH_ends_with: String
-  summary_ZH_not_ends_with: String
+  homeworkEN: String
+  homeworkEN_not: String
+  homeworkEN_in: [String!]
+  homeworkEN_not_in: [String!]
+  homeworkEN_lt: String
+  homeworkEN_lte: String
+  homeworkEN_gt: String
+  homeworkEN_gte: String
+  homeworkEN_contains: String
+  homeworkEN_not_contains: String
+  homeworkEN_starts_with: String
+  homeworkEN_not_starts_with: String
+  homeworkEN_ends_with: String
+  homeworkEN_not_ends_with: String
+  homeworkZH: String
+  homeworkZH_not: String
+  homeworkZH_in: [String!]
+  homeworkZH_not_in: [String!]
+  homeworkZH_lt: String
+  homeworkZH_lte: String
+  homeworkZH_gt: String
+  homeworkZH_gte: String
+  homeworkZH_contains: String
+  homeworkZH_not_contains: String
+  homeworkZH_starts_with: String
+  homeworkZH_not_starts_with: String
+  homeworkZH_ends_with: String
+  homeworkZH_not_ends_with: String
+  summaryEN: String
+  summaryEN_not: String
+  summaryEN_in: [String!]
+  summaryEN_not_in: [String!]
+  summaryEN_lt: String
+  summaryEN_lte: String
+  summaryEN_gt: String
+  summaryEN_gte: String
+  summaryEN_contains: String
+  summaryEN_not_contains: String
+  summaryEN_starts_with: String
+  summaryEN_not_starts_with: String
+  summaryEN_ends_with: String
+  summaryEN_not_ends_with: String
+  summaryZH: String
+  summaryZH_not: String
+  summaryZH_in: [String!]
+  summaryZH_not_in: [String!]
+  summaryZH_lt: String
+  summaryZH_lte: String
+  summaryZH_gt: String
+  summaryZH_gte: String
+  summaryZH_contains: String
+  summaryZH_not_contains: String
+  summaryZH_starts_with: String
+  summaryZH_not_starts_with: String
+  summaryZH_ends_with: String
+  summaryZH_not_ends_with: String
   materials_every: MaterialWhereInput
   materials_some: MaterialWhereInput
   materials_none: MaterialWhereInput

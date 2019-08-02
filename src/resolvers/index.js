@@ -7,6 +7,7 @@ const { Semester } = require('./Semester')
 const { ClassSession } = require('./ClassSession')
 const { Point } = require('./Point')
 const { Attendance } = require('./Attendance')
+const { Lesson } = require('./Lesson')
 
 exports.resolvers = {
   Query,
@@ -17,5 +18,6 @@ exports.resolvers = {
   Semester,
   ClassSession,
   Point,
-  Attendance
+  Attendance,
+  Lesson
 }

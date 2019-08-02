@@ -107,8 +107,10 @@ type Lesson {
   name: String!
   tags: [Tag!]!
   words: [Word!]!
-  summary_EN: String
-  summary_ZH: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
   materials: [Material!]!
 }
 

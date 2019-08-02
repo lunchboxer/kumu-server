@@ -25,6 +25,14 @@ type Query {
   activeGroups: [Group!]!
   currentSemester: Semester
   nextSemester: Semester
+  lesson(id: ID!): Lesson
+  lessons: [Lesson!]!
+  material(id: ID!): Material
+  materials: [Material!]!
+  word(id: ID!): Word
+  words: [Word!]!
+  tag(id: ID!): Tag
+  tags: [Tag!]!
 }
 
 type Mutation {
@@ -83,6 +91,10 @@ type Mutation {
   ): ClassSession
   deleteClassSession(id: ID!): ClassSession
   activateSession(id: ID!): ClassSession
+
+  ## Lesson
+  createLesson(input: LessonCreateInput!): Lesson
+  updateLesson(input: LessonUpdateInput!, id: ID!): Lesson
 }
 
 type Subscription {

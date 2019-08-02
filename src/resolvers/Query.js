@@ -91,5 +91,29 @@ exports.Query = {
       }
     })
     return next[0]
+  },
+  lesson (_, { id }, { prisma }) {
+    return prisma.lesson({ id })
+  },
+  lessons (_, args, { prisma }) {
+    return prisma.lessons()
+  },
+  material (_, { id }, { prisma }) {
+    return prisma.material({ id })
+  },
+  materials (_, args, { prisma }) {
+    return prisma.materials()
+  },
+  word (_, { id }, { prisma }) {
+    return prisma.word({ id })
+  },
+  words (_, args, { prisma }) {
+    return prisma.words()
+  },
+  tag (_, { id }, { prisma }) {
+    return prisma.tag({ id })
+  },
+  tags (_, args, { prisma }) {
+    return prisma.tags()
   }
 }
