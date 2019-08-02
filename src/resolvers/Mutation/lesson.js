@@ -3,6 +3,6 @@ exports.lesson = {
     return prisma.createLesson({ ...input })
   },
   updateLesson(_, { input, id }, { prisma }) {
-    return prisma.updateLesson({ date: input, where: { id } })
+    return prisma.updateLesson({ data: input, where: { id } })
   }
 }
