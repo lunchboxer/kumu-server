@@ -99,7 +99,7 @@ type Attendance {
 
 type Tag {
   id: ID! @id
-  name: String!
+  name: String! @unique
 }
 
 type Lesson {

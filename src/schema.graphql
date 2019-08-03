@@ -95,6 +95,12 @@ type Mutation {
   ## Lesson
   createLesson(input: LessonCreateInput!): Lesson
   updateLesson(input: LessonUpdateInput!, id: ID!): Lesson
+  deleteLesson(id: ID!): Lesson
+
+  ## Tag
+  createTag(name: String!): Tag
+  updateTag(name: String!, id: ID!): Tag
+  deleteTag(id: ID!): Tag
 }
 
 type Subscription {
