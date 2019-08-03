@@ -7,6 +7,7 @@ const { classSession } = require('./classSession')
 const { attendance } = require('./attendance')
 const { lesson } = require('./lesson')
 const { tag } = require('./tag')
+const { material } = require('./material')
 
 exports.Mutation = {
   ...auth,
@@ -17,5 +18,6 @@ exports.Mutation = {
   ...classSession,
   ...attendance,
   ...lesson,
-  ...tag
+  ...tag,
+  ...material
 }

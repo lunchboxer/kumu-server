@@ -28,7 +28,10 @@ type Query {
   lesson(id: ID!): Lesson
   lessons: [Lesson!]!
   material(id: ID!): Material
-  materials: [Material!]!
+  materials(
+    where: MaterialWhereInput
+    orderBy: MaterialOrderByInput
+  ): [Material!]!
   word(id: ID!): Word
   words: [Word!]!
   tag(id: ID!): Tag
@@ -102,6 +105,11 @@ type Mutation {
   createTag(name: String!): Tag
   updateTag(name: String!, id: ID!): Tag
   deleteTag(id: ID!): Tag
+
+  ## Material
+  createMaterial(input: MaterialCreateInput!): Material
+  updateMaterial(input: MaterialUpdateInput!, id: ID!): Material
+  deleteMaterial(id: ID!): Material
 }
 
 type Subscription {
