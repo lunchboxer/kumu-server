@@ -658,16 +658,6 @@ export type ClassSessionOrderByInput =
 
 export type TagOrderByInput = "id_ASC" | "id_DESC" | "name_ASC" | "name_DESC";
 
-export type WordOrderByInput =
-  | "id_ASC"
-  | "id_DESC"
-  | "english_ASC"
-  | "english_DESC"
-  | "chinese_ASC"
-  | "chinese_DESC"
-  | "audio_ASC"
-  | "audio_DESC";
-
 export type LessonOrderByInput =
   | "id_ASC"
   | "id_DESC"
@@ -681,6 +671,16 @@ export type LessonOrderByInput =
   | "summaryEN_DESC"
   | "summaryZH_ASC"
   | "summaryZH_DESC";
+
+export type WordOrderByInput =
+  | "id_ASC"
+  | "id_DESC"
+  | "english_ASC"
+  | "english_DESC"
+  | "chinese_ASC"
+  | "chinese_DESC"
+  | "audio_ASC"
+  | "audio_DESC";
 
 export type MaterialOrderByInput =
   | "id_ASC"
@@ -1236,6 +1236,15 @@ export interface TagWhereInput {
   name_not_starts_with?: String;
   name_ends_with?: String;
   name_not_ends_with?: String;
+  lessons_every?: LessonWhereInput;
+  lessons_some?: LessonWhereInput;
+  lessons_none?: LessonWhereInput;
+  words_every?: WordWhereInput;
+  words_some?: WordWhereInput;
+  words_none?: WordWhereInput;
+  materials_every?: MaterialWhereInput;
+  materials_some?: MaterialWhereInput;
+  materials_none?: MaterialWhereInput;
   AND?: TagWhereInput[] | TagWhereInput;
   OR?: TagWhereInput[] | TagWhereInput;
   NOT?: TagWhereInput[] | TagWhereInput;
@@ -1848,7 +1857,7 @@ export interface LessonCreateOneInput {
 export interface LessonCreateInput {
   id?: ID_Input;
   name: String;
-  tags?: TagCreateManyInput;
+  tags?: TagCreateManyWithoutLessonsInput;
   words?: WordCreateManyWithoutLessonsInput;
   homeworkEN?: String;
   homeworkZH?: String;
@@ -1857,14 +1866,87 @@ export interface LessonCreateInput {
   materials?: MaterialCreateManyInput;
 }
 
-export interface TagCreateManyInput {
-  create?: TagCreateInput[] | TagCreateInput;
+export interface TagCreateManyWithoutLessonsInput {
+  create?: TagCreateWithoutLessonsInput[] | TagCreateWithoutLessonsInput;
   connect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
 }
 
-export interface TagCreateInput {
+export interface TagCreateWithoutLessonsInput {
   id?: ID_Input;
   name: String;
+  words?: WordCreateManyWithoutTagsInput;
+  materials?: MaterialCreateManyWithoutTagsInput;
+}
+
+export interface WordCreateManyWithoutTagsInput {
+  create?: WordCreateWithoutTagsInput[] | WordCreateWithoutTagsInput;
+  connect?: WordWhereUniqueInput[] | WordWhereUniqueInput;
+}
+
+export interface WordCreateWithoutTagsInput {
+  id?: ID_Input;
+  english: String;
+  chinese?: String;
+  audio?: String;
+  lessons?: LessonCreateManyWithoutWordsInput;
+}
+
+export interface LessonCreateManyWithoutWordsInput {
+  create?: LessonCreateWithoutWordsInput[] | LessonCreateWithoutWordsInput;
+  connect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+}
+
+export interface LessonCreateWithoutWordsInput {
+  id?: ID_Input;
+  name: String;
+  tags?: TagCreateManyWithoutLessonsInput;
+  homeworkEN?: String;
+  homeworkZH?: String;
+  summaryEN?: String;
+  summaryZH?: String;
+  materials?: MaterialCreateManyInput;
+}
+
+export interface MaterialCreateManyInput {
+  create?: MaterialCreateInput[] | MaterialCreateInput;
+  connect?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
+}
+
+export interface MaterialCreateInput {
+  id?: ID_Input;
+  tags?: TagCreateManyWithoutMaterialsInput;
+  type?: String;
+  url?: String;
+  title?: String;
+  notes?: String;
+}
+
+export interface TagCreateManyWithoutMaterialsInput {
+  create?: TagCreateWithoutMaterialsInput[] | TagCreateWithoutMaterialsInput;
+  connect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+}
+
+export interface TagCreateWithoutMaterialsInput {
+  id?: ID_Input;
+  name: String;
+  lessons?: LessonCreateManyWithoutTagsInput;
+  words?: WordCreateManyWithoutTagsInput;
+}
+
+export interface LessonCreateManyWithoutTagsInput {
+  create?: LessonCreateWithoutTagsInput[] | LessonCreateWithoutTagsInput;
+  connect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+}
+
+export interface LessonCreateWithoutTagsInput {
+  id?: ID_Input;
+  name: String;
+  words?: WordCreateManyWithoutLessonsInput;
+  homeworkEN?: String;
+  homeworkZH?: String;
+  summaryEN?: String;
+  summaryZH?: String;
+  materials?: MaterialCreateManyInput;
 }
 
 export interface WordCreateManyWithoutLessonsInput {
@@ -1877,17 +1959,28 @@ export interface WordCreateWithoutLessonsInput {
   english: String;
   chinese?: String;
   audio?: String;
-  tags?: TagCreateManyInput;
+  tags?: TagCreateManyWithoutWordsInput;
 }
 
-export interface MaterialCreateManyInput {
-  create?: MaterialCreateInput[] | MaterialCreateInput;
+export interface TagCreateManyWithoutWordsInput {
+  create?: TagCreateWithoutWordsInput[] | TagCreateWithoutWordsInput;
+  connect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+}
+
+export interface TagCreateWithoutWordsInput {
+  id?: ID_Input;
+  name: String;
+  lessons?: LessonCreateManyWithoutTagsInput;
+  materials?: MaterialCreateManyWithoutTagsInput;
+}
+
+export interface MaterialCreateManyWithoutTagsInput {
+  create?: MaterialCreateWithoutTagsInput[] | MaterialCreateWithoutTagsInput;
   connect?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
 }
 
-export interface MaterialCreateInput {
+export interface MaterialCreateWithoutTagsInput {
   id?: ID_Input;
-  tags?: TagCreateManyInput;
   type?: String;
   url?: String;
   title?: String;
@@ -2362,7 +2455,7 @@ export interface LessonUpdateOneInput {
 
 export interface LessonUpdateDataInput {
   name?: String;
-  tags?: TagUpdateManyInput;
+  tags?: TagUpdateManyWithoutLessonsInput;
   words?: WordUpdateManyWithoutLessonsInput;
   homeworkEN?: String;
   homeworkZH?: String;
@@ -2371,80 +2464,189 @@ export interface LessonUpdateDataInput {
   materials?: MaterialUpdateManyInput;
 }
 
-export interface TagUpdateManyInput {
-  create?: TagCreateInput[] | TagCreateInput;
-  update?:
-    | TagUpdateWithWhereUniqueNestedInput[]
-    | TagUpdateWithWhereUniqueNestedInput;
-  upsert?:
-    | TagUpsertWithWhereUniqueNestedInput[]
-    | TagUpsertWithWhereUniqueNestedInput;
+export interface TagUpdateManyWithoutLessonsInput {
+  create?: TagCreateWithoutLessonsInput[] | TagCreateWithoutLessonsInput;
   delete?: TagWhereUniqueInput[] | TagWhereUniqueInput;
   connect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
   set?: TagWhereUniqueInput[] | TagWhereUniqueInput;
   disconnect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+  update?:
+    | TagUpdateWithWhereUniqueWithoutLessonsInput[]
+    | TagUpdateWithWhereUniqueWithoutLessonsInput;
+  upsert?:
+    | TagUpsertWithWhereUniqueWithoutLessonsInput[]
+    | TagUpsertWithWhereUniqueWithoutLessonsInput;
   deleteMany?: TagScalarWhereInput[] | TagScalarWhereInput;
   updateMany?:
     | TagUpdateManyWithWhereNestedInput[]
     | TagUpdateManyWithWhereNestedInput;
 }
 
-export interface TagUpdateWithWhereUniqueNestedInput {
+export interface TagUpdateWithWhereUniqueWithoutLessonsInput {
   where: TagWhereUniqueInput;
-  data: TagUpdateDataInput;
+  data: TagUpdateWithoutLessonsDataInput;
 }
 
-export interface TagUpdateDataInput {
+export interface TagUpdateWithoutLessonsDataInput {
   name?: String;
+  words?: WordUpdateManyWithoutTagsInput;
+  materials?: MaterialUpdateManyWithoutTagsInput;
 }
 
-export interface TagUpsertWithWhereUniqueNestedInput {
+export interface WordUpdateManyWithoutTagsInput {
+  create?: WordCreateWithoutTagsInput[] | WordCreateWithoutTagsInput;
+  delete?: WordWhereUniqueInput[] | WordWhereUniqueInput;
+  connect?: WordWhereUniqueInput[] | WordWhereUniqueInput;
+  set?: WordWhereUniqueInput[] | WordWhereUniqueInput;
+  disconnect?: WordWhereUniqueInput[] | WordWhereUniqueInput;
+  update?:
+    | WordUpdateWithWhereUniqueWithoutTagsInput[]
+    | WordUpdateWithWhereUniqueWithoutTagsInput;
+  upsert?:
+    | WordUpsertWithWhereUniqueWithoutTagsInput[]
+    | WordUpsertWithWhereUniqueWithoutTagsInput;
+  deleteMany?: WordScalarWhereInput[] | WordScalarWhereInput;
+  updateMany?:
+    | WordUpdateManyWithWhereNestedInput[]
+    | WordUpdateManyWithWhereNestedInput;
+}
+
+export interface WordUpdateWithWhereUniqueWithoutTagsInput {
+  where: WordWhereUniqueInput;
+  data: WordUpdateWithoutTagsDataInput;
+}
+
+export interface WordUpdateWithoutTagsDataInput {
+  english?: String;
+  chinese?: String;
+  audio?: String;
+  lessons?: LessonUpdateManyWithoutWordsInput;
+}
+
+export interface LessonUpdateManyWithoutWordsInput {
+  create?: LessonCreateWithoutWordsInput[] | LessonCreateWithoutWordsInput;
+  delete?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+  connect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+  set?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+  disconnect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+  update?:
+    | LessonUpdateWithWhereUniqueWithoutWordsInput[]
+    | LessonUpdateWithWhereUniqueWithoutWordsInput;
+  upsert?:
+    | LessonUpsertWithWhereUniqueWithoutWordsInput[]
+    | LessonUpsertWithWhereUniqueWithoutWordsInput;
+  deleteMany?: LessonScalarWhereInput[] | LessonScalarWhereInput;
+  updateMany?:
+    | LessonUpdateManyWithWhereNestedInput[]
+    | LessonUpdateManyWithWhereNestedInput;
+}
+
+export interface LessonUpdateWithWhereUniqueWithoutWordsInput {
+  where: LessonWhereUniqueInput;
+  data: LessonUpdateWithoutWordsDataInput;
+}
+
+export interface LessonUpdateWithoutWordsDataInput {
+  name?: String;
+  tags?: TagUpdateManyWithoutLessonsInput;
+  homeworkEN?: String;
+  homeworkZH?: String;
+  summaryEN?: String;
+  summaryZH?: String;
+  materials?: MaterialUpdateManyInput;
+}
+
+export interface MaterialUpdateManyInput {
+  create?: MaterialCreateInput[] | MaterialCreateInput;
+  update?:
+    | MaterialUpdateWithWhereUniqueNestedInput[]
+    | MaterialUpdateWithWhereUniqueNestedInput;
+  upsert?:
+    | MaterialUpsertWithWhereUniqueNestedInput[]
+    | MaterialUpsertWithWhereUniqueNestedInput;
+  delete?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
+  connect?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
+  set?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
+  disconnect?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
+  deleteMany?: MaterialScalarWhereInput[] | MaterialScalarWhereInput;
+  updateMany?:
+    | MaterialUpdateManyWithWhereNestedInput[]
+    | MaterialUpdateManyWithWhereNestedInput;
+}
+
+export interface MaterialUpdateWithWhereUniqueNestedInput {
+  where: MaterialWhereUniqueInput;
+  data: MaterialUpdateDataInput;
+}
+
+export interface MaterialUpdateDataInput {
+  tags?: TagUpdateManyWithoutMaterialsInput;
+  type?: String;
+  url?: String;
+  title?: String;
+  notes?: String;
+}
+
+export interface TagUpdateManyWithoutMaterialsInput {
+  create?: TagCreateWithoutMaterialsInput[] | TagCreateWithoutMaterialsInput;
+  delete?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+  connect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+  set?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+  disconnect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+  update?:
+    | TagUpdateWithWhereUniqueWithoutMaterialsInput[]
+    | TagUpdateWithWhereUniqueWithoutMaterialsInput;
+  upsert?:
+    | TagUpsertWithWhereUniqueWithoutMaterialsInput[]
+    | TagUpsertWithWhereUniqueWithoutMaterialsInput;
+  deleteMany?: TagScalarWhereInput[] | TagScalarWhereInput;
+  updateMany?:
+    | TagUpdateManyWithWhereNestedInput[]
+    | TagUpdateManyWithWhereNestedInput;
+}
+
+export interface TagUpdateWithWhereUniqueWithoutMaterialsInput {
   where: TagWhereUniqueInput;
-  update: TagUpdateDataInput;
-  create: TagCreateInput;
+  data: TagUpdateWithoutMaterialsDataInput;
 }
 
-export interface TagScalarWhereInput {
-  id?: ID_Input;
-  id_not?: ID_Input;
-  id_in?: ID_Input[] | ID_Input;
-  id_not_in?: ID_Input[] | ID_Input;
-  id_lt?: ID_Input;
-  id_lte?: ID_Input;
-  id_gt?: ID_Input;
-  id_gte?: ID_Input;
-  id_contains?: ID_Input;
-  id_not_contains?: ID_Input;
-  id_starts_with?: ID_Input;
-  id_not_starts_with?: ID_Input;
-  id_ends_with?: ID_Input;
-  id_not_ends_with?: ID_Input;
+export interface TagUpdateWithoutMaterialsDataInput {
   name?: String;
-  name_not?: String;
-  name_in?: String[] | String;
-  name_not_in?: String[] | String;
-  name_lt?: String;
-  name_lte?: String;
-  name_gt?: String;
-  name_gte?: String;
-  name_contains?: String;
-  name_not_contains?: String;
-  name_starts_with?: String;
-  name_not_starts_with?: String;
-  name_ends_with?: String;
-  name_not_ends_with?: String;
-  AND?: TagScalarWhereInput[] | TagScalarWhereInput;
-  OR?: TagScalarWhereInput[] | TagScalarWhereInput;
-  NOT?: TagScalarWhereInput[] | TagScalarWhereInput;
+  lessons?: LessonUpdateManyWithoutTagsInput;
+  words?: WordUpdateManyWithoutTagsInput;
 }
 
-export interface TagUpdateManyWithWhereNestedInput {
-  where: TagScalarWhereInput;
-  data: TagUpdateManyDataInput;
+export interface LessonUpdateManyWithoutTagsInput {
+  create?: LessonCreateWithoutTagsInput[] | LessonCreateWithoutTagsInput;
+  delete?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+  connect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+  set?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+  disconnect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
+  update?:
+    | LessonUpdateWithWhereUniqueWithoutTagsInput[]
+    | LessonUpdateWithWhereUniqueWithoutTagsInput;
+  upsert?:
+    | LessonUpsertWithWhereUniqueWithoutTagsInput[]
+    | LessonUpsertWithWhereUniqueWithoutTagsInput;
+  deleteMany?: LessonScalarWhereInput[] | LessonScalarWhereInput;
+  updateMany?:
+    | LessonUpdateManyWithWhereNestedInput[]
+    | LessonUpdateManyWithWhereNestedInput;
 }
 
-export interface TagUpdateManyDataInput {
+export interface LessonUpdateWithWhereUniqueWithoutTagsInput {
+  where: LessonWhereUniqueInput;
+  data: LessonUpdateWithoutTagsDataInput;
+}
+
+export interface LessonUpdateWithoutTagsDataInput {
   name?: String;
+  words?: WordUpdateManyWithoutLessonsInput;
+  homeworkEN?: String;
+  homeworkZH?: String;
+  summaryEN?: String;
+  summaryZH?: String;
+  materials?: MaterialUpdateManyInput;
 }
 
 export interface WordUpdateManyWithoutLessonsInput {
@@ -2474,123 +2676,72 @@ export interface WordUpdateWithoutLessonsDataInput {
   english?: String;
   chinese?: String;
   audio?: String;
-  tags?: TagUpdateManyInput;
+  tags?: TagUpdateManyWithoutWordsInput;
 }
 
-export interface WordUpsertWithWhereUniqueWithoutLessonsInput {
-  where: WordWhereUniqueInput;
-  update: WordUpdateWithoutLessonsDataInput;
-  create: WordCreateWithoutLessonsInput;
-}
-
-export interface WordScalarWhereInput {
-  id?: ID_Input;
-  id_not?: ID_Input;
-  id_in?: ID_Input[] | ID_Input;
-  id_not_in?: ID_Input[] | ID_Input;
-  id_lt?: ID_Input;
-  id_lte?: ID_Input;
-  id_gt?: ID_Input;
-  id_gte?: ID_Input;
-  id_contains?: ID_Input;
-  id_not_contains?: ID_Input;
-  id_starts_with?: ID_Input;
-  id_not_starts_with?: ID_Input;
-  id_ends_with?: ID_Input;
-  id_not_ends_with?: ID_Input;
-  english?: String;
-  english_not?: String;
-  english_in?: String[] | String;
-  english_not_in?: String[] | String;
-  english_lt?: String;
-  english_lte?: String;
-  english_gt?: String;
-  english_gte?: String;
-  english_contains?: String;
-  english_not_contains?: String;
-  english_starts_with?: String;
-  english_not_starts_with?: String;
-  english_ends_with?: String;
-  english_not_ends_with?: String;
-  chinese?: String;
-  chinese_not?: String;
-  chinese_in?: String[] | String;
-  chinese_not_in?: String[] | String;
-  chinese_lt?: String;
-  chinese_lte?: String;
-  chinese_gt?: String;
-  chinese_gte?: String;
-  chinese_contains?: String;
-  chinese_not_contains?: String;
-  chinese_starts_with?: String;
-  chinese_not_starts_with?: String;
-  chinese_ends_with?: String;
-  chinese_not_ends_with?: String;
-  audio?: String;
-  audio_not?: String;
-  audio_in?: String[] | String;
-  audio_not_in?: String[] | String;
-  audio_lt?: String;
-  audio_lte?: String;
-  audio_gt?: String;
-  audio_gte?: String;
-  audio_contains?: String;
-  audio_not_contains?: String;
-  audio_starts_with?: String;
-  audio_not_starts_with?: String;
-  audio_ends_with?: String;
-  audio_not_ends_with?: String;
-  AND?: WordScalarWhereInput[] | WordScalarWhereInput;
-  OR?: WordScalarWhereInput[] | WordScalarWhereInput;
-  NOT?: WordScalarWhereInput[] | WordScalarWhereInput;
-}
-
-export interface WordUpdateManyWithWhereNestedInput {
-  where: WordScalarWhereInput;
-  data: WordUpdateManyDataInput;
-}
-
-export interface WordUpdateManyDataInput {
-  english?: String;
-  chinese?: String;
-  audio?: String;
-}
-
-export interface MaterialUpdateManyInput {
-  create?: MaterialCreateInput[] | MaterialCreateInput;
+export interface TagUpdateManyWithoutWordsInput {
+  create?: TagCreateWithoutWordsInput[] | TagCreateWithoutWordsInput;
+  delete?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+  connect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+  set?: TagWhereUniqueInput[] | TagWhereUniqueInput;
+  disconnect?: TagWhereUniqueInput[] | TagWhereUniqueInput;
   update?:
-    | MaterialUpdateWithWhereUniqueNestedInput[]
-    | MaterialUpdateWithWhereUniqueNestedInput;
+    | TagUpdateWithWhereUniqueWithoutWordsInput[]
+    | TagUpdateWithWhereUniqueWithoutWordsInput;
   upsert?:
-    | MaterialUpsertWithWhereUniqueNestedInput[]
-    | MaterialUpsertWithWhereUniqueNestedInput;
+    | TagUpsertWithWhereUniqueWithoutWordsInput[]
+    | TagUpsertWithWhereUniqueWithoutWordsInput;
+  deleteMany?: TagScalarWhereInput[] | TagScalarWhereInput;
+  updateMany?:
+    | TagUpdateManyWithWhereNestedInput[]
+    | TagUpdateManyWithWhereNestedInput;
+}
+
+export interface TagUpdateWithWhereUniqueWithoutWordsInput {
+  where: TagWhereUniqueInput;
+  data: TagUpdateWithoutWordsDataInput;
+}
+
+export interface TagUpdateWithoutWordsDataInput {
+  name?: String;
+  lessons?: LessonUpdateManyWithoutTagsInput;
+  materials?: MaterialUpdateManyWithoutTagsInput;
+}
+
+export interface MaterialUpdateManyWithoutTagsInput {
+  create?: MaterialCreateWithoutTagsInput[] | MaterialCreateWithoutTagsInput;
   delete?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
   connect?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
   set?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
   disconnect?: MaterialWhereUniqueInput[] | MaterialWhereUniqueInput;
+  update?:
+    | MaterialUpdateWithWhereUniqueWithoutTagsInput[]
+    | MaterialUpdateWithWhereUniqueWithoutTagsInput;
+  upsert?:
+    | MaterialUpsertWithWhereUniqueWithoutTagsInput[]
+    | MaterialUpsertWithWhereUniqueWithoutTagsInput;
   deleteMany?: MaterialScalarWhereInput[] | MaterialScalarWhereInput;
   updateMany?:
     | MaterialUpdateManyWithWhereNestedInput[]
     | MaterialUpdateManyWithWhereNestedInput;
 }
 
-export interface MaterialUpdateWithWhereUniqueNestedInput {
+export interface MaterialUpdateWithWhereUniqueWithoutTagsInput {
   where: MaterialWhereUniqueInput;
-  data: MaterialUpdateDataInput;
+  data: MaterialUpdateWithoutTagsDataInput;
 }
 
-export interface MaterialUpdateDataInput {
-  tags?: TagUpdateManyInput;
+export interface MaterialUpdateWithoutTagsDataInput {
   type?: String;
   url?: String;
   title?: String;
   notes?: String;
 }
 
-export interface MaterialUpsertWithWhereUniqueNestedInput {
+export interface MaterialUpsertWithWhereUniqueWithoutTagsInput {
   where: MaterialWhereUniqueInput;
-  update: MaterialUpdateDataInput;
-  create: MaterialCreateInput;
+  update: MaterialUpdateWithoutTagsDataInput;
+  create: MaterialCreateWithoutTagsInput;
 }
 
 export interface MaterialScalarWhereInput {
@@ -2679,6 +2830,273 @@ export interface MaterialUpdateManyDataInput {
   url?: String;
   title?: String;
   notes?: String;
+}
+
+export interface TagUpsertWithWhereUniqueWithoutWordsInput {
+  where: TagWhereUniqueInput;
+  update: TagUpdateWithoutWordsDataInput;
+  create: TagCreateWithoutWordsInput;
+}
+
+export interface TagScalarWhereInput {
+  id?: ID_Input;
+  id_not?: ID_Input;
+  id_in?: ID_Input[] | ID_Input;
+  id_not_in?: ID_Input[] | ID_Input;
+  id_lt?: ID_Input;
+  id_lte?: ID_Input;
+  id_gt?: ID_Input;
+  id_gte?: ID_Input;
+  id_contains?: ID_Input;
+  id_not_contains?: ID_Input;
+  id_starts_with?: ID_Input;
+  id_not_starts_with?: ID_Input;
+  id_ends_with?: ID_Input;
+  id_not_ends_with?: ID_Input;
+  name?: String;
+  name_not?: String;
+  name_in?: String[] | String;
+  name_not_in?: String[] | String;
+  name_lt?: String;
+  name_lte?: String;
+  name_gt?: String;
+  name_gte?: String;
+  name_contains?: String;
+  name_not_contains?: String;
+  name_starts_with?: String;
+  name_not_starts_with?: String;
+  name_ends_with?: String;
+  name_not_ends_with?: String;
+  AND?: TagScalarWhereInput[] | TagScalarWhereInput;
+  OR?: TagScalarWhereInput[] | TagScalarWhereInput;
+  NOT?: TagScalarWhereInput[] | TagScalarWhereInput;
+}
+
+export interface TagUpdateManyWithWhereNestedInput {
+  where: TagScalarWhereInput;
+  data: TagUpdateManyDataInput;
+}
+
+export interface TagUpdateManyDataInput {
+  name?: String;
+}
+
+export interface WordUpsertWithWhereUniqueWithoutLessonsInput {
+  where: WordWhereUniqueInput;
+  update: WordUpdateWithoutLessonsDataInput;
+  create: WordCreateWithoutLessonsInput;
+}
+
+export interface WordScalarWhereInput {
+  id?: ID_Input;
+  id_not?: ID_Input;
+  id_in?: ID_Input[] | ID_Input;
+  id_not_in?: ID_Input[] | ID_Input;
+  id_lt?: ID_Input;
+  id_lte?: ID_Input;
+  id_gt?: ID_Input;
+  id_gte?: ID_Input;
+  id_contains?: ID_Input;
+  id_not_contains?: ID_Input;
+  id_starts_with?: ID_Input;
+  id_not_starts_with?: ID_Input;
+  id_ends_with?: ID_Input;
+  id_not_ends_with?: ID_Input;
+  english?: String;
+  english_not?: String;
+  english_in?: String[] | String;
+  english_not_in?: String[] | String;
+  english_lt?: String;
+  english_lte?: String;
+  english_gt?: String;
+  english_gte?: String;
+  english_contains?: String;
+  english_not_contains?: String;
+  english_starts_with?: String;
+  english_not_starts_with?: String;
+  english_ends_with?: String;
+  english_not_ends_with?: String;
+  chinese?: String;
+  chinese_not?: String;
+  chinese_in?: String[] | String;
+  chinese_not_in?: String[] | String;
+  chinese_lt?: String;
+  chinese_lte?: String;
+  chinese_gt?: String;
+  chinese_gte?: String;
+  chinese_contains?: String;
+  chinese_not_contains?: String;
+  chinese_starts_with?: String;
+  chinese_not_starts_with?: String;
+  chinese_ends_with?: String;
+  chinese_not_ends_with?: String;
+  audio?: String;
+  audio_not?: String;
+  audio_in?: String[] | String;
+  audio_not_in?: String[] | String;
+  audio_lt?: String;
+  audio_lte?: String;
+  audio_gt?: String;
+  audio_gte?: String;
+  audio_contains?: String;
+  audio_not_contains?: String;
+  audio_starts_with?: String;
+  audio_not_starts_with?: String;
+  audio_ends_with?: String;
+  audio_not_ends_with?: String;
+  AND?: WordScalarWhereInput[] | WordScalarWhereInput;
+  OR?: WordScalarWhereInput[] | WordScalarWhereInput;
+  NOT?: WordScalarWhereInput[] | WordScalarWhereInput;
+}
+
+export interface WordUpdateManyWithWhereNestedInput {
+  where: WordScalarWhereInput;
+  data: WordUpdateManyDataInput;
+}
+
+export interface WordUpdateManyDataInput {
+  english?: String;
+  chinese?: String;
+  audio?: String;
+}
+
+export interface LessonUpsertWithWhereUniqueWithoutTagsInput {
+  where: LessonWhereUniqueInput;
+  update: LessonUpdateWithoutTagsDataInput;
+  create: LessonCreateWithoutTagsInput;
+}
+
+export interface LessonScalarWhereInput {
+  id?: ID_Input;
+  id_not?: ID_Input;
+  id_in?: ID_Input[] | ID_Input;
+  id_not_in?: ID_Input[] | ID_Input;
+  id_lt?: ID_Input;
+  id_lte?: ID_Input;
+  id_gt?: ID_Input;
+  id_gte?: ID_Input;
+  id_contains?: ID_Input;
+  id_not_contains?: ID_Input;
+  id_starts_with?: ID_Input;
+  id_not_starts_with?: ID_Input;
+  id_ends_with?: ID_Input;
+  id_not_ends_with?: ID_Input;
+  name?: String;
+  name_not?: String;
+  name_in?: String[] | String;
+  name_not_in?: String[] | String;
+  name_lt?: String;
+  name_lte?: String;
+  name_gt?: String;
+  name_gte?: String;
+  name_contains?: String;
+  name_not_contains?: String;
+  name_starts_with?: String;
+  name_not_starts_with?: String;
+  name_ends_with?: String;
+  name_not_ends_with?: String;
+  homeworkEN?: String;
+  homeworkEN_not?: String;
+  homeworkEN_in?: String[] | String;
+  homeworkEN_not_in?: String[] | String;
+  homeworkEN_lt?: String;
+  homeworkEN_lte?: String;
+  homeworkEN_gt?: String;
+  homeworkEN_gte?: String;
+  homeworkEN_contains?: String;
+  homeworkEN_not_contains?: String;
+  homeworkEN_starts_with?: String;
+  homeworkEN_not_starts_with?: String;
+  homeworkEN_ends_with?: String;
+  homeworkEN_not_ends_with?: String;
+  homeworkZH?: String;
+  homeworkZH_not?: String;
+  homeworkZH_in?: String[] | String;
+  homeworkZH_not_in?: String[] | String;
+  homeworkZH_lt?: String;
+  homeworkZH_lte?: String;
+  homeworkZH_gt?: String;
+  homeworkZH_gte?: String;
+  homeworkZH_contains?: String;
+  homeworkZH_not_contains?: String;
+  homeworkZH_starts_with?: String;
+  homeworkZH_not_starts_with?: String;
+  homeworkZH_ends_with?: String;
+  homeworkZH_not_ends_with?: String;
+  summaryEN?: String;
+  summaryEN_not?: String;
+  summaryEN_in?: String[] | String;
+  summaryEN_not_in?: String[] | String;
+  summaryEN_lt?: String;
+  summaryEN_lte?: String;
+  summaryEN_gt?: String;
+  summaryEN_gte?: String;
+  summaryEN_contains?: String;
+  summaryEN_not_contains?: String;
+  summaryEN_starts_with?: String;
+  summaryEN_not_starts_with?: String;
+  summaryEN_ends_with?: String;
+  summaryEN_not_ends_with?: String;
+  summaryZH?: String;
+  summaryZH_not?: String;
+  summaryZH_in?: String[] | String;
+  summaryZH_not_in?: String[] | String;
+  summaryZH_lt?: String;
+  summaryZH_lte?: String;
+  summaryZH_gt?: String;
+  summaryZH_gte?: String;
+  summaryZH_contains?: String;
+  summaryZH_not_contains?: String;
+  summaryZH_starts_with?: String;
+  summaryZH_not_starts_with?: String;
+  summaryZH_ends_with?: String;
+  summaryZH_not_ends_with?: String;
+  AND?: LessonScalarWhereInput[] | LessonScalarWhereInput;
+  OR?: LessonScalarWhereInput[] | LessonScalarWhereInput;
+  NOT?: LessonScalarWhereInput[] | LessonScalarWhereInput;
+}
+
+export interface LessonUpdateManyWithWhereNestedInput {
+  where: LessonScalarWhereInput;
+  data: LessonUpdateManyDataInput;
+}
+
+export interface LessonUpdateManyDataInput {
+  name?: String;
+  homeworkEN?: String;
+  homeworkZH?: String;
+  summaryEN?: String;
+  summaryZH?: String;
+}
+
+export interface TagUpsertWithWhereUniqueWithoutMaterialsInput {
+  where: TagWhereUniqueInput;
+  update: TagUpdateWithoutMaterialsDataInput;
+  create: TagCreateWithoutMaterialsInput;
+}
+
+export interface MaterialUpsertWithWhereUniqueNestedInput {
+  where: MaterialWhereUniqueInput;
+  update: MaterialUpdateDataInput;
+  create: MaterialCreateInput;
+}
+
+export interface LessonUpsertWithWhereUniqueWithoutWordsInput {
+  where: LessonWhereUniqueInput;
+  update: LessonUpdateWithoutWordsDataInput;
+  create: LessonCreateWithoutWordsInput;
+}
+
+export interface WordUpsertWithWhereUniqueWithoutTagsInput {
+  where: WordWhereUniqueInput;
+  update: WordUpdateWithoutTagsDataInput;
+  create: WordCreateWithoutTagsInput;
+}
+
+export interface TagUpsertWithWhereUniqueWithoutLessonsInput {
+  where: TagWhereUniqueInput;
+  update: TagUpdateWithoutLessonsDataInput;
+  create: TagCreateWithoutLessonsInput;
 }
 
 export interface LessonUpsertNestedInput {
@@ -3102,7 +3520,7 @@ export interface GroupUpdateManyMutationInput {
 
 export interface LessonUpdateInput {
   name?: String;
-  tags?: TagUpdateManyInput;
+  tags?: TagUpdateManyWithoutLessonsInput;
   words?: WordUpdateManyWithoutLessonsInput;
   homeworkEN?: String;
   homeworkZH?: String;
@@ -3120,7 +3538,7 @@ export interface LessonUpdateManyMutationInput {
 }
 
 export interface MaterialUpdateInput {
-  tags?: TagUpdateManyInput;
+  tags?: TagUpdateManyWithoutMaterialsInput;
   type?: String;
   url?: String;
   title?: String;
@@ -3263,8 +3681,19 @@ export interface StudentUpdateManyMutationInput {
   gender?: Gender;
 }
 
+export interface TagCreateInput {
+  id?: ID_Input;
+  name: String;
+  lessons?: LessonCreateManyWithoutTagsInput;
+  words?: WordCreateManyWithoutTagsInput;
+  materials?: MaterialCreateManyWithoutTagsInput;
+}
+
 export interface TagUpdateInput {
   name?: String;
+  lessons?: LessonUpdateManyWithoutTagsInput;
+  words?: WordUpdateManyWithoutTagsInput;
+  materials?: MaterialUpdateManyWithoutTagsInput;
 }
 
 export interface TagUpdateManyMutationInput {
@@ -3309,23 +3738,7 @@ export interface WordCreateInput {
   chinese?: String;
   audio?: String;
   lessons?: LessonCreateManyWithoutWordsInput;
-  tags?: TagCreateManyInput;
-}
-
-export interface LessonCreateManyWithoutWordsInput {
-  create?: LessonCreateWithoutWordsInput[] | LessonCreateWithoutWordsInput;
-  connect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
-}
-
-export interface LessonCreateWithoutWordsInput {
-  id?: ID_Input;
-  name: String;
-  tags?: TagCreateManyInput;
-  homeworkEN?: String;
-  homeworkZH?: String;
-  summaryEN?: String;
-  summaryZH?: String;
-  materials?: MaterialCreateManyInput;
+  tags?: TagCreateManyWithoutWordsInput;
 }
 
 export interface WordUpdateInput {
@@ -3333,149 +3746,7 @@ export interface WordUpdateInput {
   chinese?: String;
   audio?: String;
   lessons?: LessonUpdateManyWithoutWordsInput;
-  tags?: TagUpdateManyInput;
-}
-
-export interface LessonUpdateManyWithoutWordsInput {
-  create?: LessonCreateWithoutWordsInput[] | LessonCreateWithoutWordsInput;
-  delete?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
-  connect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
-  set?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
-  disconnect?: LessonWhereUniqueInput[] | LessonWhereUniqueInput;
-  update?:
-    | LessonUpdateWithWhereUniqueWithoutWordsInput[]
-    | LessonUpdateWithWhereUniqueWithoutWordsInput;
-  upsert?:
-    | LessonUpsertWithWhereUniqueWithoutWordsInput[]
-    | LessonUpsertWithWhereUniqueWithoutWordsInput;
-  deleteMany?: LessonScalarWhereInput[] | LessonScalarWhereInput;
-  updateMany?:
-    | LessonUpdateManyWithWhereNestedInput[]
-    | LessonUpdateManyWithWhereNestedInput;
-}
-
-export interface LessonUpdateWithWhereUniqueWithoutWordsInput {
-  where: LessonWhereUniqueInput;
-  data: LessonUpdateWithoutWordsDataInput;
-}
-
-export interface LessonUpdateWithoutWordsDataInput {
-  name?: String;
-  tags?: TagUpdateManyInput;
-  homeworkEN?: String;
-  homeworkZH?: String;
-  summaryEN?: String;
-  summaryZH?: String;
-  materials?: MaterialUpdateManyInput;
-}
-
-export interface LessonUpsertWithWhereUniqueWithoutWordsInput {
-  where: LessonWhereUniqueInput;
-  update: LessonUpdateWithoutWordsDataInput;
-  create: LessonCreateWithoutWordsInput;
-}
-
-export interface LessonScalarWhereInput {
-  id?: ID_Input;
-  id_not?: ID_Input;
-  id_in?: ID_Input[] | ID_Input;
-  id_not_in?: ID_Input[] | ID_Input;
-  id_lt?: ID_Input;
-  id_lte?: ID_Input;
-  id_gt?: ID_Input;
-  id_gte?: ID_Input;
-  id_contains?: ID_Input;
-  id_not_contains?: ID_Input;
-  id_starts_with?: ID_Input;
-  id_not_starts_with?: ID_Input;
-  id_ends_with?: ID_Input;
-  id_not_ends_with?: ID_Input;
-  name?: String;
-  name_not?: String;
-  name_in?: String[] | String;
-  name_not_in?: String[] | String;
-  name_lt?: String;
-  name_lte?: String;
-  name_gt?: String;
-  name_gte?: String;
-  name_contains?: String;
-  name_not_contains?: String;
-  name_starts_with?: String;
-  name_not_starts_with?: String;
-  name_ends_with?: String;
-  name_not_ends_with?: String;
-  homeworkEN?: String;
-  homeworkEN_not?: String;
-  homeworkEN_in?: String[] | String;
-  homeworkEN_not_in?: String[] | String;
-  homeworkEN_lt?: String;
-  homeworkEN_lte?: String;
-  homeworkEN_gt?: String;
-  homeworkEN_gte?: String;
-  homeworkEN_contains?: String;
-  homeworkEN_not_contains?: String;
-  homeworkEN_starts_with?: String;
-  homeworkEN_not_starts_with?: String;
-  homeworkEN_ends_with?: String;
-  homeworkEN_not_ends_with?: String;
-  homeworkZH?: String;
-  homeworkZH_not?: String;
-  homeworkZH_in?: String[] | String;
-  homeworkZH_not_in?: String[] | String;
-  homeworkZH_lt?: String;
-  homeworkZH_lte?: String;
-  homeworkZH_gt?: String;
-  homeworkZH_gte?: String;
-  homeworkZH_contains?: String;
-  homeworkZH_not_contains?: String;
-  homeworkZH_starts_with?: String;
-  homeworkZH_not_starts_with?: String;
-  homeworkZH_ends_with?: String;
-  homeworkZH_not_ends_with?: String;
-  summaryEN?: String;
-  summaryEN_not?: String;
-  summaryEN_in?: String[] | String;
-  summaryEN_not_in?: String[] | String;
-  summaryEN_lt?: String;
-  summaryEN_lte?: String;
-  summaryEN_gt?: String;
-  summaryEN_gte?: String;
-  summaryEN_contains?: String;
-  summaryEN_not_contains?: String;
-  summaryEN_starts_with?: String;
-  summaryEN_not_starts_with?: String;
-  summaryEN_ends_with?: String;
-  summaryEN_not_ends_with?: String;
-  summaryZH?: String;
-  summaryZH_not?: String;
-  summaryZH_in?: String[] | String;
-  summaryZH_not_in?: String[] | String;
-  summaryZH_lt?: String;
-  summaryZH_lte?: String;
-  summaryZH_gt?: String;
-  summaryZH_gte?: String;
-  summaryZH_contains?: String;
-  summaryZH_not_contains?: String;
-  summaryZH_starts_with?: String;
-  summaryZH_not_starts_with?: String;
-  summaryZH_ends_with?: String;
-  summaryZH_not_ends_with?: String;
-  AND?: LessonScalarWhereInput[] | LessonScalarWhereInput;
-  OR?: LessonScalarWhereInput[] | LessonScalarWhereInput;
-  NOT?: LessonScalarWhereInput[] | LessonScalarWhereInput;
-}
-
-export interface LessonUpdateManyWithWhereNestedInput {
-  where: LessonScalarWhereInput;
-  data: LessonUpdateManyDataInput;
-}
-
-export interface LessonUpdateManyDataInput {
-  name?: String;
-  homeworkEN?: String;
-  homeworkZH?: String;
-  summaryEN?: String;
-  summaryZH?: String;
+  tags?: TagUpdateManyWithoutWordsInput;
 }
 
 export interface WordUpdateManyMutationInput {
@@ -4068,6 +4339,33 @@ export interface Tag {
 export interface TagPromise extends Promise<Tag>, Fragmentable {
   id: () => Promise<ID_Output>;
   name: () => Promise<String>;
+  lessons: <T = FragmentableArray<Lesson>>(args?: {
+    where?: LessonWhereInput;
+    orderBy?: LessonOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
+  words: <T = FragmentableArray<Word>>(args?: {
+    where?: WordWhereInput;
+    orderBy?: WordOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
+  materials: <T = FragmentableArray<Material>>(args?: {
+    where?: MaterialWhereInput;
+    orderBy?: MaterialOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
 }
 
 export interface TagSubscription
@@ -4075,6 +4373,33 @@ export interface TagSubscription
     Fragmentable {
   id: () => Promise<AsyncIterator<ID_Output>>;
   name: () => Promise<AsyncIterator<String>>;
+  lessons: <T = Promise<AsyncIterator<LessonSubscription>>>(args?: {
+    where?: LessonWhereInput;
+    orderBy?: LessonOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
+  words: <T = Promise<AsyncIterator<WordSubscription>>>(args?: {
+    where?: WordWhereInput;
+    orderBy?: WordOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
+  materials: <T = Promise<AsyncIterator<MaterialSubscription>>>(args?: {
+    where?: MaterialWhereInput;
+    orderBy?: MaterialOrderByInput;
+    skip?: Int;
+    after?: String;
+    before?: String;
+    first?: Int;
+    last?: Int;
+  }) => T;
 }
 
 export interface Word {

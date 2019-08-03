@@ -100,6 +100,9 @@ type Attendance {
 type Tag {
   id: ID! @id
   name: String! @unique
+  lessons: [Lesson!]!
+  words: [Word!]!
+  materials: [Material!]!
 }
 
 type Lesson {

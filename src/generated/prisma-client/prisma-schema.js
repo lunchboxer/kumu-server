@@ -1188,13 +1188,18 @@ type LessonConnection {
 input LessonCreateInput {
   id: ID
   name: String!
-  tags: TagCreateManyInput
+  tags: TagCreateManyWithoutLessonsInput
   words: WordCreateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
   materials: MaterialCreateManyInput
+}
+
+input LessonCreateManyWithoutTagsInput {
+  create: [LessonCreateWithoutTagsInput!]
+  connect: [LessonWhereUniqueInput!]
 }
 
 input LessonCreateManyWithoutWordsInput {
@@ -1207,10 +1212,21 @@ input LessonCreateOneInput {
   connect: LessonWhereUniqueInput
 }
 
+input LessonCreateWithoutTagsInput {
+  id: ID
+  name: String!
+  words: WordCreateManyWithoutLessonsInput
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials: MaterialCreateManyInput
+}
+
 input LessonCreateWithoutWordsInput {
   id: ID
   name: String!
-  tags: TagCreateManyInput
+  tags: TagCreateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
@@ -1357,7 +1373,7 @@ input LessonSubscriptionWhereInput {
 
 input LessonUpdateDataInput {
   name: String
-  tags: TagUpdateManyInput
+  tags: TagUpdateManyWithoutLessonsInput
   words: WordUpdateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
@@ -1368,7 +1384,7 @@ input LessonUpdateDataInput {
 
 input LessonUpdateInput {
   name: String
-  tags: TagUpdateManyInput
+  tags: TagUpdateManyWithoutLessonsInput
   words: WordUpdateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
@@ -1391,6 +1407,18 @@ input LessonUpdateManyMutationInput {
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+}
+
+input LessonUpdateManyWithoutTagsInput {
+  create: [LessonCreateWithoutTagsInput!]
+  delete: [LessonWhereUniqueInput!]
+  connect: [LessonWhereUniqueInput!]
+  set: [LessonWhereUniqueInput!]
+  disconnect: [LessonWhereUniqueInput!]
+  update: [LessonUpdateWithWhereUniqueWithoutTagsInput!]
+  upsert: [LessonUpsertWithWhereUniqueWithoutTagsInput!]
+  deleteMany: [LessonScalarWhereInput!]
+  updateMany: [LessonUpdateManyWithWhereNestedInput!]
 }
 
 input LessonUpdateManyWithoutWordsInput {
@@ -1419,14 +1447,29 @@ input LessonUpdateOneInput {
   connect: LessonWhereUniqueInput
 }
 
-input LessonUpdateWithoutWordsDataInput {
+input LessonUpdateWithoutTagsDataInput {
   name: String
-  tags: TagUpdateManyInput
+  words: WordUpdateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
   materials: MaterialUpdateManyInput
+}
+
+input LessonUpdateWithoutWordsDataInput {
+  name: String
+  tags: TagUpdateManyWithoutLessonsInput
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials: MaterialUpdateManyInput
+}
+
+input LessonUpdateWithWhereUniqueWithoutTagsInput {
+  where: LessonWhereUniqueInput!
+  data: LessonUpdateWithoutTagsDataInput!
 }
 
 input LessonUpdateWithWhereUniqueWithoutWordsInput {
@@ -1437,6 +1480,12 @@ input LessonUpdateWithWhereUniqueWithoutWordsInput {
 input LessonUpsertNestedInput {
   update: LessonUpdateDataInput!
   create: LessonCreateInput!
+}
+
+input LessonUpsertWithWhereUniqueWithoutTagsInput {
+  where: LessonWhereUniqueInput!
+  update: LessonUpdateWithoutTagsDataInput!
+  create: LessonCreateWithoutTagsInput!
 }
 
 input LessonUpsertWithWhereUniqueWithoutWordsInput {
@@ -1567,7 +1616,7 @@ type MaterialConnection {
 
 input MaterialCreateInput {
   id: ID
-  tags: TagCreateManyInput
+  tags: TagCreateManyWithoutMaterialsInput
   type: String
   url: String
   title: String
@@ -1577,6 +1626,19 @@ input MaterialCreateInput {
 input MaterialCreateManyInput {
   create: [MaterialCreateInput!]
   connect: [MaterialWhereUniqueInput!]
+}
+
+input MaterialCreateManyWithoutTagsInput {
+  create: [MaterialCreateWithoutTagsInput!]
+  connect: [MaterialWhereUniqueInput!]
+}
+
+input MaterialCreateWithoutTagsInput {
+  id: ID
+  type: String
+  url: String
+  title: String
+  notes: String
 }
 
 type MaterialEdge {
@@ -1700,7 +1762,7 @@ input MaterialSubscriptionWhereInput {
 }
 
 input MaterialUpdateDataInput {
-  tags: TagUpdateManyInput
+  tags: TagUpdateManyWithoutMaterialsInput
   type: String
   url: String
   title: String
@@ -1708,7 +1770,7 @@ input MaterialUpdateDataInput {
 }
 
 input MaterialUpdateInput {
-  tags: TagUpdateManyInput
+  tags: TagUpdateManyWithoutMaterialsInput
   type: String
   url: String
   title: String
@@ -1741,9 +1803,28 @@ input MaterialUpdateManyMutationInput {
   notes: String
 }
 
+input MaterialUpdateManyWithoutTagsInput {
+  create: [MaterialCreateWithoutTagsInput!]
+  delete: [MaterialWhereUniqueInput!]
+  connect: [MaterialWhereUniqueInput!]
+  set: [MaterialWhereUniqueInput!]
+  disconnect: [MaterialWhereUniqueInput!]
+  update: [MaterialUpdateWithWhereUniqueWithoutTagsInput!]
+  upsert: [MaterialUpsertWithWhereUniqueWithoutTagsInput!]
+  deleteMany: [MaterialScalarWhereInput!]
+  updateMany: [MaterialUpdateManyWithWhereNestedInput!]
+}
+
 input MaterialUpdateManyWithWhereNestedInput {
   where: MaterialScalarWhereInput!
   data: MaterialUpdateManyDataInput!
+}
+
+input MaterialUpdateWithoutTagsDataInput {
+  type: String
+  url: String
+  title: String
+  notes: String
 }
 
 input MaterialUpdateWithWhereUniqueNestedInput {
@@ -1751,10 +1832,21 @@ input MaterialUpdateWithWhereUniqueNestedInput {
   data: MaterialUpdateDataInput!
 }
 
+input MaterialUpdateWithWhereUniqueWithoutTagsInput {
+  where: MaterialWhereUniqueInput!
+  data: MaterialUpdateWithoutTagsDataInput!
+}
+
 input MaterialUpsertWithWhereUniqueNestedInput {
   where: MaterialWhereUniqueInput!
   update: MaterialUpdateDataInput!
   create: MaterialCreateInput!
+}
+
+input MaterialUpsertWithWhereUniqueWithoutTagsInput {
+  where: MaterialWhereUniqueInput!
+  update: MaterialUpdateWithoutTagsDataInput!
+  create: MaterialCreateWithoutTagsInput!
 }
 
 input MaterialWhereInput {
@@ -2983,6 +3075,9 @@ type Subscription {
 type Tag {
   id: ID!
   name: String!
+  lessons(where: LessonWhereInput, orderBy: LessonOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Lesson!]
+  words(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Word!]
+  materials(where: MaterialWhereInput, orderBy: MaterialOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Material!]
 }
 
 type TagConnection {
@@ -2994,11 +3089,45 @@ type TagConnection {
 input TagCreateInput {
   id: ID
   name: String!
+  lessons: LessonCreateManyWithoutTagsInput
+  words: WordCreateManyWithoutTagsInput
+  materials: MaterialCreateManyWithoutTagsInput
 }
 
-input TagCreateManyInput {
-  create: [TagCreateInput!]
+input TagCreateManyWithoutLessonsInput {
+  create: [TagCreateWithoutLessonsInput!]
   connect: [TagWhereUniqueInput!]
+}
+
+input TagCreateManyWithoutMaterialsInput {
+  create: [TagCreateWithoutMaterialsInput!]
+  connect: [TagWhereUniqueInput!]
+}
+
+input TagCreateManyWithoutWordsInput {
+  create: [TagCreateWithoutWordsInput!]
+  connect: [TagWhereUniqueInput!]
+}
+
+input TagCreateWithoutLessonsInput {
+  id: ID
+  name: String!
+  words: WordCreateManyWithoutTagsInput
+  materials: MaterialCreateManyWithoutTagsInput
+}
+
+input TagCreateWithoutMaterialsInput {
+  id: ID
+  name: String!
+  lessons: LessonCreateManyWithoutTagsInput
+  words: WordCreateManyWithoutTagsInput
+}
+
+input TagCreateWithoutWordsInput {
+  id: ID
+  name: String!
+  lessons: LessonCreateManyWithoutTagsInput
+  materials: MaterialCreateManyWithoutTagsInput
 }
 
 type TagEdge {
@@ -3070,32 +3199,55 @@ input TagSubscriptionWhereInput {
   NOT: [TagSubscriptionWhereInput!]
 }
 
-input TagUpdateDataInput {
-  name: String
-}
-
 input TagUpdateInput {
   name: String
+  lessons: LessonUpdateManyWithoutTagsInput
+  words: WordUpdateManyWithoutTagsInput
+  materials: MaterialUpdateManyWithoutTagsInput
 }
 
 input TagUpdateManyDataInput {
   name: String
 }
 
-input TagUpdateManyInput {
-  create: [TagCreateInput!]
-  update: [TagUpdateWithWhereUniqueNestedInput!]
-  upsert: [TagUpsertWithWhereUniqueNestedInput!]
+input TagUpdateManyMutationInput {
+  name: String
+}
+
+input TagUpdateManyWithoutLessonsInput {
+  create: [TagCreateWithoutLessonsInput!]
   delete: [TagWhereUniqueInput!]
   connect: [TagWhereUniqueInput!]
   set: [TagWhereUniqueInput!]
   disconnect: [TagWhereUniqueInput!]
+  update: [TagUpdateWithWhereUniqueWithoutLessonsInput!]
+  upsert: [TagUpsertWithWhereUniqueWithoutLessonsInput!]
   deleteMany: [TagScalarWhereInput!]
   updateMany: [TagUpdateManyWithWhereNestedInput!]
 }
 
-input TagUpdateManyMutationInput {
-  name: String
+input TagUpdateManyWithoutMaterialsInput {
+  create: [TagCreateWithoutMaterialsInput!]
+  delete: [TagWhereUniqueInput!]
+  connect: [TagWhereUniqueInput!]
+  set: [TagWhereUniqueInput!]
+  disconnect: [TagWhereUniqueInput!]
+  update: [TagUpdateWithWhereUniqueWithoutMaterialsInput!]
+  upsert: [TagUpsertWithWhereUniqueWithoutMaterialsInput!]
+  deleteMany: [TagScalarWhereInput!]
+  updateMany: [TagUpdateManyWithWhereNestedInput!]
+}
+
+input TagUpdateManyWithoutWordsInput {
+  create: [TagCreateWithoutWordsInput!]
+  delete: [TagWhereUniqueInput!]
+  connect: [TagWhereUniqueInput!]
+  set: [TagWhereUniqueInput!]
+  disconnect: [TagWhereUniqueInput!]
+  update: [TagUpdateWithWhereUniqueWithoutWordsInput!]
+  upsert: [TagUpsertWithWhereUniqueWithoutWordsInput!]
+  deleteMany: [TagScalarWhereInput!]
+  updateMany: [TagUpdateManyWithWhereNestedInput!]
 }
 
 input TagUpdateManyWithWhereNestedInput {
@@ -3103,15 +3255,55 @@ input TagUpdateManyWithWhereNestedInput {
   data: TagUpdateManyDataInput!
 }
 
-input TagUpdateWithWhereUniqueNestedInput {
-  where: TagWhereUniqueInput!
-  data: TagUpdateDataInput!
+input TagUpdateWithoutLessonsDataInput {
+  name: String
+  words: WordUpdateManyWithoutTagsInput
+  materials: MaterialUpdateManyWithoutTagsInput
 }
 
-input TagUpsertWithWhereUniqueNestedInput {
+input TagUpdateWithoutMaterialsDataInput {
+  name: String
+  lessons: LessonUpdateManyWithoutTagsInput
+  words: WordUpdateManyWithoutTagsInput
+}
+
+input TagUpdateWithoutWordsDataInput {
+  name: String
+  lessons: LessonUpdateManyWithoutTagsInput
+  materials: MaterialUpdateManyWithoutTagsInput
+}
+
+input TagUpdateWithWhereUniqueWithoutLessonsInput {
   where: TagWhereUniqueInput!
-  update: TagUpdateDataInput!
-  create: TagCreateInput!
+  data: TagUpdateWithoutLessonsDataInput!
+}
+
+input TagUpdateWithWhereUniqueWithoutMaterialsInput {
+  where: TagWhereUniqueInput!
+  data: TagUpdateWithoutMaterialsDataInput!
+}
+
+input TagUpdateWithWhereUniqueWithoutWordsInput {
+  where: TagWhereUniqueInput!
+  data: TagUpdateWithoutWordsDataInput!
+}
+
+input TagUpsertWithWhereUniqueWithoutLessonsInput {
+  where: TagWhereUniqueInput!
+  update: TagUpdateWithoutLessonsDataInput!
+  create: TagCreateWithoutLessonsInput!
+}
+
+input TagUpsertWithWhereUniqueWithoutMaterialsInput {
+  where: TagWhereUniqueInput!
+  update: TagUpdateWithoutMaterialsDataInput!
+  create: TagCreateWithoutMaterialsInput!
+}
+
+input TagUpsertWithWhereUniqueWithoutWordsInput {
+  where: TagWhereUniqueInput!
+  update: TagUpdateWithoutWordsDataInput!
+  create: TagCreateWithoutWordsInput!
 }
 
 input TagWhereInput {
@@ -3143,6 +3335,15 @@ input TagWhereInput {
   name_not_starts_with: String
   name_ends_with: String
   name_not_ends_with: String
+  lessons_every: LessonWhereInput
+  lessons_some: LessonWhereInput
+  lessons_none: LessonWhereInput
+  words_every: WordWhereInput
+  words_some: WordWhereInput
+  words_none: WordWhereInput
+  materials_every: MaterialWhereInput
+  materials_some: MaterialWhereInput
+  materials_none: MaterialWhereInput
   AND: [TagWhereInput!]
   OR: [TagWhereInput!]
   NOT: [TagWhereInput!]
@@ -3437,11 +3638,16 @@ input WordCreateInput {
   chinese: String
   audio: String
   lessons: LessonCreateManyWithoutWordsInput
-  tags: TagCreateManyInput
+  tags: TagCreateManyWithoutWordsInput
 }
 
 input WordCreateManyWithoutLessonsInput {
   create: [WordCreateWithoutLessonsInput!]
+  connect: [WordWhereUniqueInput!]
+}
+
+input WordCreateManyWithoutTagsInput {
+  create: [WordCreateWithoutTagsInput!]
   connect: [WordWhereUniqueInput!]
 }
 
@@ -3450,7 +3656,15 @@ input WordCreateWithoutLessonsInput {
   english: String!
   chinese: String
   audio: String
-  tags: TagCreateManyInput
+  tags: TagCreateManyWithoutWordsInput
+}
+
+input WordCreateWithoutTagsInput {
+  id: ID
+  english: String!
+  chinese: String
+  audio: String
+  lessons: LessonCreateManyWithoutWordsInput
 }
 
 type WordEdge {
@@ -3561,7 +3775,7 @@ input WordUpdateInput {
   chinese: String
   audio: String
   lessons: LessonUpdateManyWithoutWordsInput
-  tags: TagUpdateManyInput
+  tags: TagUpdateManyWithoutWordsInput
 }
 
 input WordUpdateManyDataInput {
@@ -3588,6 +3802,18 @@ input WordUpdateManyWithoutLessonsInput {
   updateMany: [WordUpdateManyWithWhereNestedInput!]
 }
 
+input WordUpdateManyWithoutTagsInput {
+  create: [WordCreateWithoutTagsInput!]
+  delete: [WordWhereUniqueInput!]
+  connect: [WordWhereUniqueInput!]
+  set: [WordWhereUniqueInput!]
+  disconnect: [WordWhereUniqueInput!]
+  update: [WordUpdateWithWhereUniqueWithoutTagsInput!]
+  upsert: [WordUpsertWithWhereUniqueWithoutTagsInput!]
+  deleteMany: [WordScalarWhereInput!]
+  updateMany: [WordUpdateManyWithWhereNestedInput!]
+}
+
 input WordUpdateManyWithWhereNestedInput {
   where: WordScalarWhereInput!
   data: WordUpdateManyDataInput!
@@ -3597,7 +3823,14 @@ input WordUpdateWithoutLessonsDataInput {
   english: String
   chinese: String
   audio: String
-  tags: TagUpdateManyInput
+  tags: TagUpdateManyWithoutWordsInput
+}
+
+input WordUpdateWithoutTagsDataInput {
+  english: String
+  chinese: String
+  audio: String
+  lessons: LessonUpdateManyWithoutWordsInput
 }
 
 input WordUpdateWithWhereUniqueWithoutLessonsInput {
@@ -3605,10 +3838,21 @@ input WordUpdateWithWhereUniqueWithoutLessonsInput {
   data: WordUpdateWithoutLessonsDataInput!
 }
 
+input WordUpdateWithWhereUniqueWithoutTagsInput {
+  where: WordWhereUniqueInput!
+  data: WordUpdateWithoutTagsDataInput!
+}
+
 input WordUpsertWithWhereUniqueWithoutLessonsInput {
   where: WordWhereUniqueInput!
   update: WordUpdateWithoutLessonsDataInput!
   create: WordCreateWithoutLessonsInput!
+}
+
+input WordUpsertWithWhereUniqueWithoutTagsInput {
+  where: WordWhereUniqueInput!
+  update: WordUpdateWithoutTagsDataInput!
+  create: WordCreateWithoutTagsInput!
 }
 
 input WordWhereInput {
