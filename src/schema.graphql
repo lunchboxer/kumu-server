@@ -204,3 +204,12 @@ input UserInput {
   username: String
   role: Role
 }
+
+type Tag {
+  id: ID!
+  name: String!
+  lessons: [Lesson!]!
+  words: [Word!]!
+  materials: [Material!]!
+  connections: Int
+}

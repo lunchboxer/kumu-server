@@ -8,6 +8,7 @@ const { ClassSession } = require('./ClassSession')
 const { Point } = require('./Point')
 const { Attendance } = require('./Attendance')
 const { Lesson } = require('./Lesson')
+const { Tag } = require('./Tag')
 
 exports.resolvers = {
   Query,
@@ -19,5 +20,6 @@ exports.resolvers = {
   ClassSession,
   Point,
   Attendance,
-  Lesson
+  Lesson,
+  Tag
 }
