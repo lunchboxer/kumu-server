@@ -52,11 +52,21 @@ type ClassSession {
   attendances: [Attendance!]! @relation(onDelete: CASCADE)
   stage: Stage! @default(value: Inactive)
   lesson: Lesson @relation(link: INLINE)
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean! @default(value: false)
+  report: Report @relation(link: INLINE)
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
+}
+
+type Report {
+  id: ID! @id
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  performance: String
+  published: Boolean! @default(value: false)
+  materials: [Material!]!
+  words: [Word!]!
 }
 
 type Semester {
