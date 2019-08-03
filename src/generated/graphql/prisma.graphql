@@ -26,6 +26,10 @@ type AggregatePoint {
   count: Int!
 }
 
+type AggregateReport {
+  count: Int!
+}
+
 type AggregateSemester {
   count: Int!
 }
@@ -347,9 +351,7 @@ type ClassSession {
   attendances(where: AttendanceWhereInput, orderBy: AttendanceOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Attendance!]
   stage: Stage!
   lesson: Lesson
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean!
+  report: Report
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -371,9 +373,7 @@ input ClassSessionCreateInput {
   attendances: AttendanceCreateManyWithoutClassSessionInput
   stage: Stage
   lesson: LessonCreateOneInput
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
+  report: ReportCreateOneInput
 }
 
 input ClassSessionCreateManyWithoutGroupInput {
@@ -401,9 +401,7 @@ input ClassSessionCreateWithoutAttendancesInput {
   points: PointCreateManyWithoutClassSessionInput
   stage: Stage
   lesson: LessonCreateOneInput
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
+  report: ReportCreateOneInput
 }
 
 input ClassSessionCreateWithoutGroupInput {
@@ -416,9 +414,7 @@ input ClassSessionCreateWithoutGroupInput {
   attendances: AttendanceCreateManyWithoutClassSessionInput
   stage: Stage
   lesson: LessonCreateOneInput
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
+  report: ReportCreateOneInput
 }
 
 input ClassSessionCreateWithoutPointsInput {
@@ -431,9 +427,7 @@ input ClassSessionCreateWithoutPointsInput {
   attendances: AttendanceCreateManyWithoutClassSessionInput
   stage: Stage
   lesson: LessonCreateOneInput
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
+  report: ReportCreateOneInput
 }
 
 type ClassSessionEdge {
@@ -454,12 +448,6 @@ enum ClassSessionOrderByInput {
   endedAt_DESC
   stage_ASC
   stage_DESC
-  summary_EN_ASC
-  summary_EN_DESC
-  summary_ZH_ASC
-  summary_ZH_DESC
-  published_ASC
-  published_DESC
   createdAt_ASC
   createdAt_DESC
   updatedAt_ASC
@@ -473,9 +461,6 @@ type ClassSessionPreviousValues {
   endsAt: DateTime!
   endedAt: DateTime
   stage: Stage!
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean!
   createdAt: DateTime!
   updatedAt: DateTime!
 }
@@ -531,36 +516,6 @@ input ClassSessionScalarWhereInput {
   stage_not: Stage
   stage_in: [Stage!]
   stage_not_in: [Stage!]
-  summary_EN: String
-  summary_EN_not: String
-  summary_EN_in: [String!]
-  summary_EN_not_in: [String!]
-  summary_EN_lt: String
-  summary_EN_lte: String
-  summary_EN_gt: String
-  summary_EN_gte: String
-  summary_EN_contains: String
-  summary_EN_not_contains: String
-  summary_EN_starts_with: String
-  summary_EN_not_starts_with: String
-  summary_EN_ends_with: String
-  summary_EN_not_ends_with: String
-  summary_ZH: String
-  summary_ZH_not: String
-  summary_ZH_in: [String!]
-  summary_ZH_not_in: [String!]
-  summary_ZH_lt: String
-  summary_ZH_lte: String
-  summary_ZH_gt: String
-  summary_ZH_gte: String
-  summary_ZH_contains: String
-  summary_ZH_not_contains: String
-  summary_ZH_starts_with: String
-  summary_ZH_not_starts_with: String
-  summary_ZH_ends_with: String
-  summary_ZH_not_ends_with: String
-  published: Boolean
-  published_not: Boolean
   createdAt: DateTime
   createdAt_not: DateTime
   createdAt_in: [DateTime!]
@@ -610,9 +565,7 @@ input ClassSessionUpdateInput {
   attendances: AttendanceUpdateManyWithoutClassSessionInput
   stage: Stage
   lesson: LessonUpdateOneInput
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
+  report: ReportUpdateOneInput
 }
 
 input ClassSessionUpdateManyDataInput {
@@ -621,9 +574,6 @@ input ClassSessionUpdateManyDataInput {
   endsAt: DateTime
   endedAt: DateTime
   stage: Stage
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
 }
 
 input ClassSessionUpdateManyMutationInput {
@@ -632,9 +582,6 @@ input ClassSessionUpdateManyMutationInput {
   endsAt: DateTime
   endedAt: DateTime
   stage: Stage
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
 }
 
 input ClassSessionUpdateManyWithoutGroupInput {
@@ -677,9 +624,7 @@ input ClassSessionUpdateWithoutAttendancesDataInput {
   points: PointUpdateManyWithoutClassSessionInput
   stage: Stage
   lesson: LessonUpdateOneInput
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
+  report: ReportUpdateOneInput
 }
 
 input ClassSessionUpdateWithoutGroupDataInput {
@@ -691,9 +636,7 @@ input ClassSessionUpdateWithoutGroupDataInput {
   attendances: AttendanceUpdateManyWithoutClassSessionInput
   stage: Stage
   lesson: LessonUpdateOneInput
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
+  report: ReportUpdateOneInput
 }
 
 input ClassSessionUpdateWithoutPointsDataInput {
@@ -705,9 +648,7 @@ input ClassSessionUpdateWithoutPointsDataInput {
   attendances: AttendanceUpdateManyWithoutClassSessionInput
   stage: Stage
   lesson: LessonUpdateOneInput
-  summary_EN: String
-  summary_ZH: String
-  published: Boolean
+  report: ReportUpdateOneInput
 }
 
 input ClassSessionUpdateWithWhereUniqueWithoutGroupInput {
@@ -790,36 +731,7 @@ input ClassSessionWhereInput {
   stage_in: [Stage!]
   stage_not_in: [Stage!]
   lesson: LessonWhereInput
-  summary_EN: String
-  summary_EN_not: String
-  summary_EN_in: [String!]
-  summary_EN_not_in: [String!]
-  summary_EN_lt: String
-  summary_EN_lte: String
-  summary_EN_gt: String
-  summary_EN_gte: String
-  summary_EN_contains: String
-  summary_EN_not_contains: String
-  summary_EN_starts_with: String
-  summary_EN_not_starts_with: String
-  summary_EN_ends_with: String
-  summary_EN_not_ends_with: String
-  summary_ZH: String
-  summary_ZH_not: String
-  summary_ZH_in: [String!]
-  summary_ZH_not_in: [String!]
-  summary_ZH_lt: String
-  summary_ZH_lte: String
-  summary_ZH_gt: String
-  summary_ZH_gte: String
-  summary_ZH_contains: String
-  summary_ZH_not_contains: String
-  summary_ZH_starts_with: String
-  summary_ZH_not_starts_with: String
-  summary_ZH_ends_with: String
-  summary_ZH_not_ends_with: String
-  published: Boolean
-  published_not: Boolean
+  report: ReportWhereInput
   createdAt: DateTime
   createdAt_not: DateTime
   createdAt_in: [DateTime!]
@@ -2065,6 +1977,12 @@ type Mutation {
   upsertPoint(where: PointWhereUniqueInput!, create: PointCreateInput!, update: PointUpdateInput!): Point!
   deletePoint(where: PointWhereUniqueInput!): Point
   deleteManyPoints(where: PointWhereInput): BatchPayload!
+  createReport(data: ReportCreateInput!): Report!
+  updateReport(data: ReportUpdateInput!, where: ReportWhereUniqueInput!): Report
+  updateManyReports(data: ReportUpdateManyMutationInput!, where: ReportWhereInput): BatchPayload!
+  upsertReport(where: ReportWhereUniqueInput!, create: ReportCreateInput!, update: ReportUpdateInput!): Report!
+  deleteReport(where: ReportWhereUniqueInput!): Report
+  deleteManyReports(where: ReportWhereInput): BatchPayload!
   createSemester(data: SemesterCreateInput!): Semester!
   updateSemester(data: SemesterUpdateInput!, where: SemesterWhereUniqueInput!): Semester
   updateManySemesters(data: SemesterUpdateManyMutationInput!, where: SemesterWhereInput): BatchPayload!
@@ -2396,6 +2314,9 @@ type Query {
   point(where: PointWhereUniqueInput!): Point
   points(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Point]!
   pointsConnection(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): PointConnection!
+  report(where: ReportWhereUniqueInput!): Report
+  reports(where: ReportWhereInput, orderBy: ReportOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Report]!
+  reportsConnection(where: ReportWhereInput, orderBy: ReportOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): ReportConnection!
   semester(where: SemesterWhereUniqueInput!): Semester
   semesters(where: SemesterWhereInput, orderBy: SemesterOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Semester]!
   semestersConnection(where: SemesterWhereInput, orderBy: SemesterOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): SemesterConnection!
@@ -2415,6 +2336,238 @@ type Query {
   words(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Word]!
   wordsConnection(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): WordConnection!
   node(id: ID!): Node
+}
+
+type Report {
+  id: ID!
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  performance: String
+  published: Boolean!
+  materials(where: MaterialWhereInput, orderBy: MaterialOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Material!]
+  words(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Word!]
+}
+
+type ReportConnection {
+  pageInfo: PageInfo!
+  edges: [ReportEdge]!
+  aggregate: AggregateReport!
+}
+
+input ReportCreateInput {
+  id: ID
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  performance: String
+  published: Boolean
+  materials: MaterialCreateManyInput
+  words: WordCreateManyInput
+}
+
+input ReportCreateOneInput {
+  create: ReportCreateInput
+  connect: ReportWhereUniqueInput
+}
+
+type ReportEdge {
+  node: Report!
+  cursor: String!
+}
+
+enum ReportOrderByInput {
+  id_ASC
+  id_DESC
+  homeworkEN_ASC
+  homeworkEN_DESC
+  homeworkZH_ASC
+  homeworkZH_DESC
+  summaryEN_ASC
+  summaryEN_DESC
+  summaryZH_ASC
+  summaryZH_DESC
+  performance_ASC
+  performance_DESC
+  published_ASC
+  published_DESC
+}
+
+type ReportPreviousValues {
+  id: ID!
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  performance: String
+  published: Boolean!
+}
+
+type ReportSubscriptionPayload {
+  mutation: MutationType!
+  node: Report
+  updatedFields: [String!]
+  previousValues: ReportPreviousValues
+}
+
+input ReportSubscriptionWhereInput {
+  mutation_in: [MutationType!]
+  updatedFields_contains: String
+  updatedFields_contains_every: [String!]
+  updatedFields_contains_some: [String!]
+  node: ReportWhereInput
+  AND: [ReportSubscriptionWhereInput!]
+  OR: [ReportSubscriptionWhereInput!]
+  NOT: [ReportSubscriptionWhereInput!]
+}
+
+input ReportUpdateDataInput {
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  performance: String
+  published: Boolean
+  materials: MaterialUpdateManyInput
+  words: WordUpdateManyInput
+}
+
+input ReportUpdateInput {
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  performance: String
+  published: Boolean
+  materials: MaterialUpdateManyInput
+  words: WordUpdateManyInput
+}
+
+input ReportUpdateManyMutationInput {
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  performance: String
+  published: Boolean
+}
+
+input ReportUpdateOneInput {
+  create: ReportCreateInput
+  update: ReportUpdateDataInput
+  upsert: ReportUpsertNestedInput
+  delete: Boolean
+  disconnect: Boolean
+  connect: ReportWhereUniqueInput
+}
+
+input ReportUpsertNestedInput {
+  update: ReportUpdateDataInput!
+  create: ReportCreateInput!
+}
+
+input ReportWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  homeworkEN: String
+  homeworkEN_not: String
+  homeworkEN_in: [String!]
+  homeworkEN_not_in: [String!]
+  homeworkEN_lt: String
+  homeworkEN_lte: String
+  homeworkEN_gt: String
+  homeworkEN_gte: String
+  homeworkEN_contains: String
+  homeworkEN_not_contains: String
+  homeworkEN_starts_with: String
+  homeworkEN_not_starts_with: String
+  homeworkEN_ends_with: String
+  homeworkEN_not_ends_with: String
+  homeworkZH: String
+  homeworkZH_not: String
+  homeworkZH_in: [String!]
+  homeworkZH_not_in: [String!]
+  homeworkZH_lt: String
+  homeworkZH_lte: String
+  homeworkZH_gt: String
+  homeworkZH_gte: String
+  homeworkZH_contains: String
+  homeworkZH_not_contains: String
+  homeworkZH_starts_with: String
+  homeworkZH_not_starts_with: String
+  homeworkZH_ends_with: String
+  homeworkZH_not_ends_with: String
+  summaryEN: String
+  summaryEN_not: String
+  summaryEN_in: [String!]
+  summaryEN_not_in: [String!]
+  summaryEN_lt: String
+  summaryEN_lte: String
+  summaryEN_gt: String
+  summaryEN_gte: String
+  summaryEN_contains: String
+  summaryEN_not_contains: String
+  summaryEN_starts_with: String
+  summaryEN_not_starts_with: String
+  summaryEN_ends_with: String
+  summaryEN_not_ends_with: String
+  summaryZH: String
+  summaryZH_not: String
+  summaryZH_in: [String!]
+  summaryZH_not_in: [String!]
+  summaryZH_lt: String
+  summaryZH_lte: String
+  summaryZH_gt: String
+  summaryZH_gte: String
+  summaryZH_contains: String
+  summaryZH_not_contains: String
+  summaryZH_starts_with: String
+  summaryZH_not_starts_with: String
+  summaryZH_ends_with: String
+  summaryZH_not_ends_with: String
+  performance: String
+  performance_not: String
+  performance_in: [String!]
+  performance_not_in: [String!]
+  performance_lt: String
+  performance_lte: String
+  performance_gt: String
+  performance_gte: String
+  performance_contains: String
+  performance_not_contains: String
+  performance_starts_with: String
+  performance_not_starts_with: String
+  performance_ends_with: String
+  performance_not_ends_with: String
+  published: Boolean
+  published_not: Boolean
+  materials_every: MaterialWhereInput
+  materials_some: MaterialWhereInput
+  materials_none: MaterialWhereInput
+  words_every: WordWhereInput
+  words_some: WordWhereInput
+  words_none: WordWhereInput
+  AND: [ReportWhereInput!]
+  OR: [ReportWhereInput!]
+  NOT: [ReportWhereInput!]
+}
+
+input ReportWhereUniqueInput {
+  id: ID
 }
 
 enum Role {
@@ -3059,6 +3212,7 @@ type Subscription {
   material(where: MaterialSubscriptionWhereInput): MaterialSubscriptionPayload
   message(where: MessageSubscriptionWhereInput): MessageSubscriptionPayload
   point(where: PointSubscriptionWhereInput): PointSubscriptionPayload
+  report(where: ReportSubscriptionWhereInput): ReportSubscriptionPayload
   semester(where: SemesterSubscriptionWhereInput): SemesterSubscriptionPayload
   student(where: StudentSubscriptionWhereInput): StudentSubscriptionPayload
   tag(where: TagSubscriptionWhereInput): TagSubscriptionPayload
@@ -3636,6 +3790,11 @@ input WordCreateInput {
   tags: TagCreateManyWithoutWordsInput
 }
 
+input WordCreateManyInput {
+  create: [WordCreateInput!]
+  connect: [WordWhereUniqueInput!]
+}
+
 input WordCreateManyWithoutLessonsInput {
   create: [WordCreateWithoutLessonsInput!]
   connect: [WordWhereUniqueInput!]
@@ -3765,6 +3924,14 @@ input WordSubscriptionWhereInput {
   NOT: [WordSubscriptionWhereInput!]
 }
 
+input WordUpdateDataInput {
+  english: String
+  chinese: String
+  audio: String
+  lessons: LessonUpdateManyWithoutWordsInput
+  tags: TagUpdateManyWithoutWordsInput
+}
+
 input WordUpdateInput {
   english: String
   chinese: String
@@ -3777,6 +3944,18 @@ input WordUpdateManyDataInput {
   english: String
   chinese: String
   audio: String
+}
+
+input WordUpdateManyInput {
+  create: [WordCreateInput!]
+  update: [WordUpdateWithWhereUniqueNestedInput!]
+  upsert: [WordUpsertWithWhereUniqueNestedInput!]
+  delete: [WordWhereUniqueInput!]
+  connect: [WordWhereUniqueInput!]
+  set: [WordWhereUniqueInput!]
+  disconnect: [WordWhereUniqueInput!]
+  deleteMany: [WordScalarWhereInput!]
+  updateMany: [WordUpdateManyWithWhereNestedInput!]
 }
 
 input WordUpdateManyMutationInput {
@@ -3828,6 +4007,11 @@ input WordUpdateWithoutTagsDataInput {
   lessons: LessonUpdateManyWithoutWordsInput
 }
 
+input WordUpdateWithWhereUniqueNestedInput {
+  where: WordWhereUniqueInput!
+  data: WordUpdateDataInput!
+}
+
 input WordUpdateWithWhereUniqueWithoutLessonsInput {
   where: WordWhereUniqueInput!
   data: WordUpdateWithoutLessonsDataInput!
@@ -3836,6 +4020,12 @@ input WordUpdateWithWhereUniqueWithoutLessonsInput {
 input WordUpdateWithWhereUniqueWithoutTagsInput {
   where: WordWhereUniqueInput!
   data: WordUpdateWithoutTagsDataInput!
+}
+
+input WordUpsertWithWhereUniqueNestedInput {
+  where: WordWhereUniqueInput!
+  update: WordUpdateDataInput!
+  create: WordCreateInput!
 }
 
 input WordUpsertWithWhereUniqueWithoutLessonsInput {

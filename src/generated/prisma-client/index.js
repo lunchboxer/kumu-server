@@ -29,6 +29,10 @@ var models = [
     embedded: false
   },
   {
+    name: "Report",
+    embedded: false
+  },
+  {
     name: "Semester",
     embedded: false
   },

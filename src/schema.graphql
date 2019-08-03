@@ -33,6 +33,7 @@ type Query {
   words: [Word!]!
   tag(id: ID!): Tag
   tags: [Tag!]!
+  report(id: ID!): Report
 }
 
 type Mutation {
@@ -161,6 +162,7 @@ type ClassSession {
   points: [Point!]!
   attendances: [Attendance!]!
   stage: Stage!
+  report: Report
   number: Int
 }
 
