@@ -101,8 +101,8 @@ exports.Query = {
   material (_, { id }, { prisma }) {
     return prisma.material({ id })
   },
-  materials (_, args, { prisma }) {
-    return prisma.materials()
+  materials (_, { where, orderBy }, { prisma }) {
+    return prisma.materials({ where, orderBy })
   },
   word (_, { id }, { prisma }) {
     return prisma.word({ id })
