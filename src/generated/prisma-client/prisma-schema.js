@@ -3150,6 +3150,7 @@ input TagWhereInput {
 
 input TagWhereUniqueInput {
   id: ID
+  name: String
 }
 
 type User {

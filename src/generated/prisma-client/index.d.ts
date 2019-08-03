@@ -1520,6 +1520,7 @@ export type StudentWhereUniqueInput = AtLeastOne<{
 
 export type TagWhereUniqueInput = AtLeastOne<{
   id: ID_Input;
+  name?: String;
 }>;
 
 export type UserWhereUniqueInput = AtLeastOne<{

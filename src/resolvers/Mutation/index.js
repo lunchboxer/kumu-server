@@ -6,6 +6,7 @@ const { point } = require('./point')
 const { classSession } = require('./classSession')
 const { attendance } = require('./attendance')
 const { lesson } = require('./lesson')
+const { tag } = require('./tag')
 
 exports.Mutation = {
   ...auth,
@@ -15,5 +16,6 @@ exports.Mutation = {
   ...point,
   ...classSession,
   ...attendance,
-  ...lesson
+  ...lesson,
+  ...tag
 }
