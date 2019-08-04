@@ -8,6 +8,7 @@ const { attendance } = require('./attendance')
 const { lesson } = require('./lesson')
 const { tag } = require('./tag')
 const { material } = require('./material')
+const { word } = require('./word')
 
 exports.Mutation = {
   ...auth,
@@ -19,5 +20,6 @@ exports.Mutation = {
   ...attendance,
   ...lesson,
   ...tag,
-  ...material
+  ...material,
+  ...word
 }
