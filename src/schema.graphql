@@ -103,13 +103,18 @@ type Mutation {
 
   ## Tag
   createTag(name: String!): Tag
-  updateTag(name: String!, id: ID!): Tag
+  updateTag(input: TagUpdateInput!, id: ID!): Tag
   deleteTag(id: ID!): Tag
 
   ## Material
   createMaterial(input: MaterialCreateInput!): Material
   updateMaterial(input: MaterialUpdateInput!, id: ID!): Material
   deleteMaterial(id: ID!): Material
+
+  ## Word
+  createWord(input: WordCreateInput!): Word
+  updateWord(input: WordUpdateInput!, id: ID!): Word
+  deleteWord(id: ID!): Word
 }
 
 type Subscription {

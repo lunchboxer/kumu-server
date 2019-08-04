@@ -1,9 +1,9 @@
 type User {
   id: ID! @id
-  username: String! @unique
-  password: String!
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
+  username: String! @unique
+  password: String!
   role: Role
 }
 
@@ -13,6 +13,8 @@ enum Role {
 
 type Student {
   id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
   chineseName: String
   englishName: String
   pinyinName: String
@@ -21,8 +23,6 @@ type Student {
   groups: [Group!]!
   points: [Point!]! @relation(onDelete: CASCADE)
   attendances: [Attendance!]! @relation(onDelete: CASCADE)
-  createdAt: DateTime! @createdAt
-  updatedAt: DateTime! @updatedAt
 }
 
 enum Gender {
@@ -33,28 +33,28 @@ enum Gender {
 type Group {
   # a group of students attending class together
   id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
   name: String!
   students: [Student!]! @relation(onDelete: SET_NULL)
   classSessions: [ClassSession!]!
   semester: Semester! @relation(link: INLINE)
-  createdAt: DateTime! @createdAt
-  updatedAt: DateTime! @updatedAt
 }
 
 type ClassSession {
   id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
   startsAt: DateTime!
   startedAt: DateTime
   endsAt: DateTime!
   endedAt: DateTime
+  stage: Stage! @default(value: Inactive)
   group: Group! @relation(link: INLINE)
   points: [Point!]! @relation(onDelete: CASCADE)
   attendances: [Attendance!]! @relation(onDelete: CASCADE)
-  stage: Stage! @default(value: Inactive)
   lesson: Lesson @relation(link: INLINE)
   report: Report @relation(link: INLINE)
-  createdAt: DateTime! @createdAt
-  updatedAt: DateTime! @updatedAt
 }
 
 type Report {
@@ -71,12 +71,12 @@ type Report {
 
 type Semester {
   id: ID! @id
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
   startDate: DateTime!
   endDate: DateTime!
   name: String! @unique
   groups: [Group!]!
-  createdAt: DateTime! @createdAt
-  updatedAt: DateTime! @updatedAt
 }
 
 type Point {
@@ -98,13 +98,13 @@ enum Stage {
 }
 
 type Attendance {
-  classSession: ClassSession!
   id: ID! @id
-  student: Student! @relation(link: INLINE)
-  status: AttendanceStatus! @relation(link: INLINE)
-  arrivedAt: DateTime
   createdAt: DateTime! @createdAt
   updatedAt: DateTime! @updatedAt
+  arrivedAt: DateTime
+  student: Student! @relation(link: INLINE)
+  status: AttendanceStatus! @relation(link: INLINE)
+  classSession: ClassSession!
 }
 
 type Tag {
@@ -118,22 +118,22 @@ type Tag {
 type Lesson {
   id: ID! @id
   name: String!
-  tags: [Tag!]!
-  words: [Word!]!
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  tags: [Tag!]!
+  words: [Word!]!
   materials: [Material!]!
 }
 
 type Material {
   id: ID! @id
-  tags: [Tag!]!
   type: String
   url: String
   title: String
   notes: String
+  tags: [Tag!]!
 }
 
 type Word {
@@ -162,6 +162,6 @@ type Message {
 
 type Viewer {
   id: ID! @id
-  name: String
   createdAt: DateTime! @createdAt
+  name: String
 }
