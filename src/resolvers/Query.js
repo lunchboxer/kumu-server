@@ -107,8 +107,8 @@ exports.Query = {
   word (_, { id }, { prisma }) {
     return prisma.word({ id })
   },
-  words (_, args, { prisma }) {
-    return prisma.words()
+  words (_, { where, orderBy }, { prisma }) {
+    return prisma.words({ where, orderBy })
   },
   tag (_, { id }, { prisma }) {
     return prisma.tag({ id })
