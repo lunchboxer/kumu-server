@@ -26,7 +26,7 @@ type Query {
   currentSemester: Semester
   nextSemester: Semester
   lesson(id: ID!): Lesson
-  lessons: [Lesson!]!
+  lessons(orderBy: LessonOrderByInput, where: LessonWhereInput): [Lesson!]!
   material(id: ID!): Material
   materials(
     where: MaterialWhereInput
