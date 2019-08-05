@@ -95,8 +95,8 @@ exports.Query = {
   lesson (_, { id }, { prisma }) {
     return prisma.lesson({ id })
   },
-  lessons (_, args, { prisma }) {
-    return prisma.lessons()
+  lessons (_, { where, orderBy }, { prisma }) {
+    return prisma.lessons({ where, orderBy })
   },
   material (_, { id }, { prisma }) {
     return prisma.material({ id })
