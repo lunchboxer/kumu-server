@@ -33,7 +33,7 @@ type Query {
     orderBy: MaterialOrderByInput
   ): [Material!]!
   word(id: ID!): Word
-  words: [Word!]!
+  words(where: WordWhereInput, orderBy: WordOrderByInput): [Word!]!
   tag(id: ID!): Tag
   tags: [Tag!]!
   report(id: ID!): Report
