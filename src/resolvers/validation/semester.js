@@ -15,12 +15,9 @@ exports.checkConflicts = async (startDate, endDate, id, { prisma }) => {
   if (startDate) {
     const startConflicts = await prisma.semesters({
       where: {
-        // new startDate is during existing semester
-        AND: [
-          { startDate_lte: startDate },
-          { endDate_gte: startDate },
-          { id_not: id }
-        ]
+        startDate_lte: startDate,
+        endDate_gte: startDate,
+        id_not: id
       }
     })
     if (startConflicts.length) {
@@ -33,11 +30,9 @@ exports.checkConflicts = async (startDate, endDate, id, { prisma }) => {
     const endConflicts = await prisma.semesters({
       where: {
         // new endDate is during existing semester
-        AND: [
-          { startDate_lte: endDate },
-          { endDate_gte: endDate },
-          { id_not: id }
-        ]
+        startDate_lte: endDate,
+        endDate_gte: endDate,
+        id_not: id
       }
     })
     if (endConflicts.length) {
@@ -57,11 +52,9 @@ exports.checkConflicts = async (startDate, endDate, id, { prisma }) => {
   if (endDate && startDate) {
     const insideConflicts = await prisma.semesters({
       where: {
-        AND: [
-          { startDate_gte: startDate },
-          { endDate_lte: endDate },
-          { id_not: id }
-        ]
+        startDate_gte: startDate,
+        endDate_lte: endDate,
+        id_not: id
       }
     })
     if (insideConflicts.length) {

@@ -58,7 +58,7 @@ exports.Query = {
   async activeGroups (_, args, context) {
     const now = new Date().toJSON()
     const current = await context.prisma.semesters({
-      where: { AND: [{ startDate_lt: now }, { endDate_gt: now }] }
+      where: { startDate_lt: now, endDate_gt: now }
     })
     const next = await context.prisma.semesters({
       orderBy: 'startDate_ASC',
