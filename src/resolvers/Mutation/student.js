@@ -1,4 +1,5 @@
 const pinyin = require('pinyin')
+const { oneGroupPerSemester } = require('../validation/student')
 
 const addMissingPinyin = chineseName => {
   let pinyinName = pinyin(chineseName).join('')
@@ -46,7 +47,8 @@ exports.student = {
   deleteStudent (_, args, context) {
     return context.prisma.deleteStudent({ id: args.id })
   },
-  addStudentToGroup (_, { studentId, groupId }, context) {
+  async addStudentToGroup (_, { studentId, groupId }, context) {
+    await oneGroupPerSemester(studentId, groupId, null, context)
     return context.prisma.updateStudent({
       where: { id: studentId },
       data: {
@@ -70,7 +72,8 @@ exports.student = {
       }
     })
   },
-  moveStudentToDifferentGroup (_, args, context) {
+  async moveStudentToDifferentGroup (_, args, context) {
+    await oneGroupPerSemester(args.studentId, args.newGroupId, args.oldGroupId, context)
     return context.prisma.updateStudent({
       where: { id: args.studentId },
       data: {
