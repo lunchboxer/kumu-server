@@ -1,10 +1,6 @@
 exports.Student = {
   groups (root, args, context) {
-    return context.prisma
-      .student({
-        id: root.id
-      })
-      .groups()
+    return context.prisma.student({ id: root.id }).groups()
   },
   points (root, args, context) {
     return context.prisma.student({ id: root.id }).points()
