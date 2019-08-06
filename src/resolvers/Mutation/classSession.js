@@ -58,5 +58,23 @@ exports.classSession = {
   },
   deleteClassSession (_, { id }, context) {
     return context.prisma.deleteClassSession({ id })
+  },
+  createReport (_, { sessionId, input }, context) {
+    return context.prisma.updateSession({
+      where: { id: sessionId },
+      data: { report: { create: input } }
+    })
+  },
+  updateReport (_, { sessionId, input }, context) {
+    return context.prisma.updateSession({
+      where: { id: sessionId },
+      data: { report: { update: input } }
+    })
+  },
+  deleteReport (_, { sessionId }, context) {
+    return context.prisma.updateSession({
+      where: { id: sessionId },
+      data: { report: { delete: true } }
+    })
   }
 }

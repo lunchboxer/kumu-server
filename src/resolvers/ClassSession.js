@@ -11,6 +11,9 @@ exports.ClassSession = {
   report (root, _, { prisma }) {
     return prisma.classSession({ id: root.id }).report()
   },
+  lesson (root, _, { prisma }) {
+    return prisma.classSession({ id: root.id }).lesson()
+  },
   async number (root, _, { prisma }) {
     const group = await prisma.classSession({ id: root.id }).group()
     const semester = await prisma.classSession({ id: root.id })

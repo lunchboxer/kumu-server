@@ -36,7 +36,6 @@ type Query {
   words(where: WordWhereInput, orderBy: WordOrderByInput): [Word!]!
   tag(id: ID!): Tag
   tags: [Tag!]!
-  report(id: ID!): Report
 }
 
 type Mutation {
@@ -95,6 +94,9 @@ type Mutation {
   ): ClassSession
   deleteClassSession(id: ID!): ClassSession
   activateSession(id: ID!): ClassSession
+  createReport(classSessionId: ID!, input: ReportCreateInput): ClassSession
+  updateReport(classSessionId: ID!, input: ReportUpdateDataInput): ClassSession
+  deleteReport(classSessionId: ID!): ClassSession
 
   ## Lesson
   createLesson(input: LessonCreateInput!): Lesson
@@ -115,6 +117,8 @@ type Mutation {
   createWord(input: WordCreateInput!): Word
   updateWord(input: WordUpdateInput!, id: ID!): Word
   deleteWord(id: ID!): Word
+
+  ## Report
 }
 
 type Subscription {
@@ -176,6 +180,7 @@ type ClassSession {
   attendances: [Attendance!]!
   stage: Stage!
   report: Report
+  lesson: Lesson
   number: Int
 }
 

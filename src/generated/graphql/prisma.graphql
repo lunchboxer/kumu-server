@@ -55,13 +55,13 @@ type AggregateWord {
 }
 
 type Attendance {
-  classSession: ClassSession!
   id: ID!
-  student: Student!
-  status: AttendanceStatus!
-  arrivedAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
+  arrivedAt: DateTime
+  student: Student!
+  status: AttendanceStatus!
+  classSession: ClassSession!
 }
 
 type AttendanceConnection {
@@ -71,11 +71,11 @@ type AttendanceConnection {
 }
 
 input AttendanceCreateInput {
-  classSession: ClassSessionCreateOneWithoutAttendancesInput!
   id: ID
+  arrivedAt: DateTime
   student: StudentCreateOneWithoutAttendancesInput!
   status: AttendanceStatus!
-  arrivedAt: DateTime
+  classSession: ClassSessionCreateOneWithoutAttendancesInput!
 }
 
 input AttendanceCreateManyWithoutClassSessionInput {
@@ -90,16 +90,16 @@ input AttendanceCreateManyWithoutStudentInput {
 
 input AttendanceCreateWithoutClassSessionInput {
   id: ID
+  arrivedAt: DateTime
   student: StudentCreateOneWithoutAttendancesInput!
   status: AttendanceStatus!
-  arrivedAt: DateTime
 }
 
 input AttendanceCreateWithoutStudentInput {
-  classSession: ClassSessionCreateOneWithoutAttendancesInput!
   id: ID
-  status: AttendanceStatus!
   arrivedAt: DateTime
+  status: AttendanceStatus!
+  classSession: ClassSessionCreateOneWithoutAttendancesInput!
 }
 
 type AttendanceEdge {
@@ -110,22 +110,22 @@ type AttendanceEdge {
 enum AttendanceOrderByInput {
   id_ASC
   id_DESC
-  status_ASC
-  status_DESC
-  arrivedAt_ASC
-  arrivedAt_DESC
   createdAt_ASC
   createdAt_DESC
   updatedAt_ASC
   updatedAt_DESC
+  arrivedAt_ASC
+  arrivedAt_DESC
+  status_ASC
+  status_DESC
 }
 
 type AttendancePreviousValues {
   id: ID!
-  status: AttendanceStatus!
-  arrivedAt: DateTime
   createdAt: DateTime!
   updatedAt: DateTime!
+  arrivedAt: DateTime
+  status: AttendanceStatus!
 }
 
 input AttendanceScalarWhereInput {
@@ -143,18 +143,6 @@ input AttendanceScalarWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
-  status: AttendanceStatus
-  status_not: AttendanceStatus
-  status_in: [AttendanceStatus!]
-  status_not_in: [AttendanceStatus!]
-  arrivedAt: DateTime
-  arrivedAt_not: DateTime
-  arrivedAt_in: [DateTime!]
-  arrivedAt_not_in: [DateTime!]
-  arrivedAt_lt: DateTime
-  arrivedAt_lte: DateTime
-  arrivedAt_gt: DateTime
-  arrivedAt_gte: DateTime
   createdAt: DateTime
   createdAt_not: DateTime
   createdAt_in: [DateTime!]
@@ -171,6 +159,18 @@ input AttendanceScalarWhereInput {
   updatedAt_lte: DateTime
   updatedAt_gt: DateTime
   updatedAt_gte: DateTime
+  arrivedAt: DateTime
+  arrivedAt_not: DateTime
+  arrivedAt_in: [DateTime!]
+  arrivedAt_not_in: [DateTime!]
+  arrivedAt_lt: DateTime
+  arrivedAt_lte: DateTime
+  arrivedAt_gt: DateTime
+  arrivedAt_gte: DateTime
+  status: AttendanceStatus
+  status_not: AttendanceStatus
+  status_in: [AttendanceStatus!]
+  status_not_in: [AttendanceStatus!]
   AND: [AttendanceScalarWhereInput!]
   OR: [AttendanceScalarWhereInput!]
   NOT: [AttendanceScalarWhereInput!]
@@ -203,20 +203,20 @@ input AttendanceSubscriptionWhereInput {
 }
 
 input AttendanceUpdateInput {
-  classSession: ClassSessionUpdateOneRequiredWithoutAttendancesInput
+  arrivedAt: DateTime
   student: StudentUpdateOneRequiredWithoutAttendancesInput
   status: AttendanceStatus
-  arrivedAt: DateTime
+  classSession: ClassSessionUpdateOneRequiredWithoutAttendancesInput
 }
 
 input AttendanceUpdateManyDataInput {
-  status: AttendanceStatus
   arrivedAt: DateTime
+  status: AttendanceStatus
 }
 
 input AttendanceUpdateManyMutationInput {
-  status: AttendanceStatus
   arrivedAt: DateTime
+  status: AttendanceStatus
 }
 
 input AttendanceUpdateManyWithoutClassSessionInput {
@@ -249,15 +249,15 @@ input AttendanceUpdateManyWithWhereNestedInput {
 }
 
 input AttendanceUpdateWithoutClassSessionDataInput {
+  arrivedAt: DateTime
   student: StudentUpdateOneRequiredWithoutAttendancesInput
   status: AttendanceStatus
-  arrivedAt: DateTime
 }
 
 input AttendanceUpdateWithoutStudentDataInput {
-  classSession: ClassSessionUpdateOneRequiredWithoutAttendancesInput
-  status: AttendanceStatus
   arrivedAt: DateTime
+  status: AttendanceStatus
+  classSession: ClassSessionUpdateOneRequiredWithoutAttendancesInput
 }
 
 input AttendanceUpdateWithWhereUniqueWithoutClassSessionInput {
@@ -283,7 +283,6 @@ input AttendanceUpsertWithWhereUniqueWithoutStudentInput {
 }
 
 input AttendanceWhereInput {
-  classSession: ClassSessionWhereInput
   id: ID
   id_not: ID
   id_in: [ID!]
@@ -298,19 +297,6 @@ input AttendanceWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
-  student: StudentWhereInput
-  status: AttendanceStatus
-  status_not: AttendanceStatus
-  status_in: [AttendanceStatus!]
-  status_not_in: [AttendanceStatus!]
-  arrivedAt: DateTime
-  arrivedAt_not: DateTime
-  arrivedAt_in: [DateTime!]
-  arrivedAt_not_in: [DateTime!]
-  arrivedAt_lt: DateTime
-  arrivedAt_lte: DateTime
-  arrivedAt_gt: DateTime
-  arrivedAt_gte: DateTime
   createdAt: DateTime
   createdAt_not: DateTime
   createdAt_in: [DateTime!]
@@ -327,6 +313,20 @@ input AttendanceWhereInput {
   updatedAt_lte: DateTime
   updatedAt_gt: DateTime
   updatedAt_gte: DateTime
+  arrivedAt: DateTime
+  arrivedAt_not: DateTime
+  arrivedAt_in: [DateTime!]
+  arrivedAt_not_in: [DateTime!]
+  arrivedAt_lt: DateTime
+  arrivedAt_lte: DateTime
+  arrivedAt_gt: DateTime
+  arrivedAt_gte: DateTime
+  student: StudentWhereInput
+  status: AttendanceStatus
+  status_not: AttendanceStatus
+  status_in: [AttendanceStatus!]
+  status_not_in: [AttendanceStatus!]
+  classSession: ClassSessionWhereInput
   AND: [AttendanceWhereInput!]
   OR: [AttendanceWhereInput!]
   NOT: [AttendanceWhereInput!]
@@ -342,18 +342,18 @@ type BatchPayload {
 
 type ClassSession {
   id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
   startsAt: DateTime!
   startedAt: DateTime
   endsAt: DateTime!
   endedAt: DateTime
+  stage: Stage!
   group: Group!
   points(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Point!]
   attendances(where: AttendanceWhereInput, orderBy: AttendanceOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Attendance!]
-  stage: Stage!
   lesson: Lesson
   report: Report
-  createdAt: DateTime!
-  updatedAt: DateTime!
 }
 
 type ClassSessionConnection {
@@ -368,10 +368,10 @@ input ClassSessionCreateInput {
   startedAt: DateTime
   endsAt: DateTime!
   endedAt: DateTime
+  stage: Stage
   group: GroupCreateOneWithoutClassSessionsInput!
   points: PointCreateManyWithoutClassSessionInput
   attendances: AttendanceCreateManyWithoutClassSessionInput
-  stage: Stage
   lesson: LessonCreateOneInput
   report: ReportCreateOneInput
 }
@@ -397,9 +397,9 @@ input ClassSessionCreateWithoutAttendancesInput {
   startedAt: DateTime
   endsAt: DateTime!
   endedAt: DateTime
+  stage: Stage
   group: GroupCreateOneWithoutClassSessionsInput!
   points: PointCreateManyWithoutClassSessionInput
-  stage: Stage
   lesson: LessonCreateOneInput
   report: ReportCreateOneInput
 }
@@ -410,9 +410,9 @@ input ClassSessionCreateWithoutGroupInput {
   startedAt: DateTime
   endsAt: DateTime!
   endedAt: DateTime
+  stage: Stage
   points: PointCreateManyWithoutClassSessionInput
   attendances: AttendanceCreateManyWithoutClassSessionInput
-  stage: Stage
   lesson: LessonCreateOneInput
   report: ReportCreateOneInput
 }
@@ -423,9 +423,9 @@ input ClassSessionCreateWithoutPointsInput {
   startedAt: DateTime
   endsAt: DateTime!
   endedAt: DateTime
+  stage: Stage
   group: GroupCreateOneWithoutClassSessionsInput!
   attendances: AttendanceCreateManyWithoutClassSessionInput
-  stage: Stage
   lesson: LessonCreateOneInput
   report: ReportCreateOneInput
 }
@@ -438,6 +438,10 @@ type ClassSessionEdge {
 enum ClassSessionOrderByInput {
   id_ASC
   id_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
   startsAt_ASC
   startsAt_DESC
   startedAt_ASC
@@ -448,21 +452,17 @@ enum ClassSessionOrderByInput {
   endedAt_DESC
   stage_ASC
   stage_DESC
-  createdAt_ASC
-  createdAt_DESC
-  updatedAt_ASC
-  updatedAt_DESC
 }
 
 type ClassSessionPreviousValues {
   id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
   startsAt: DateTime!
   startedAt: DateTime
   endsAt: DateTime!
   endedAt: DateTime
   stage: Stage!
-  createdAt: DateTime!
-  updatedAt: DateTime!
 }
 
 input ClassSessionScalarWhereInput {
@@ -480,6 +480,22 @@ input ClassSessionScalarWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   startsAt: DateTime
   startsAt_not: DateTime
   startsAt_in: [DateTime!]
@@ -516,22 +532,6 @@ input ClassSessionScalarWhereInput {
   stage_not: Stage
   stage_in: [Stage!]
   stage_not_in: [Stage!]
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   AND: [ClassSessionScalarWhereInput!]
   OR: [ClassSessionScalarWhereInput!]
   NOT: [ClassSessionScalarWhereInput!]
@@ -560,10 +560,10 @@ input ClassSessionUpdateInput {
   startedAt: DateTime
   endsAt: DateTime
   endedAt: DateTime
+  stage: Stage
   group: GroupUpdateOneRequiredWithoutClassSessionsInput
   points: PointUpdateManyWithoutClassSessionInput
   attendances: AttendanceUpdateManyWithoutClassSessionInput
-  stage: Stage
   lesson: LessonUpdateOneInput
   report: ReportUpdateOneInput
 }
@@ -620,9 +620,9 @@ input ClassSessionUpdateWithoutAttendancesDataInput {
   startedAt: DateTime
   endsAt: DateTime
   endedAt: DateTime
+  stage: Stage
   group: GroupUpdateOneRequiredWithoutClassSessionsInput
   points: PointUpdateManyWithoutClassSessionInput
-  stage: Stage
   lesson: LessonUpdateOneInput
   report: ReportUpdateOneInput
 }
@@ -632,9 +632,9 @@ input ClassSessionUpdateWithoutGroupDataInput {
   startedAt: DateTime
   endsAt: DateTime
   endedAt: DateTime
+  stage: Stage
   points: PointUpdateManyWithoutClassSessionInput
   attendances: AttendanceUpdateManyWithoutClassSessionInput
-  stage: Stage
   lesson: LessonUpdateOneInput
   report: ReportUpdateOneInput
 }
@@ -644,9 +644,9 @@ input ClassSessionUpdateWithoutPointsDataInput {
   startedAt: DateTime
   endsAt: DateTime
   endedAt: DateTime
+  stage: Stage
   group: GroupUpdateOneRequiredWithoutClassSessionsInput
   attendances: AttendanceUpdateManyWithoutClassSessionInput
-  stage: Stage
   lesson: LessonUpdateOneInput
   report: ReportUpdateOneInput
 }
@@ -687,6 +687,22 @@ input ClassSessionWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   startsAt: DateTime
   startsAt_not: DateTime
   startsAt_in: [DateTime!]
@@ -719,6 +735,10 @@ input ClassSessionWhereInput {
   endedAt_lte: DateTime
   endedAt_gt: DateTime
   endedAt_gte: DateTime
+  stage: Stage
+  stage_not: Stage
+  stage_in: [Stage!]
+  stage_not_in: [Stage!]
   group: GroupWhereInput
   points_every: PointWhereInput
   points_some: PointWhereInput
@@ -726,28 +746,8 @@ input ClassSessionWhereInput {
   attendances_every: AttendanceWhereInput
   attendances_some: AttendanceWhereInput
   attendances_none: AttendanceWhereInput
-  stage: Stage
-  stage_not: Stage
-  stage_in: [Stage!]
-  stage_not_in: [Stage!]
   lesson: LessonWhereInput
   report: ReportWhereInput
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   AND: [ClassSessionWhereInput!]
   OR: [ClassSessionWhereInput!]
   NOT: [ClassSessionWhereInput!]
@@ -766,12 +766,12 @@ enum Gender {
 
 type Group {
   id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
   name: String!
   students(where: StudentWhereInput, orderBy: StudentOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Student!]
   classSessions(where: ClassSessionWhereInput, orderBy: ClassSessionOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [ClassSession!]
   semester: Semester!
-  createdAt: DateTime!
-  updatedAt: DateTime!
 }
 
 type GroupConnection {
@@ -832,19 +832,19 @@ type GroupEdge {
 enum GroupOrderByInput {
   id_ASC
   id_DESC
-  name_ASC
-  name_DESC
   createdAt_ASC
   createdAt_DESC
   updatedAt_ASC
   updatedAt_DESC
+  name_ASC
+  name_DESC
 }
 
 type GroupPreviousValues {
   id: ID!
-  name: String!
   createdAt: DateTime!
   updatedAt: DateTime!
+  name: String!
 }
 
 input GroupScalarWhereInput {
@@ -862,20 +862,6 @@ input GroupScalarWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
-  name: String
-  name_not: String
-  name_in: [String!]
-  name_not_in: [String!]
-  name_lt: String
-  name_lte: String
-  name_gt: String
-  name_gte: String
-  name_contains: String
-  name_not_contains: String
-  name_starts_with: String
-  name_not_starts_with: String
-  name_ends_with: String
-  name_not_ends_with: String
   createdAt: DateTime
   createdAt_not: DateTime
   createdAt_in: [DateTime!]
@@ -892,6 +878,20 @@ input GroupScalarWhereInput {
   updatedAt_lte: DateTime
   updatedAt_gt: DateTime
   updatedAt_gte: DateTime
+  name: String
+  name_not: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
   AND: [GroupScalarWhereInput!]
   OR: [GroupScalarWhereInput!]
   NOT: [GroupScalarWhereInput!]
@@ -1026,6 +1026,22 @@ input GroupWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   name: String
   name_not: String
   name_in: [String!]
@@ -1047,22 +1063,6 @@ input GroupWhereInput {
   classSessions_some: ClassSessionWhereInput
   classSessions_none: ClassSessionWhereInput
   semester: SemesterWhereInput
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   AND: [GroupWhereInput!]
   OR: [GroupWhereInput!]
   NOT: [GroupWhereInput!]
@@ -1077,12 +1077,12 @@ scalar Json
 type Lesson {
   id: ID!
   name: String!
-  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
-  words(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Word!]
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
+  words(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Word!]
   materials(where: MaterialWhereInput, orderBy: MaterialOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Material!]
 }
 
@@ -1095,12 +1095,12 @@ type LessonConnection {
 input LessonCreateInput {
   id: ID
   name: String!
-  tags: TagCreateManyWithoutLessonsInput
-  words: WordCreateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  tags: TagCreateManyWithoutLessonsInput
+  words: WordCreateManyWithoutLessonsInput
   materials: MaterialCreateManyInput
 }
 
@@ -1122,22 +1122,22 @@ input LessonCreateOneInput {
 input LessonCreateWithoutTagsInput {
   id: ID
   name: String!
-  words: WordCreateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  words: WordCreateManyWithoutLessonsInput
   materials: MaterialCreateManyInput
 }
 
 input LessonCreateWithoutWordsInput {
   id: ID
   name: String!
-  tags: TagCreateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  tags: TagCreateManyWithoutLessonsInput
   materials: MaterialCreateManyInput
 }
 
@@ -1280,23 +1280,23 @@ input LessonSubscriptionWhereInput {
 
 input LessonUpdateDataInput {
   name: String
-  tags: TagUpdateManyWithoutLessonsInput
-  words: WordUpdateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  tags: TagUpdateManyWithoutLessonsInput
+  words: WordUpdateManyWithoutLessonsInput
   materials: MaterialUpdateManyInput
 }
 
 input LessonUpdateInput {
   name: String
-  tags: TagUpdateManyWithoutLessonsInput
-  words: WordUpdateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  tags: TagUpdateManyWithoutLessonsInput
+  words: WordUpdateManyWithoutLessonsInput
   materials: MaterialUpdateManyInput
 }
 
@@ -1356,21 +1356,21 @@ input LessonUpdateOneInput {
 
 input LessonUpdateWithoutTagsDataInput {
   name: String
-  words: WordUpdateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  words: WordUpdateManyWithoutLessonsInput
   materials: MaterialUpdateManyInput
 }
 
 input LessonUpdateWithoutWordsDataInput {
   name: String
-  tags: TagUpdateManyWithoutLessonsInput
   homeworkEN: String
   homeworkZH: String
   summaryEN: String
   summaryZH: String
+  tags: TagUpdateManyWithoutLessonsInput
   materials: MaterialUpdateManyInput
 }
 
@@ -1430,12 +1430,6 @@ input LessonWhereInput {
   name_not_starts_with: String
   name_ends_with: String
   name_not_ends_with: String
-  tags_every: TagWhereInput
-  tags_some: TagWhereInput
-  tags_none: TagWhereInput
-  words_every: WordWhereInput
-  words_some: WordWhereInput
-  words_none: WordWhereInput
   homeworkEN: String
   homeworkEN_not: String
   homeworkEN_in: [String!]
@@ -1492,6 +1486,12 @@ input LessonWhereInput {
   summaryZH_not_starts_with: String
   summaryZH_ends_with: String
   summaryZH_not_ends_with: String
+  tags_every: TagWhereInput
+  tags_some: TagWhereInput
+  tags_none: TagWhereInput
+  words_every: WordWhereInput
+  words_some: WordWhereInput
+  words_none: WordWhereInput
   materials_every: MaterialWhereInput
   materials_some: MaterialWhereInput
   materials_none: MaterialWhereInput
@@ -1508,11 +1508,11 @@ scalar Long
 
 type Material {
   id: ID!
-  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
   type: String
   url: String
   title: String
   notes: String
+  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
 }
 
 type MaterialConnection {
@@ -1523,11 +1523,11 @@ type MaterialConnection {
 
 input MaterialCreateInput {
   id: ID
-  tags: TagCreateManyWithoutMaterialsInput
   type: String
   url: String
   title: String
   notes: String
+  tags: TagCreateManyWithoutMaterialsInput
 }
 
 input MaterialCreateManyInput {
@@ -1669,19 +1669,19 @@ input MaterialSubscriptionWhereInput {
 }
 
 input MaterialUpdateDataInput {
-  tags: TagUpdateManyWithoutMaterialsInput
   type: String
   url: String
   title: String
   notes: String
+  tags: TagUpdateManyWithoutMaterialsInput
 }
 
 input MaterialUpdateInput {
-  tags: TagUpdateManyWithoutMaterialsInput
   type: String
   url: String
   title: String
   notes: String
+  tags: TagUpdateManyWithoutMaterialsInput
 }
 
 input MaterialUpdateManyDataInput {
@@ -1771,9 +1771,6 @@ input MaterialWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
-  tags_every: TagWhereInput
-  tags_some: TagWhereInput
-  tags_none: TagWhereInput
   type: String
   type_not: String
   type_in: [String!]
@@ -1830,6 +1827,9 @@ input MaterialWhereInput {
   notes_not_starts_with: String
   notes_ends_with: String
   notes_not_ends_with: String
+  tags_every: TagWhereInput
+  tags_some: TagWhereInput
+  tags_none: TagWhereInput
   AND: [MaterialWhereInput!]
   OR: [MaterialWhereInput!]
   NOT: [MaterialWhereInput!]
@@ -2576,12 +2576,12 @@ enum Role {
 
 type Semester {
   id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
   startDate: DateTime!
   endDate: DateTime!
   name: String!
   groups(where: GroupWhereInput, orderBy: GroupOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Group!]
-  createdAt: DateTime!
-  updatedAt: DateTime!
 }
 
 type SemesterConnection {
@@ -2618,25 +2618,25 @@ type SemesterEdge {
 enum SemesterOrderByInput {
   id_ASC
   id_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
   startDate_ASC
   startDate_DESC
   endDate_ASC
   endDate_DESC
   name_ASC
   name_DESC
-  createdAt_ASC
-  createdAt_DESC
-  updatedAt_ASC
-  updatedAt_DESC
 }
 
 type SemesterPreviousValues {
   id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
   startDate: DateTime!
   endDate: DateTime!
   name: String!
-  createdAt: DateTime!
-  updatedAt: DateTime!
 }
 
 type SemesterSubscriptionPayload {
@@ -2703,6 +2703,22 @@ input SemesterWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   startDate: DateTime
   startDate_not: DateTime
   startDate_in: [DateTime!]
@@ -2736,22 +2752,6 @@ input SemesterWhereInput {
   groups_every: GroupWhereInput
   groups_some: GroupWhereInput
   groups_none: GroupWhereInput
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   AND: [SemesterWhereInput!]
   OR: [SemesterWhereInput!]
   NOT: [SemesterWhereInput!]
@@ -2771,6 +2771,8 @@ enum Stage {
 
 type Student {
   id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
   chineseName: String
   englishName: String
   pinyinName: String
@@ -2779,8 +2781,6 @@ type Student {
   groups(where: GroupWhereInput, orderBy: GroupOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Group!]
   points(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Point!]
   attendances(where: AttendanceWhereInput, orderBy: AttendanceOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Attendance!]
-  createdAt: DateTime!
-  updatedAt: DateTime!
 }
 
 type StudentConnection {
@@ -2857,6 +2857,10 @@ type StudentEdge {
 enum StudentOrderByInput {
   id_ASC
   id_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
   chineseName_ASC
   chineseName_DESC
   englishName_ASC
@@ -2867,21 +2871,17 @@ enum StudentOrderByInput {
   birthdate_DESC
   gender_ASC
   gender_DESC
-  createdAt_ASC
-  createdAt_DESC
-  updatedAt_ASC
-  updatedAt_DESC
 }
 
 type StudentPreviousValues {
   id: ID!
+  createdAt: DateTime!
+  updatedAt: DateTime!
   chineseName: String
   englishName: String
   pinyinName: String
   birthdate: DateTime
   gender: Gender
-  createdAt: DateTime!
-  updatedAt: DateTime!
 }
 
 input StudentScalarWhereInput {
@@ -2899,6 +2899,22 @@ input StudentScalarWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   chineseName: String
   chineseName_not: String
   chineseName_in: [String!]
@@ -2953,22 +2969,6 @@ input StudentScalarWhereInput {
   gender_not: Gender
   gender_in: [Gender!]
   gender_not_in: [Gender!]
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   AND: [StudentScalarWhereInput!]
   OR: [StudentScalarWhereInput!]
   NOT: [StudentScalarWhereInput!]
@@ -3116,6 +3116,22 @@ input StudentWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   chineseName: String
   chineseName_not: String
   chineseName_in: [String!]
@@ -3179,22 +3195,6 @@ input StudentWhereInput {
   attendances_every: AttendanceWhereInput
   attendances_some: AttendanceWhereInput
   attendances_none: AttendanceWhereInput
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   AND: [StudentWhereInput!]
   OR: [StudentWhereInput!]
   NOT: [StudentWhereInput!]
@@ -3505,10 +3505,10 @@ input TagWhereUniqueInput {
 
 type User {
   id: ID!
-  username: String!
-  password: String!
   createdAt: DateTime!
   updatedAt: DateTime!
+  username: String!
+  password: String!
   role: Role
 }
 
@@ -3533,24 +3533,24 @@ type UserEdge {
 enum UserOrderByInput {
   id_ASC
   id_DESC
-  username_ASC
-  username_DESC
-  password_ASC
-  password_DESC
   createdAt_ASC
   createdAt_DESC
   updatedAt_ASC
   updatedAt_DESC
+  username_ASC
+  username_DESC
+  password_ASC
+  password_DESC
   role_ASC
   role_DESC
 }
 
 type UserPreviousValues {
   id: ID!
-  username: String!
-  password: String!
   createdAt: DateTime!
   updatedAt: DateTime!
+  username: String!
+  password: String!
   role: Role
 }
 
@@ -3599,6 +3599,22 @@ input UserWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
   username: String
   username_not: String
   username_in: [String!]
@@ -3627,22 +3643,6 @@ input UserWhereInput {
   password_not_starts_with: String
   password_ends_with: String
   password_not_ends_with: String
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
-  updatedAt: DateTime
-  updatedAt_not: DateTime
-  updatedAt_in: [DateTime!]
-  updatedAt_not_in: [DateTime!]
-  updatedAt_lt: DateTime
-  updatedAt_lte: DateTime
-  updatedAt_gt: DateTime
-  updatedAt_gte: DateTime
   role: Role
   role_not: Role
   role_in: [Role!]
@@ -3659,8 +3659,8 @@ input UserWhereUniqueInput {
 
 type Viewer {
   id: ID!
-  name: String
   createdAt: DateTime!
+  name: String
 }
 
 type ViewerConnection {
@@ -3682,16 +3682,16 @@ type ViewerEdge {
 enum ViewerOrderByInput {
   id_ASC
   id_DESC
-  name_ASC
-  name_DESC
   createdAt_ASC
   createdAt_DESC
+  name_ASC
+  name_DESC
 }
 
 type ViewerPreviousValues {
   id: ID!
-  name: String
   createdAt: DateTime!
+  name: String
 }
 
 type ViewerSubscriptionPayload {
@@ -3735,6 +3735,14 @@ input ViewerWhereInput {
   id_not_starts_with: ID
   id_ends_with: ID
   id_not_ends_with: ID
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
   name: String
   name_not: String
   name_in: [String!]
@@ -3749,14 +3757,6 @@ input ViewerWhereInput {
   name_not_starts_with: String
   name_ends_with: String
   name_not_ends_with: String
-  createdAt: DateTime
-  createdAt_not: DateTime
-  createdAt_in: [DateTime!]
-  createdAt_not_in: [DateTime!]
-  createdAt_lt: DateTime
-  createdAt_lte: DateTime
-  createdAt_gt: DateTime
-  createdAt_gte: DateTime
   AND: [ViewerWhereInput!]
   OR: [ViewerWhereInput!]
   NOT: [ViewerWhereInput!]
