@@ -86,17 +86,23 @@ type Mutation {
   markRestAbsent(classSessionId: ID!): Boolean
 
   ## ClassSession
-  createClassSession(input: ClassSessionInput!, groupId: ID!): ClassSession
+  createClassSession(
+    input: ClassSessionCreateInput!
+    groupId: ID!
+    lessonId: ID
+  ): ClassSession
   updateClassSession(
     id: ID!
-    input: ClassSessionInput
+    input: ClassSessionUpdateInput
     groupId: ID
+    lessonId: ID
   ): ClassSession
   deleteClassSession(id: ID!): ClassSession
   activateSession(id: ID!): ClassSession
   createReport(classSessionId: ID!, input: ReportCreateInput): ClassSession
   updateReport(classSessionId: ID!, input: ReportUpdateDataInput): ClassSession
   deleteReport(classSessionId: ID!): ClassSession
+  addLessonToClassSession(id: ID!, lessonId: ID!): ClassSession
 
   ## Lesson
   createLesson(input: LessonCreateInput!): Lesson
@@ -210,14 +216,6 @@ input PointInput {
   value: Int!
   studentId: ID!
   classSessionId: ID!
-}
-
-input ClassSessionInput {
-  startsAt: DateTime
-  endsAt: DateTime
-  stage: Stage
-  startedAt: DateTime
-  endedAt: DateTime
 }
 
 input UserInput {
