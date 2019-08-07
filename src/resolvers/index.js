@@ -11,6 +11,7 @@ const { Lesson } = require('./Lesson')
 const { Tag } = require('./Tag')
 const { Material } = require('./Material')
 const { Word } = require('./Word')
+const { Report } = require('./Report')
 
 exports.resolvers = {
   Query,
@@ -25,5 +26,6 @@ exports.resolvers = {
   Lesson,
   Tag,
   Material,
-  Word
+  Word,
+  Report
 }
