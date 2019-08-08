@@ -2786,6 +2786,8 @@ type Student {
   groups(where: GroupWhereInput, orderBy: GroupOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Group!]
   points(where: PointWhereInput, orderBy: PointOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Point!]
   attendances(where: AttendanceWhereInput, orderBy: AttendanceOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Attendance!]
+  lastLogin: DateTime
+  password: String
 }
 
 type StudentConnection {
@@ -2804,6 +2806,8 @@ input StudentCreateInput {
   groups: GroupCreateManyWithoutStudentsInput
   points: PointCreateManyWithoutStudentInput
   attendances: AttendanceCreateManyWithoutStudentInput
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentCreateManyWithoutGroupsInput {
@@ -2830,6 +2834,8 @@ input StudentCreateWithoutAttendancesInput {
   gender: Gender
   groups: GroupCreateManyWithoutStudentsInput
   points: PointCreateManyWithoutStudentInput
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentCreateWithoutGroupsInput {
@@ -2841,6 +2847,8 @@ input StudentCreateWithoutGroupsInput {
   gender: Gender
   points: PointCreateManyWithoutStudentInput
   attendances: AttendanceCreateManyWithoutStudentInput
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentCreateWithoutPointsInput {
@@ -2852,6 +2860,8 @@ input StudentCreateWithoutPointsInput {
   gender: Gender
   groups: GroupCreateManyWithoutStudentsInput
   attendances: AttendanceCreateManyWithoutStudentInput
+  lastLogin: DateTime
+  password: String
 }
 
 type StudentEdge {
@@ -2876,6 +2886,10 @@ enum StudentOrderByInput {
   birthdate_DESC
   gender_ASC
   gender_DESC
+  lastLogin_ASC
+  lastLogin_DESC
+  password_ASC
+  password_DESC
 }
 
 type StudentPreviousValues {
@@ -2887,6 +2901,8 @@ type StudentPreviousValues {
   pinyinName: String
   birthdate: DateTime
   gender: Gender
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentScalarWhereInput {
@@ -2974,6 +2990,28 @@ input StudentScalarWhereInput {
   gender_not: Gender
   gender_in: [Gender!]
   gender_not_in: [Gender!]
+  lastLogin: DateTime
+  lastLogin_not: DateTime
+  lastLogin_in: [DateTime!]
+  lastLogin_not_in: [DateTime!]
+  lastLogin_lt: DateTime
+  lastLogin_lte: DateTime
+  lastLogin_gt: DateTime
+  lastLogin_gte: DateTime
+  password: String
+  password_not: String
+  password_in: [String!]
+  password_not_in: [String!]
+  password_lt: String
+  password_lte: String
+  password_gt: String
+  password_gte: String
+  password_contains: String
+  password_not_contains: String
+  password_starts_with: String
+  password_not_starts_with: String
+  password_ends_with: String
+  password_not_ends_with: String
   AND: [StudentScalarWhereInput!]
   OR: [StudentScalarWhereInput!]
   NOT: [StudentScalarWhereInput!]
@@ -3006,6 +3044,8 @@ input StudentUpdateInput {
   groups: GroupUpdateManyWithoutStudentsInput
   points: PointUpdateManyWithoutStudentInput
   attendances: AttendanceUpdateManyWithoutStudentInput
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentUpdateManyDataInput {
@@ -3014,6 +3054,8 @@ input StudentUpdateManyDataInput {
   pinyinName: String
   birthdate: DateTime
   gender: Gender
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentUpdateManyMutationInput {
@@ -3022,6 +3064,8 @@ input StudentUpdateManyMutationInput {
   pinyinName: String
   birthdate: DateTime
   gender: Gender
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentUpdateManyWithoutGroupsInput {
@@ -3063,6 +3107,8 @@ input StudentUpdateWithoutAttendancesDataInput {
   gender: Gender
   groups: GroupUpdateManyWithoutStudentsInput
   points: PointUpdateManyWithoutStudentInput
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentUpdateWithoutGroupsDataInput {
@@ -3073,6 +3119,8 @@ input StudentUpdateWithoutGroupsDataInput {
   gender: Gender
   points: PointUpdateManyWithoutStudentInput
   attendances: AttendanceUpdateManyWithoutStudentInput
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentUpdateWithoutPointsDataInput {
@@ -3083,6 +3131,8 @@ input StudentUpdateWithoutPointsDataInput {
   gender: Gender
   groups: GroupUpdateManyWithoutStudentsInput
   attendances: AttendanceUpdateManyWithoutStudentInput
+  lastLogin: DateTime
+  password: String
 }
 
 input StudentUpdateWithWhereUniqueWithoutGroupsInput {
@@ -3200,6 +3250,28 @@ input StudentWhereInput {
   attendances_every: AttendanceWhereInput
   attendances_some: AttendanceWhereInput
   attendances_none: AttendanceWhereInput
+  lastLogin: DateTime
+  lastLogin_not: DateTime
+  lastLogin_in: [DateTime!]
+  lastLogin_not_in: [DateTime!]
+  lastLogin_lt: DateTime
+  lastLogin_lte: DateTime
+  lastLogin_gt: DateTime
+  lastLogin_gte: DateTime
+  password: String
+  password_not: String
+  password_in: [String!]
+  password_not_in: [String!]
+  password_lt: String
+  password_lte: String
+  password_gt: String
+  password_gte: String
+  password_contains: String
+  password_not_contains: String
+  password_starts_with: String
+  password_not_starts_with: String
+  password_ends_with: String
+  password_not_ends_with: String
   AND: [StudentWhereInput!]
   OR: [StudentWhereInput!]
   NOT: [StudentWhereInput!]

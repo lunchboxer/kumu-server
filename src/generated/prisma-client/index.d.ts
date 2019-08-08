@@ -647,7 +647,11 @@ export type StudentOrderByInput =
   | "birthdate_ASC"
   | "birthdate_DESC"
   | "gender_ASC"
-  | "gender_DESC";
+  | "gender_DESC"
+  | "lastLogin_ASC"
+  | "lastLogin_DESC"
+  | "password_ASC"
+  | "password_DESC";
 
 export type ClassSessionOrderByInput =
   | "id_ASC"
@@ -946,6 +950,28 @@ export interface StudentWhereInput {
   attendances_every?: AttendanceWhereInput;
   attendances_some?: AttendanceWhereInput;
   attendances_none?: AttendanceWhereInput;
+  lastLogin?: DateTimeInput;
+  lastLogin_not?: DateTimeInput;
+  lastLogin_in?: DateTimeInput[] | DateTimeInput;
+  lastLogin_not_in?: DateTimeInput[] | DateTimeInput;
+  lastLogin_lt?: DateTimeInput;
+  lastLogin_lte?: DateTimeInput;
+  lastLogin_gt?: DateTimeInput;
+  lastLogin_gte?: DateTimeInput;
+  password?: String;
+  password_not?: String;
+  password_in?: String[] | String;
+  password_not_in?: String[] | String;
+  password_lt?: String;
+  password_lte?: String;
+  password_gt?: String;
+  password_gte?: String;
+  password_contains?: String;
+  password_not_contains?: String;
+  password_starts_with?: String;
+  password_not_starts_with?: String;
+  password_ends_with?: String;
+  password_not_ends_with?: String;
   AND?: StudentWhereInput[] | StudentWhereInput;
   OR?: StudentWhereInput[] | StudentWhereInput;
   NOT?: StudentWhereInput[] | StudentWhereInput;
@@ -1799,6 +1825,8 @@ export interface StudentCreateWithoutAttendancesInput {
   gender?: Gender;
   groups?: GroupCreateManyWithoutStudentsInput;
   points?: PointCreateManyWithoutStudentInput;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface GroupCreateManyWithoutStudentsInput {
@@ -1860,6 +1888,8 @@ export interface StudentCreateWithoutPointsInput {
   gender?: Gender;
   groups?: GroupCreateManyWithoutStudentsInput;
   attendances?: AttendanceCreateManyWithoutStudentInput;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface AttendanceCreateManyWithoutStudentInput {
@@ -1920,6 +1950,8 @@ export interface StudentCreateWithoutGroupsInput {
   gender?: Gender;
   points?: PointCreateManyWithoutStudentInput;
   attendances?: AttendanceCreateManyWithoutStudentInput;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface PointCreateManyWithoutStudentInput {
@@ -2168,6 +2200,8 @@ export interface StudentUpdateWithoutAttendancesDataInput {
   gender?: Gender;
   groups?: GroupUpdateManyWithoutStudentsInput;
   points?: PointUpdateManyWithoutStudentInput;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface GroupUpdateManyWithoutStudentsInput {
@@ -2281,6 +2315,8 @@ export interface StudentUpdateWithoutPointsDataInput {
   gender?: Gender;
   groups?: GroupUpdateManyWithoutStudentsInput;
   attendances?: AttendanceUpdateManyWithoutStudentInput;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface AttendanceUpdateManyWithoutStudentInput {
@@ -2377,6 +2413,8 @@ export interface StudentUpdateWithoutGroupsDataInput {
   gender?: Gender;
   points?: PointUpdateManyWithoutStudentInput;
   attendances?: AttendanceUpdateManyWithoutStudentInput;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface PointUpdateManyWithoutStudentInput {
@@ -3398,6 +3436,28 @@ export interface StudentScalarWhereInput {
   gender_not?: Gender;
   gender_in?: Gender[] | Gender;
   gender_not_in?: Gender[] | Gender;
+  lastLogin?: DateTimeInput;
+  lastLogin_not?: DateTimeInput;
+  lastLogin_in?: DateTimeInput[] | DateTimeInput;
+  lastLogin_not_in?: DateTimeInput[] | DateTimeInput;
+  lastLogin_lt?: DateTimeInput;
+  lastLogin_lte?: DateTimeInput;
+  lastLogin_gt?: DateTimeInput;
+  lastLogin_gte?: DateTimeInput;
+  password?: String;
+  password_not?: String;
+  password_in?: String[] | String;
+  password_not_in?: String[] | String;
+  password_lt?: String;
+  password_lte?: String;
+  password_gt?: String;
+  password_gte?: String;
+  password_contains?: String;
+  password_not_contains?: String;
+  password_starts_with?: String;
+  password_not_starts_with?: String;
+  password_ends_with?: String;
+  password_not_ends_with?: String;
   AND?: StudentScalarWhereInput[] | StudentScalarWhereInput;
   OR?: StudentScalarWhereInput[] | StudentScalarWhereInput;
   NOT?: StudentScalarWhereInput[] | StudentScalarWhereInput;
@@ -3414,6 +3474,8 @@ export interface StudentUpdateManyDataInput {
   pinyinName?: String;
   birthdate?: DateTimeInput;
   gender?: Gender;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface SemesterUpdateOneRequiredWithoutGroupsInput {
@@ -3843,6 +3905,8 @@ export interface StudentCreateInput {
   groups?: GroupCreateManyWithoutStudentsInput;
   points?: PointCreateManyWithoutStudentInput;
   attendances?: AttendanceCreateManyWithoutStudentInput;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface StudentUpdateInput {
@@ -3854,6 +3918,8 @@ export interface StudentUpdateInput {
   groups?: GroupUpdateManyWithoutStudentsInput;
   points?: PointUpdateManyWithoutStudentInput;
   attendances?: AttendanceUpdateManyWithoutStudentInput;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface StudentUpdateManyMutationInput {
@@ -3862,6 +3928,8 @@ export interface StudentUpdateManyMutationInput {
   pinyinName?: String;
   birthdate?: DateTimeInput;
   gender?: Gender;
+  lastLogin?: DateTimeInput;
+  password?: String;
 }
 
 export interface TagCreateInput {
@@ -4132,6 +4200,8 @@ export interface Student {
   pinyinName?: String;
   birthdate?: DateTimeOutput;
   gender?: Gender;
+  lastLogin?: DateTimeOutput;
+  password?: String;
 }
 
 export interface StudentPromise extends Promise<Student>, Fragmentable {
@@ -4170,6 +4240,8 @@ export interface StudentPromise extends Promise<Student>, Fragmentable {
     first?: Int;
     last?: Int;
   }) => T;
+  lastLogin: () => Promise<DateTimeOutput>;
+  password: () => Promise<String>;
 }
 
 export interface StudentSubscription
@@ -4210,6 +4282,8 @@ export interface StudentSubscription
     first?: Int;
     last?: Int;
   }) => T;
+  lastLogin: () => Promise<AsyncIterator<DateTimeOutput>>;
+  password: () => Promise<AsyncIterator<String>>;
 }
 
 export interface Group {
@@ -6143,6 +6217,8 @@ export interface StudentPreviousValues {
   pinyinName?: String;
   birthdate?: DateTimeOutput;
   gender?: Gender;
+  lastLogin?: DateTimeOutput;
+  password?: String;
 }
 
 export interface StudentPreviousValuesPromise
@@ -6156,6 +6232,8 @@ export interface StudentPreviousValuesPromise
   pinyinName: () => Promise<String>;
   birthdate: () => Promise<DateTimeOutput>;
   gender: () => Promise<Gender>;
+  lastLogin: () => Promise<DateTimeOutput>;
+  password: () => Promise<String>;
 }
 
 export interface StudentPreviousValuesSubscription
@@ -6169,6 +6247,8 @@ export interface StudentPreviousValuesSubscription
   pinyinName: () => Promise<AsyncIterator<String>>;
   birthdate: () => Promise<AsyncIterator<DateTimeOutput>>;
   gender: () => Promise<AsyncIterator<Gender>>;
+  lastLogin: () => Promise<AsyncIterator<DateTimeOutput>>;
+  password: () => Promise<AsyncIterator<String>>;
 }
 
 export interface TagSubscriptionPayload {
