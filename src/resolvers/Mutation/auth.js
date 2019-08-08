@@ -1,7 +1,7 @@
 const bcrypt = require('bcryptjs')
 const jwt = require('jsonwebtoken')
 
-const auth = {
+exports.auth = {
   // async signup (root, args, context) {
   //   const password = await bcrypt.hash(args.password, 10)
   //   const user = await context.prisma.createUser({ ...args, password })
@@ -43,7 +43,34 @@ const auth = {
       token: jwt.sign({ userId: user.id }, process.env.APP_SECRET),
       user
     }
+  },
+  async createStudentPassword (_, args, { prisma }) {
+    const password = await bcrypt.hash(args.password, 10)
+    const student = prisma.updateStudent({
+      where: { id: args.studentId },
+      data: { password, lastLogin: new Date() }
+    })
+    return {
+      token: jwt.sign({ studentId: student.id }, process.env.APP_SECRET),
+      student
+    }
+  },
+  async studentLogin (_, { studentId, password }, { prisma }) {
+    const student = await prisma.student({ id: studentId })
+    if (!student) {
+      throw new Error(`No user found for student id: studentId`)
+    }
+    const passwordValid = await bcrypt.compare(password, student.password)
+    if (!passwordValid) {
+      throw new Error('Invalid password')
+    }
+    const loggedInStudent = await prisma.updateStudent({
+      where: { id: studentId },
+      data: { lastLogin: new Date() }
+    })
+    return {
+      token: jwt.sign({ studentId: student.id }, process.env.APP_SECRET),
+      student: loggedInStudent
+    }
   }
 }
-
-module.exports = { auth }

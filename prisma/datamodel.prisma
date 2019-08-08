@@ -23,6 +23,8 @@ type Student {
   groups: [Group!]!
   points: [Point!]! @relation(onDelete: CASCADE)
   attendances: [Attendance!]! @relation(onDelete: CASCADE)
+  lastLogin: DateTime
+  password: String
 }
 
 enum Gender {
