@@ -33,8 +33,8 @@ exports.Query = {
   group (_, args, context) {
     return context.prisma.group({ id: args.id })
   },
-  groups (_, args, context) {
-    return context.prisma.groups()
+  groups (_, { where, orderBy }, context) {
+    return context.prisma.groups({ orderBy, where })
   },
   semester (_, args, context) {
     return context.prisma.group({ id: args.id })
@@ -51,7 +51,7 @@ exports.Query = {
   points (_, { where }, context) {
     return context.prisma.points({ orderBy: 'createdAt_DESC', where })
   },
-  attendances (_, { where }, context) {
+  attendances (_, { where, orderBy }, context) {
     return context.prisma.attendances({ orderBy: 'createdAt_DESC', where })
   },
   // All the groups from the current and upcoming semester

@@ -12,7 +12,7 @@ type Query {
     searchString: String
   ): [Student!]!
   group(id: ID!): Group
-  groups: [Group!]!
+  groups(orderBy: GroupOrderByInput, where: GroupWhereInput): [Group!]!
   semester(id: ID!): Semester
   semesters: [Semester!]!
   classSession(id: ID!): ClassSession
