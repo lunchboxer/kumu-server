@@ -1,0 +1,1952 @@
+type Attendance {
+  classSession: ClassSession!
+  id: ID!
+  student: Student!
+  status: AttendanceStatus!
+  arrivedAt: DateTime
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+enum AttendanceStatus {
+  Absent
+  Present
+  Late
+  LeftEarly
+  LateLeftEarly
+}
+
+input AttendanceWhereInput {
+  classSession: ClassSessionWhereInput
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  student: StudentWhereInput
+  status: AttendanceStatus
+  status_not: AttendanceStatus
+  status_in: [AttendanceStatus!]
+  status_not_in: [AttendanceStatus!]
+  arrivedAt: DateTime
+  arrivedAt_not: DateTime
+  arrivedAt_in: [DateTime!]
+  arrivedAt_not_in: [DateTime!]
+  arrivedAt_lt: DateTime
+  arrivedAt_lte: DateTime
+  arrivedAt_gt: DateTime
+  arrivedAt_gte: DateTime
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
+  AND: [AttendanceWhereInput!]
+  OR: [AttendanceWhereInput!]
+  NOT: [AttendanceWhereInput!]
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+type ClassSession {
+  id: ID!
+  startsAt: DateTime!
+  startedAt: DateTime
+  endsAt: DateTime!
+  endedAt: DateTime
+  group: Group!
+  points: [Point!]!
+  attendances: [Attendance!]!
+  stage: Stage!
+  report: Report
+  number: Int
+}
+
+input ClassSessionInput {
+  startsAt: DateTime
+  endsAt: DateTime
+  stage: Stage
+  startedAt: DateTime
+  endedAt: DateTime
+}
+
+enum ClassSessionOrderByInput {
+  id_ASC
+  id_DESC
+  startsAt_ASC
+  startsAt_DESC
+  startedAt_ASC
+  startedAt_DESC
+  endsAt_ASC
+  endsAt_DESC
+  endedAt_ASC
+  endedAt_DESC
+  stage_ASC
+  stage_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+}
+
+type ClassSessionPreviousValues {
+  id: ID!
+  startsAt: DateTime!
+  startedAt: DateTime
+  endsAt: DateTime!
+  endedAt: DateTime
+  stage: Stage!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type ClassSessionSubscriptionPayload {
+  mutation: MutationType!
+  node: ClassSession
+  updatedFields: [String!]
+  previousValues: ClassSessionPreviousValues
+}
+
+input ClassSessionSubscriptionWhereInput {
+  mutation_in: [MutationType!]
+  updatedFields_contains: String
+  updatedFields_contains_every: [String!]
+  updatedFields_contains_some: [String!]
+  node: ClassSessionWhereInput
+  AND: [ClassSessionSubscriptionWhereInput!]
+  OR: [ClassSessionSubscriptionWhereInput!]
+  NOT: [ClassSessionSubscriptionWhereInput!]
+}
+
+input ClassSessionWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  startsAt: DateTime
+  startsAt_not: DateTime
+  startsAt_in: [DateTime!]
+  startsAt_not_in: [DateTime!]
+  startsAt_lt: DateTime
+  startsAt_lte: DateTime
+  startsAt_gt: DateTime
+  startsAt_gte: DateTime
+  startedAt: DateTime
+  startedAt_not: DateTime
+  startedAt_in: [DateTime!]
+  startedAt_not_in: [DateTime!]
+  startedAt_lt: DateTime
+  startedAt_lte: DateTime
+  startedAt_gt: DateTime
+  startedAt_gte: DateTime
+  endsAt: DateTime
+  endsAt_not: DateTime
+  endsAt_in: [DateTime!]
+  endsAt_not_in: [DateTime!]
+  endsAt_lt: DateTime
+  endsAt_lte: DateTime
+  endsAt_gt: DateTime
+  endsAt_gte: DateTime
+  endedAt: DateTime
+  endedAt_not: DateTime
+  endedAt_in: [DateTime!]
+  endedAt_not_in: [DateTime!]
+  endedAt_lt: DateTime
+  endedAt_lte: DateTime
+  endedAt_gt: DateTime
+  endedAt_gte: DateTime
+  group: GroupWhereInput
+  points_every: PointWhereInput
+  points_some: PointWhereInput
+  points_none: PointWhereInput
+  attendances_every: AttendanceWhereInput
+  attendances_some: AttendanceWhereInput
+  attendances_none: AttendanceWhereInput
+  stage: Stage
+  stage_not: Stage
+  stage_in: [Stage!]
+  stage_not_in: [Stage!]
+  lesson: LessonWhereInput
+  report: ReportWhereInput
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
+  AND: [ClassSessionWhereInput!]
+  OR: [ClassSessionWhereInput!]
+  NOT: [ClassSessionWhereInput!]
+}
+
+scalar DateTime
+
+enum Gender {
+  M
+  F
+}
+
+type Group {
+  id: ID!
+  name: String!
+  semester: Semester!
+  students: [Student!]!
+}
+
+input GroupWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  name: String
+  name_not: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  students_every: StudentWhereInput
+  students_some: StudentWhereInput
+  students_none: StudentWhereInput
+  classSessions_every: ClassSessionWhereInput
+  classSessions_some: ClassSessionWhereInput
+  classSessions_none: ClassSessionWhereInput
+  semester: SemesterWhereInput
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
+  AND: [GroupWhereInput!]
+  OR: [GroupWhereInput!]
+  NOT: [GroupWhereInput!]
+}
+
+type Lesson {
+  id: ID!
+  name: String!
+  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
+  words(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Word!]
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials(where: MaterialWhereInput, orderBy: MaterialOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Material!]
+}
+
+input LessonCreateInput {
+  id: ID
+  name: String!
+  tags: TagCreateManyWithoutLessonsInput
+  words: WordCreateManyWithoutLessonsInput
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials: MaterialCreateManyInput
+}
+
+input LessonCreateManyWithoutTagsInput {
+  create: [LessonCreateWithoutTagsInput!]
+  connect: [LessonWhereUniqueInput!]
+}
+
+input LessonCreateManyWithoutWordsInput {
+  create: [LessonCreateWithoutWordsInput!]
+  connect: [LessonWhereUniqueInput!]
+}
+
+input LessonCreateWithoutTagsInput {
+  id: ID
+  name: String!
+  words: WordCreateManyWithoutLessonsInput
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials: MaterialCreateManyInput
+}
+
+input LessonCreateWithoutWordsInput {
+  id: ID
+  name: String!
+  tags: TagCreateManyWithoutLessonsInput
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials: MaterialCreateManyInput
+}
+
+enum LessonOrderByInput {
+  id_ASC
+  id_DESC
+  name_ASC
+  name_DESC
+  homeworkEN_ASC
+  homeworkEN_DESC
+  homeworkZH_ASC
+  homeworkZH_DESC
+  summaryEN_ASC
+  summaryEN_DESC
+  summaryZH_ASC
+  summaryZH_DESC
+}
+
+input LessonScalarWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  name: String
+  name_not: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  homeworkEN: String
+  homeworkEN_not: String
+  homeworkEN_in: [String!]
+  homeworkEN_not_in: [String!]
+  homeworkEN_lt: String
+  homeworkEN_lte: String
+  homeworkEN_gt: String
+  homeworkEN_gte: String
+  homeworkEN_contains: String
+  homeworkEN_not_contains: String
+  homeworkEN_starts_with: String
+  homeworkEN_not_starts_with: String
+  homeworkEN_ends_with: String
+  homeworkEN_not_ends_with: String
+  homeworkZH: String
+  homeworkZH_not: String
+  homeworkZH_in: [String!]
+  homeworkZH_not_in: [String!]
+  homeworkZH_lt: String
+  homeworkZH_lte: String
+  homeworkZH_gt: String
+  homeworkZH_gte: String
+  homeworkZH_contains: String
+  homeworkZH_not_contains: String
+  homeworkZH_starts_with: String
+  homeworkZH_not_starts_with: String
+  homeworkZH_ends_with: String
+  homeworkZH_not_ends_with: String
+  summaryEN: String
+  summaryEN_not: String
+  summaryEN_in: [String!]
+  summaryEN_not_in: [String!]
+  summaryEN_lt: String
+  summaryEN_lte: String
+  summaryEN_gt: String
+  summaryEN_gte: String
+  summaryEN_contains: String
+  summaryEN_not_contains: String
+  summaryEN_starts_with: String
+  summaryEN_not_starts_with: String
+  summaryEN_ends_with: String
+  summaryEN_not_ends_with: String
+  summaryZH: String
+  summaryZH_not: String
+  summaryZH_in: [String!]
+  summaryZH_not_in: [String!]
+  summaryZH_lt: String
+  summaryZH_lte: String
+  summaryZH_gt: String
+  summaryZH_gte: String
+  summaryZH_contains: String
+  summaryZH_not_contains: String
+  summaryZH_starts_with: String
+  summaryZH_not_starts_with: String
+  summaryZH_ends_with: String
+  summaryZH_not_ends_with: String
+  AND: [LessonScalarWhereInput!]
+  OR: [LessonScalarWhereInput!]
+  NOT: [LessonScalarWhereInput!]
+}
+
+input LessonUpdateInput {
+  name: String
+  tags: TagUpdateManyWithoutLessonsInput
+  words: WordUpdateManyWithoutLessonsInput
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials: MaterialUpdateManyInput
+}
+
+input LessonUpdateManyDataInput {
+  name: String
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+}
+
+input LessonUpdateManyWithoutTagsInput {
+  create: [LessonCreateWithoutTagsInput!]
+  delete: [LessonWhereUniqueInput!]
+  connect: [LessonWhereUniqueInput!]
+  set: [LessonWhereUniqueInput!]
+  disconnect: [LessonWhereUniqueInput!]
+  update: [LessonUpdateWithWhereUniqueWithoutTagsInput!]
+  upsert: [LessonUpsertWithWhereUniqueWithoutTagsInput!]
+  deleteMany: [LessonScalarWhereInput!]
+  updateMany: [LessonUpdateManyWithWhereNestedInput!]
+}
+
+input LessonUpdateManyWithoutWordsInput {
+  create: [LessonCreateWithoutWordsInput!]
+  delete: [LessonWhereUniqueInput!]
+  connect: [LessonWhereUniqueInput!]
+  set: [LessonWhereUniqueInput!]
+  disconnect: [LessonWhereUniqueInput!]
+  update: [LessonUpdateWithWhereUniqueWithoutWordsInput!]
+  upsert: [LessonUpsertWithWhereUniqueWithoutWordsInput!]
+  deleteMany: [LessonScalarWhereInput!]
+  updateMany: [LessonUpdateManyWithWhereNestedInput!]
+}
+
+input LessonUpdateManyWithWhereNestedInput {
+  where: LessonScalarWhereInput!
+  data: LessonUpdateManyDataInput!
+}
+
+input LessonUpdateWithoutTagsDataInput {
+  name: String
+  words: WordUpdateManyWithoutLessonsInput
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials: MaterialUpdateManyInput
+}
+
+input LessonUpdateWithoutWordsDataInput {
+  name: String
+  tags: TagUpdateManyWithoutLessonsInput
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  materials: MaterialUpdateManyInput
+}
+
+input LessonUpdateWithWhereUniqueWithoutTagsInput {
+  where: LessonWhereUniqueInput!
+  data: LessonUpdateWithoutTagsDataInput!
+}
+
+input LessonUpdateWithWhereUniqueWithoutWordsInput {
+  where: LessonWhereUniqueInput!
+  data: LessonUpdateWithoutWordsDataInput!
+}
+
+input LessonUpsertWithWhereUniqueWithoutTagsInput {
+  where: LessonWhereUniqueInput!
+  update: LessonUpdateWithoutTagsDataInput!
+  create: LessonCreateWithoutTagsInput!
+}
+
+input LessonUpsertWithWhereUniqueWithoutWordsInput {
+  where: LessonWhereUniqueInput!
+  update: LessonUpdateWithoutWordsDataInput!
+  create: LessonCreateWithoutWordsInput!
+}
+
+input LessonWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  name: String
+  name_not: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  tags_every: TagWhereInput
+  tags_some: TagWhereInput
+  tags_none: TagWhereInput
+  words_every: WordWhereInput
+  words_some: WordWhereInput
+  words_none: WordWhereInput
+  homeworkEN: String
+  homeworkEN_not: String
+  homeworkEN_in: [String!]
+  homeworkEN_not_in: [String!]
+  homeworkEN_lt: String
+  homeworkEN_lte: String
+  homeworkEN_gt: String
+  homeworkEN_gte: String
+  homeworkEN_contains: String
+  homeworkEN_not_contains: String
+  homeworkEN_starts_with: String
+  homeworkEN_not_starts_with: String
+  homeworkEN_ends_with: String
+  homeworkEN_not_ends_with: String
+  homeworkZH: String
+  homeworkZH_not: String
+  homeworkZH_in: [String!]
+  homeworkZH_not_in: [String!]
+  homeworkZH_lt: String
+  homeworkZH_lte: String
+  homeworkZH_gt: String
+  homeworkZH_gte: String
+  homeworkZH_contains: String
+  homeworkZH_not_contains: String
+  homeworkZH_starts_with: String
+  homeworkZH_not_starts_with: String
+  homeworkZH_ends_with: String
+  homeworkZH_not_ends_with: String
+  summaryEN: String
+  summaryEN_not: String
+  summaryEN_in: [String!]
+  summaryEN_not_in: [String!]
+  summaryEN_lt: String
+  summaryEN_lte: String
+  summaryEN_gt: String
+  summaryEN_gte: String
+  summaryEN_contains: String
+  summaryEN_not_contains: String
+  summaryEN_starts_with: String
+  summaryEN_not_starts_with: String
+  summaryEN_ends_with: String
+  summaryEN_not_ends_with: String
+  summaryZH: String
+  summaryZH_not: String
+  summaryZH_in: [String!]
+  summaryZH_not_in: [String!]
+  summaryZH_lt: String
+  summaryZH_lte: String
+  summaryZH_gt: String
+  summaryZH_gte: String
+  summaryZH_contains: String
+  summaryZH_not_contains: String
+  summaryZH_starts_with: String
+  summaryZH_not_starts_with: String
+  summaryZH_ends_with: String
+  summaryZH_not_ends_with: String
+  materials_every: MaterialWhereInput
+  materials_some: MaterialWhereInput
+  materials_none: MaterialWhereInput
+  AND: [LessonWhereInput!]
+  OR: [LessonWhereInput!]
+  NOT: [LessonWhereInput!]
+}
+
+input LessonWhereUniqueInput {
+  id: ID
+}
+
+type Material {
+  id: ID!
+  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
+  type: String
+  url: String
+  title: String
+  notes: String
+}
+
+input MaterialCreateInput {
+  id: ID
+  tags: TagCreateManyWithoutMaterialsInput
+  type: String
+  url: String
+  title: String
+  notes: String
+}
+
+input MaterialCreateManyInput {
+  create: [MaterialCreateInput!]
+  connect: [MaterialWhereUniqueInput!]
+}
+
+input MaterialCreateManyWithoutTagsInput {
+  create: [MaterialCreateWithoutTagsInput!]
+  connect: [MaterialWhereUniqueInput!]
+}
+
+input MaterialCreateWithoutTagsInput {
+  id: ID
+  type: String
+  url: String
+  title: String
+  notes: String
+}
+
+enum MaterialOrderByInput {
+  id_ASC
+  id_DESC
+  type_ASC
+  type_DESC
+  url_ASC
+  url_DESC
+  title_ASC
+  title_DESC
+  notes_ASC
+  notes_DESC
+}
+
+input MaterialScalarWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  type: String
+  type_not: String
+  type_in: [String!]
+  type_not_in: [String!]
+  type_lt: String
+  type_lte: String
+  type_gt: String
+  type_gte: String
+  type_contains: String
+  type_not_contains: String
+  type_starts_with: String
+  type_not_starts_with: String
+  type_ends_with: String
+  type_not_ends_with: String
+  url: String
+  url_not: String
+  url_in: [String!]
+  url_not_in: [String!]
+  url_lt: String
+  url_lte: String
+  url_gt: String
+  url_gte: String
+  url_contains: String
+  url_not_contains: String
+  url_starts_with: String
+  url_not_starts_with: String
+  url_ends_with: String
+  url_not_ends_with: String
+  title: String
+  title_not: String
+  title_in: [String!]
+  title_not_in: [String!]
+  title_lt: String
+  title_lte: String
+  title_gt: String
+  title_gte: String
+  title_contains: String
+  title_not_contains: String
+  title_starts_with: String
+  title_not_starts_with: String
+  title_ends_with: String
+  title_not_ends_with: String
+  notes: String
+  notes_not: String
+  notes_in: [String!]
+  notes_not_in: [String!]
+  notes_lt: String
+  notes_lte: String
+  notes_gt: String
+  notes_gte: String
+  notes_contains: String
+  notes_not_contains: String
+  notes_starts_with: String
+  notes_not_starts_with: String
+  notes_ends_with: String
+  notes_not_ends_with: String
+  AND: [MaterialScalarWhereInput!]
+  OR: [MaterialScalarWhereInput!]
+  NOT: [MaterialScalarWhereInput!]
+}
+
+input MaterialUpdateDataInput {
+  tags: TagUpdateManyWithoutMaterialsInput
+  type: String
+  url: String
+  title: String
+  notes: String
+}
+
+input MaterialUpdateInput {
+  tags: TagUpdateManyWithoutMaterialsInput
+  type: String
+  url: String
+  title: String
+  notes: String
+}
+
+input MaterialUpdateManyDataInput {
+  type: String
+  url: String
+  title: String
+  notes: String
+}
+
+input MaterialUpdateManyInput {
+  create: [MaterialCreateInput!]
+  update: [MaterialUpdateWithWhereUniqueNestedInput!]
+  upsert: [MaterialUpsertWithWhereUniqueNestedInput!]
+  delete: [MaterialWhereUniqueInput!]
+  connect: [MaterialWhereUniqueInput!]
+  set: [MaterialWhereUniqueInput!]
+  disconnect: [MaterialWhereUniqueInput!]
+  deleteMany: [MaterialScalarWhereInput!]
+  updateMany: [MaterialUpdateManyWithWhereNestedInput!]
+}
+
+input MaterialUpdateManyWithoutTagsInput {
+  create: [MaterialCreateWithoutTagsInput!]
+  delete: [MaterialWhereUniqueInput!]
+  connect: [MaterialWhereUniqueInput!]
+  set: [MaterialWhereUniqueInput!]
+  disconnect: [MaterialWhereUniqueInput!]
+  update: [MaterialUpdateWithWhereUniqueWithoutTagsInput!]
+  upsert: [MaterialUpsertWithWhereUniqueWithoutTagsInput!]
+  deleteMany: [MaterialScalarWhereInput!]
+  updateMany: [MaterialUpdateManyWithWhereNestedInput!]
+}
+
+input MaterialUpdateManyWithWhereNestedInput {
+  where: MaterialScalarWhereInput!
+  data: MaterialUpdateManyDataInput!
+}
+
+input MaterialUpdateWithoutTagsDataInput {
+  type: String
+  url: String
+  title: String
+  notes: String
+}
+
+input MaterialUpdateWithWhereUniqueNestedInput {
+  where: MaterialWhereUniqueInput!
+  data: MaterialUpdateDataInput!
+}
+
+input MaterialUpdateWithWhereUniqueWithoutTagsInput {
+  where: MaterialWhereUniqueInput!
+  data: MaterialUpdateWithoutTagsDataInput!
+}
+
+input MaterialUpsertWithWhereUniqueNestedInput {
+  where: MaterialWhereUniqueInput!
+  update: MaterialUpdateDataInput!
+  create: MaterialCreateInput!
+}
+
+input MaterialUpsertWithWhereUniqueWithoutTagsInput {
+  where: MaterialWhereUniqueInput!
+  update: MaterialUpdateWithoutTagsDataInput!
+  create: MaterialCreateWithoutTagsInput!
+}
+
+input MaterialWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  tags_every: TagWhereInput
+  tags_some: TagWhereInput
+  tags_none: TagWhereInput
+  type: String
+  type_not: String
+  type_in: [String!]
+  type_not_in: [String!]
+  type_lt: String
+  type_lte: String
+  type_gt: String
+  type_gte: String
+  type_contains: String
+  type_not_contains: String
+  type_starts_with: String
+  type_not_starts_with: String
+  type_ends_with: String
+  type_not_ends_with: String
+  url: String
+  url_not: String
+  url_in: [String!]
+  url_not_in: [String!]
+  url_lt: String
+  url_lte: String
+  url_gt: String
+  url_gte: String
+  url_contains: String
+  url_not_contains: String
+  url_starts_with: String
+  url_not_starts_with: String
+  url_ends_with: String
+  url_not_ends_with: String
+  title: String
+  title_not: String
+  title_in: [String!]
+  title_not_in: [String!]
+  title_lt: String
+  title_lte: String
+  title_gt: String
+  title_gte: String
+  title_contains: String
+  title_not_contains: String
+  title_starts_with: String
+  title_not_starts_with: String
+  title_ends_with: String
+  title_not_ends_with: String
+  notes: String
+  notes_not: String
+  notes_in: [String!]
+  notes_not_in: [String!]
+  notes_lt: String
+  notes_lte: String
+  notes_gt: String
+  notes_gte: String
+  notes_contains: String
+  notes_not_contains: String
+  notes_starts_with: String
+  notes_not_starts_with: String
+  notes_ends_with: String
+  notes_not_ends_with: String
+  AND: [MaterialWhereInput!]
+  OR: [MaterialWhereInput!]
+  NOT: [MaterialWhereInput!]
+}
+
+input MaterialWhereUniqueInput {
+  id: ID
+}
+
+type Mutation {
+  createUser(username: String!, password: String!): User
+  updateUser(id: ID!, input: UserInput!): User
+  deleteUser(id: ID!): User
+  login(username: String!, password: String!): AuthPayload!
+  changePassword(id: ID!, newPassword: String!): User
+  createStudent(input: StudentInput!, groupId: ID): Student
+  updateStudent(id: ID!, input: StudentInput!): Student
+  deleteStudent(id: ID!): Student
+  addStudentToGroup(studentId: ID!, groupId: ID!): Student
+  removeStudentFromGroup(studentId: ID!, groupId: ID!): Student
+  moveStudentToDifferentGroup(studentId: ID!, oldGroupId: ID!, newGroupId: ID!): Student
+  createGroup(name: String!, semesterId: ID!): Group
+  updateGroup(id: ID!, name: String, semesterId: ID): Group
+  deleteGroup(id: ID!): Group
+  createSemester(input: SemesterInput!): Semester
+  updateSemester(id: ID!, input: SemesterInput!): Semester
+  deleteSemester(id: ID!): Semester
+  addPoint(value: Int!, studentId: ID!, classSessionId: ID!): Point
+  undoPoint(id: ID!): Point
+  markAllPresent(classSessionId: ID!): Boolean
+  updateAttendance(classSessionId: ID!, studentId: ID!, status: String!): Attendance
+  markRestAbsent(classSessionId: ID!): Boolean
+  createClassSession(input: ClassSessionInput!, groupId: ID!): ClassSession
+  updateClassSession(id: ID!, input: ClassSessionInput, groupId: ID): ClassSession
+  deleteClassSession(id: ID!): ClassSession
+  activateSession(id: ID!): ClassSession
+  createLesson(input: LessonCreateInput!): Lesson
+  updateLesson(input: LessonUpdateInput!, id: ID!): Lesson
+  deleteLesson(id: ID!): Lesson
+  createTag(name: String!): Tag
+  updateTag(input: TagUpdateInput!, id: ID!): Tag
+  deleteTag(id: ID!): Tag
+  createMaterial(input: MaterialCreateInput!): Material
+  updateMaterial(input: MaterialUpdateInput!, id: ID!): Material
+  deleteMaterial(id: ID!): Material
+  createWord(input: WordCreateInput!): Word
+  updateWord(input: WordUpdateInput!, id: ID!): Word
+  deleteWord(id: ID!): Word
+}
+
+enum MutationType {
+  CREATED
+  UPDATED
+  DELETED
+}
+
+type Point {
+  id: ID!
+  value: Int!
+  student: Student!
+  classSession: ClassSession!
+}
+
+input PointInput {
+  value: Int!
+  studentId: ID!
+  classSessionId: ID!
+}
+
+type PointPreviousValues {
+  id: ID!
+  value: Int!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type PointSubscriptionPayload {
+  mutation: MutationType!
+  node: Point
+  updatedFields: [String!]
+  previousValues: PointPreviousValues
+}
+
+input PointWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  value: Int
+  value_not: Int
+  value_in: [Int!]
+  value_not_in: [Int!]
+  value_lt: Int
+  value_lte: Int
+  value_gt: Int
+  value_gte: Int
+  student: StudentWhereInput
+  classSession: ClassSessionWhereInput
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
+  AND: [PointWhereInput!]
+  OR: [PointWhereInput!]
+  NOT: [PointWhereInput!]
+}
+
+type Query {
+  me: User
+  user(id: ID!): User
+  users: [User!]!
+  student(id: ID!): Student
+  students(orderBy: StudentOrderByInput, where: StudentWhereInput, searchString: String): [Student!]!
+  group(id: ID!): Group
+  groups: [Group!]!
+  semester(id: ID!): Semester
+  semesters: [Semester!]!
+  classSession(id: ID!): ClassSession
+  classSessions(where: ClassSessionWhereInput, orderBy: ClassSessionOrderByInput): [ClassSession!]!
+  points(where: PointWhereInput): [Point!]!
+  attendances(where: AttendanceWhereInput): [Attendance!]!
+  activeGroups: [Group!]!
+  currentSemester: Semester
+  nextSemester: Semester
+  lesson(id: ID!): Lesson
+  lessons: [Lesson!]!
+  material(id: ID!): Material
+  materials(where: MaterialWhereInput, orderBy: MaterialOrderByInput): [Material!]!
+  word(id: ID!): Word
+  words: [Word!]!
+  tag(id: ID!): Tag
+  tags: [Tag!]!
+  report(id: ID!): Report
+}
+
+type Report {
+  id: ID!
+  homeworkEN: String
+  homeworkZH: String
+  summaryEN: String
+  summaryZH: String
+  performance: String
+  published: Boolean!
+  materials(where: MaterialWhereInput, orderBy: MaterialOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Material!]
+  words(where: WordWhereInput, orderBy: WordOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Word!]
+}
+
+input ReportWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  homeworkEN: String
+  homeworkEN_not: String
+  homeworkEN_in: [String!]
+  homeworkEN_not_in: [String!]
+  homeworkEN_lt: String
+  homeworkEN_lte: String
+  homeworkEN_gt: String
+  homeworkEN_gte: String
+  homeworkEN_contains: String
+  homeworkEN_not_contains: String
+  homeworkEN_starts_with: String
+  homeworkEN_not_starts_with: String
+  homeworkEN_ends_with: String
+  homeworkEN_not_ends_with: String
+  homeworkZH: String
+  homeworkZH_not: String
+  homeworkZH_in: [String!]
+  homeworkZH_not_in: [String!]
+  homeworkZH_lt: String
+  homeworkZH_lte: String
+  homeworkZH_gt: String
+  homeworkZH_gte: String
+  homeworkZH_contains: String
+  homeworkZH_not_contains: String
+  homeworkZH_starts_with: String
+  homeworkZH_not_starts_with: String
+  homeworkZH_ends_with: String
+  homeworkZH_not_ends_with: String
+  summaryEN: String
+  summaryEN_not: String
+  summaryEN_in: [String!]
+  summaryEN_not_in: [String!]
+  summaryEN_lt: String
+  summaryEN_lte: String
+  summaryEN_gt: String
+  summaryEN_gte: String
+  summaryEN_contains: String
+  summaryEN_not_contains: String
+  summaryEN_starts_with: String
+  summaryEN_not_starts_with: String
+  summaryEN_ends_with: String
+  summaryEN_not_ends_with: String
+  summaryZH: String
+  summaryZH_not: String
+  summaryZH_in: [String!]
+  summaryZH_not_in: [String!]
+  summaryZH_lt: String
+  summaryZH_lte: String
+  summaryZH_gt: String
+  summaryZH_gte: String
+  summaryZH_contains: String
+  summaryZH_not_contains: String
+  summaryZH_starts_with: String
+  summaryZH_not_starts_with: String
+  summaryZH_ends_with: String
+  summaryZH_not_ends_with: String
+  performance: String
+  performance_not: String
+  performance_in: [String!]
+  performance_not_in: [String!]
+  performance_lt: String
+  performance_lte: String
+  performance_gt: String
+  performance_gte: String
+  performance_contains: String
+  performance_not_contains: String
+  performance_starts_with: String
+  performance_not_starts_with: String
+  performance_ends_with: String
+  performance_not_ends_with: String
+  published: Boolean
+  published_not: Boolean
+  materials_every: MaterialWhereInput
+  materials_some: MaterialWhereInput
+  materials_none: MaterialWhereInput
+  words_every: WordWhereInput
+  words_some: WordWhereInput
+  words_none: WordWhereInput
+  AND: [ReportWhereInput!]
+  OR: [ReportWhereInput!]
+  NOT: [ReportWhereInput!]
+}
+
+enum Role {
+  Admin
+}
+
+type Semester {
+  id: ID!
+  startDate: DateTime!
+  endDate: DateTime!
+  name: String!
+  groups: [Group!]!
+}
+
+input SemesterInput {
+  startDate: DateTime
+  endDate: DateTime
+  name: String
+}
+
+input SemesterWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  startDate: DateTime
+  startDate_not: DateTime
+  startDate_in: [DateTime!]
+  startDate_not_in: [DateTime!]
+  startDate_lt: DateTime
+  startDate_lte: DateTime
+  startDate_gt: DateTime
+  startDate_gte: DateTime
+  endDate: DateTime
+  endDate_not: DateTime
+  endDate_in: [DateTime!]
+  endDate_not_in: [DateTime!]
+  endDate_lt: DateTime
+  endDate_lte: DateTime
+  endDate_gt: DateTime
+  endDate_gte: DateTime
+  name: String
+  name_not: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  groups_every: GroupWhereInput
+  groups_some: GroupWhereInput
+  groups_none: GroupWhereInput
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
+  AND: [SemesterWhereInput!]
+  OR: [SemesterWhereInput!]
+  NOT: [SemesterWhereInput!]
+}
+
+enum Stage {
+  Inactive
+  Active
+  Started
+  Ended
+}
+
+type Student {
+  id: ID!
+  chineseName: String!
+  englishName: String!
+  pinyinName: String
+  gender: Gender
+  birthdate: DateTime
+  groups: [Group!]!
+  points: [Point!]!
+  pointsTally: Int
+}
+
+input StudentInput {
+  chineseName: String
+  englishName: String
+  pinyinName: String
+  birthdate: DateTime
+  gender: Gender
+}
+
+enum StudentOrderByInput {
+  id_ASC
+  id_DESC
+  chineseName_ASC
+  chineseName_DESC
+  englishName_ASC
+  englishName_DESC
+  pinyinName_ASC
+  pinyinName_DESC
+  birthdate_ASC
+  birthdate_DESC
+  gender_ASC
+  gender_DESC
+  createdAt_ASC
+  createdAt_DESC
+  updatedAt_ASC
+  updatedAt_DESC
+}
+
+input StudentWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  chineseName: String
+  chineseName_not: String
+  chineseName_in: [String!]
+  chineseName_not_in: [String!]
+  chineseName_lt: String
+  chineseName_lte: String
+  chineseName_gt: String
+  chineseName_gte: String
+  chineseName_contains: String
+  chineseName_not_contains: String
+  chineseName_starts_with: String
+  chineseName_not_starts_with: String
+  chineseName_ends_with: String
+  chineseName_not_ends_with: String
+  englishName: String
+  englishName_not: String
+  englishName_in: [String!]
+  englishName_not_in: [String!]
+  englishName_lt: String
+  englishName_lte: String
+  englishName_gt: String
+  englishName_gte: String
+  englishName_contains: String
+  englishName_not_contains: String
+  englishName_starts_with: String
+  englishName_not_starts_with: String
+  englishName_ends_with: String
+  englishName_not_ends_with: String
+  pinyinName: String
+  pinyinName_not: String
+  pinyinName_in: [String!]
+  pinyinName_not_in: [String!]
+  pinyinName_lt: String
+  pinyinName_lte: String
+  pinyinName_gt: String
+  pinyinName_gte: String
+  pinyinName_contains: String
+  pinyinName_not_contains: String
+  pinyinName_starts_with: String
+  pinyinName_not_starts_with: String
+  pinyinName_ends_with: String
+  pinyinName_not_ends_with: String
+  birthdate: DateTime
+  birthdate_not: DateTime
+  birthdate_in: [DateTime!]
+  birthdate_not_in: [DateTime!]
+  birthdate_lt: DateTime
+  birthdate_lte: DateTime
+  birthdate_gt: DateTime
+  birthdate_gte: DateTime
+  gender: Gender
+  gender_not: Gender
+  gender_in: [Gender!]
+  gender_not_in: [Gender!]
+  groups_every: GroupWhereInput
+  groups_some: GroupWhereInput
+  groups_none: GroupWhereInput
+  points_every: PointWhereInput
+  points_some: PointWhereInput
+  points_none: PointWhereInput
+  attendances_every: AttendanceWhereInput
+  attendances_some: AttendanceWhereInput
+  attendances_none: AttendanceWhereInput
+  createdAt: DateTime
+  createdAt_not: DateTime
+  createdAt_in: [DateTime!]
+  createdAt_not_in: [DateTime!]
+  createdAt_lt: DateTime
+  createdAt_lte: DateTime
+  createdAt_gt: DateTime
+  createdAt_gte: DateTime
+  updatedAt: DateTime
+  updatedAt_not: DateTime
+  updatedAt_in: [DateTime!]
+  updatedAt_not_in: [DateTime!]
+  updatedAt_lt: DateTime
+  updatedAt_lte: DateTime
+  updatedAt_gt: DateTime
+  updatedAt_gte: DateTime
+  AND: [StudentWhereInput!]
+  OR: [StudentWhereInput!]
+  NOT: [StudentWhereInput!]
+}
+
+type Subscription {
+  attendances(classSessionId: ID): Attendance
+  classSession(id: ID!): ClassSession
+  semesters: Semester
+  classSessions(where: ClassSessionSubscriptionWhereInput): ClassSessionSubscriptionPayload
+  points(classSessionId: ID): PointSubscriptionPayload
+}
+
+type Tag {
+  id: ID!
+  name: String!
+  lessons: [Lesson!]!
+  words: [Word!]!
+  materials: [Material!]!
+  connections: Int
+}
+
+input TagCreateManyWithoutLessonsInput {
+  create: [TagCreateWithoutLessonsInput!]
+  connect: [TagWhereUniqueInput!]
+}
+
+input TagCreateManyWithoutMaterialsInput {
+  create: [TagCreateWithoutMaterialsInput!]
+  connect: [TagWhereUniqueInput!]
+}
+
+input TagCreateManyWithoutWordsInput {
+  create: [TagCreateWithoutWordsInput!]
+  connect: [TagWhereUniqueInput!]
+}
+
+input TagCreateWithoutLessonsInput {
+  id: ID
+  name: String!
+  words: WordCreateManyWithoutTagsInput
+  materials: MaterialCreateManyWithoutTagsInput
+}
+
+input TagCreateWithoutMaterialsInput {
+  id: ID
+  name: String!
+  lessons: LessonCreateManyWithoutTagsInput
+  words: WordCreateManyWithoutTagsInput
+}
+
+input TagCreateWithoutWordsInput {
+  id: ID
+  name: String!
+  lessons: LessonCreateManyWithoutTagsInput
+  materials: MaterialCreateManyWithoutTagsInput
+}
+
+enum TagOrderByInput {
+  id_ASC
+  id_DESC
+  name_ASC
+  name_DESC
+}
+
+input TagScalarWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  name: String
+  name_not: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  AND: [TagScalarWhereInput!]
+  OR: [TagScalarWhereInput!]
+  NOT: [TagScalarWhereInput!]
+}
+
+input TagUpdateInput {
+  name: String
+  lessons: LessonUpdateManyWithoutTagsInput
+  words: WordUpdateManyWithoutTagsInput
+  materials: MaterialUpdateManyWithoutTagsInput
+}
+
+input TagUpdateManyDataInput {
+  name: String
+}
+
+input TagUpdateManyWithoutLessonsInput {
+  create: [TagCreateWithoutLessonsInput!]
+  delete: [TagWhereUniqueInput!]
+  connect: [TagWhereUniqueInput!]
+  set: [TagWhereUniqueInput!]
+  disconnect: [TagWhereUniqueInput!]
+  update: [TagUpdateWithWhereUniqueWithoutLessonsInput!]
+  upsert: [TagUpsertWithWhereUniqueWithoutLessonsInput!]
+  deleteMany: [TagScalarWhereInput!]
+  updateMany: [TagUpdateManyWithWhereNestedInput!]
+}
+
+input TagUpdateManyWithoutMaterialsInput {
+  create: [TagCreateWithoutMaterialsInput!]
+  delete: [TagWhereUniqueInput!]
+  connect: [TagWhereUniqueInput!]
+  set: [TagWhereUniqueInput!]
+  disconnect: [TagWhereUniqueInput!]
+  update: [TagUpdateWithWhereUniqueWithoutMaterialsInput!]
+  upsert: [TagUpsertWithWhereUniqueWithoutMaterialsInput!]
+  deleteMany: [TagScalarWhereInput!]
+  updateMany: [TagUpdateManyWithWhereNestedInput!]
+}
+
+input TagUpdateManyWithoutWordsInput {
+  create: [TagCreateWithoutWordsInput!]
+  delete: [TagWhereUniqueInput!]
+  connect: [TagWhereUniqueInput!]
+  set: [TagWhereUniqueInput!]
+  disconnect: [TagWhereUniqueInput!]
+  update: [TagUpdateWithWhereUniqueWithoutWordsInput!]
+  upsert: [TagUpsertWithWhereUniqueWithoutWordsInput!]
+  deleteMany: [TagScalarWhereInput!]
+  updateMany: [TagUpdateManyWithWhereNestedInput!]
+}
+
+input TagUpdateManyWithWhereNestedInput {
+  where: TagScalarWhereInput!
+  data: TagUpdateManyDataInput!
+}
+
+input TagUpdateWithoutLessonsDataInput {
+  name: String
+  words: WordUpdateManyWithoutTagsInput
+  materials: MaterialUpdateManyWithoutTagsInput
+}
+
+input TagUpdateWithoutMaterialsDataInput {
+  name: String
+  lessons: LessonUpdateManyWithoutTagsInput
+  words: WordUpdateManyWithoutTagsInput
+}
+
+input TagUpdateWithoutWordsDataInput {
+  name: String
+  lessons: LessonUpdateManyWithoutTagsInput
+  materials: MaterialUpdateManyWithoutTagsInput
+}
+
+input TagUpdateWithWhereUniqueWithoutLessonsInput {
+  where: TagWhereUniqueInput!
+  data: TagUpdateWithoutLessonsDataInput!
+}
+
+input TagUpdateWithWhereUniqueWithoutMaterialsInput {
+  where: TagWhereUniqueInput!
+  data: TagUpdateWithoutMaterialsDataInput!
+}
+
+input TagUpdateWithWhereUniqueWithoutWordsInput {
+  where: TagWhereUniqueInput!
+  data: TagUpdateWithoutWordsDataInput!
+}
+
+input TagUpsertWithWhereUniqueWithoutLessonsInput {
+  where: TagWhereUniqueInput!
+  update: TagUpdateWithoutLessonsDataInput!
+  create: TagCreateWithoutLessonsInput!
+}
+
+input TagUpsertWithWhereUniqueWithoutMaterialsInput {
+  where: TagWhereUniqueInput!
+  update: TagUpdateWithoutMaterialsDataInput!
+  create: TagCreateWithoutMaterialsInput!
+}
+
+input TagUpsertWithWhereUniqueWithoutWordsInput {
+  where: TagWhereUniqueInput!
+  update: TagUpdateWithoutWordsDataInput!
+  create: TagCreateWithoutWordsInput!
+}
+
+input TagWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  name: String
+  name_not: String
+  name_in: [String!]
+  name_not_in: [String!]
+  name_lt: String
+  name_lte: String
+  name_gt: String
+  name_gte: String
+  name_contains: String
+  name_not_contains: String
+  name_starts_with: String
+  name_not_starts_with: String
+  name_ends_with: String
+  name_not_ends_with: String
+  lessons_every: LessonWhereInput
+  lessons_some: LessonWhereInput
+  lessons_none: LessonWhereInput
+  words_every: WordWhereInput
+  words_some: WordWhereInput
+  words_none: WordWhereInput
+  materials_every: MaterialWhereInput
+  materials_some: MaterialWhereInput
+  materials_none: MaterialWhereInput
+  AND: [TagWhereInput!]
+  OR: [TagWhereInput!]
+  NOT: [TagWhereInput!]
+}
+
+input TagWhereUniqueInput {
+  id: ID
+  name: String
+}
+
+type User {
+  id: ID!
+  username: String!
+  role: Role
+}
+
+input UserInput {
+  username: String
+  role: Role
+}
+
+type Word {
+  id: ID!
+  english: String!
+  chinese: String
+  audio: String
+  lessons(where: LessonWhereInput, orderBy: LessonOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Lesson!]
+  tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
+}
+
+input WordCreateInput {
+  id: ID
+  english: String!
+  chinese: String
+  audio: String
+  lessons: LessonCreateManyWithoutWordsInput
+  tags: TagCreateManyWithoutWordsInput
+}
+
+input WordCreateManyWithoutLessonsInput {
+  create: [WordCreateWithoutLessonsInput!]
+  connect: [WordWhereUniqueInput!]
+}
+
+input WordCreateManyWithoutTagsInput {
+  create: [WordCreateWithoutTagsInput!]
+  connect: [WordWhereUniqueInput!]
+}
+
+input WordCreateWithoutLessonsInput {
+  id: ID
+  english: String!
+  chinese: String
+  audio: String
+  tags: TagCreateManyWithoutWordsInput
+}
+
+input WordCreateWithoutTagsInput {
+  id: ID
+  english: String!
+  chinese: String
+  audio: String
+  lessons: LessonCreateManyWithoutWordsInput
+}
+
+enum WordOrderByInput {
+  id_ASC
+  id_DESC
+  english_ASC
+  english_DESC
+  chinese_ASC
+  chinese_DESC
+  audio_ASC
+  audio_DESC
+}
+
+input WordScalarWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  english: String
+  english_not: String
+  english_in: [String!]
+  english_not_in: [String!]
+  english_lt: String
+  english_lte: String
+  english_gt: String
+  english_gte: String
+  english_contains: String
+  english_not_contains: String
+  english_starts_with: String
+  english_not_starts_with: String
+  english_ends_with: String
+  english_not_ends_with: String
+  chinese: String
+  chinese_not: String
+  chinese_in: [String!]
+  chinese_not_in: [String!]
+  chinese_lt: String
+  chinese_lte: String
+  chinese_gt: String
+  chinese_gte: String
+  chinese_contains: String
+  chinese_not_contains: String
+  chinese_starts_with: String
+  chinese_not_starts_with: String
+  chinese_ends_with: String
+  chinese_not_ends_with: String
+  audio: String
+  audio_not: String
+  audio_in: [String!]
+  audio_not_in: [String!]
+  audio_lt: String
+  audio_lte: String
+  audio_gt: String
+  audio_gte: String
+  audio_contains: String
+  audio_not_contains: String
+  audio_starts_with: String
+  audio_not_starts_with: String
+  audio_ends_with: String
+  audio_not_ends_with: String
+  AND: [WordScalarWhereInput!]
+  OR: [WordScalarWhereInput!]
+  NOT: [WordScalarWhereInput!]
+}
+
+input WordUpdateInput {
+  english: String
+  chinese: String
+  audio: String
+  lessons: LessonUpdateManyWithoutWordsInput
+  tags: TagUpdateManyWithoutWordsInput
+}
+
+input WordUpdateManyDataInput {
+  english: String
+  chinese: String
+  audio: String
+}
+
+input WordUpdateManyWithoutLessonsInput {
+  create: [WordCreateWithoutLessonsInput!]
+  delete: [WordWhereUniqueInput!]
+  connect: [WordWhereUniqueInput!]
+  set: [WordWhereUniqueInput!]
+  disconnect: [WordWhereUniqueInput!]
+  update: [WordUpdateWithWhereUniqueWithoutLessonsInput!]
+  upsert: [WordUpsertWithWhereUniqueWithoutLessonsInput!]
+  deleteMany: [WordScalarWhereInput!]
+  updateMany: [WordUpdateManyWithWhereNestedInput!]
+}
+
+input WordUpdateManyWithoutTagsInput {
+  create: [WordCreateWithoutTagsInput!]
+  delete: [WordWhereUniqueInput!]
+  connect: [WordWhereUniqueInput!]
+  set: [WordWhereUniqueInput!]
+  disconnect: [WordWhereUniqueInput!]
+  update: [WordUpdateWithWhereUniqueWithoutTagsInput!]
+  upsert: [WordUpsertWithWhereUniqueWithoutTagsInput!]
+  deleteMany: [WordScalarWhereInput!]
+  updateMany: [WordUpdateManyWithWhereNestedInput!]
+}
+
+input WordUpdateManyWithWhereNestedInput {
+  where: WordScalarWhereInput!
+  data: WordUpdateManyDataInput!
+}
+
+input WordUpdateWithoutLessonsDataInput {
+  english: String
+  chinese: String
+  audio: String
+  tags: TagUpdateManyWithoutWordsInput
+}
+
+input WordUpdateWithoutTagsDataInput {
+  english: String
+  chinese: String
+  audio: String
+  lessons: LessonUpdateManyWithoutWordsInput
+}
+
+input WordUpdateWithWhereUniqueWithoutLessonsInput {
+  where: WordWhereUniqueInput!
+  data: WordUpdateWithoutLessonsDataInput!
+}
+
+input WordUpdateWithWhereUniqueWithoutTagsInput {
+  where: WordWhereUniqueInput!
+  data: WordUpdateWithoutTagsDataInput!
+}
+
+input WordUpsertWithWhereUniqueWithoutLessonsInput {
+  where: WordWhereUniqueInput!
+  update: WordUpdateWithoutLessonsDataInput!
+  create: WordCreateWithoutLessonsInput!
+}
+
+input WordUpsertWithWhereUniqueWithoutTagsInput {
+  where: WordWhereUniqueInput!
+  update: WordUpdateWithoutTagsDataInput!
+  create: WordCreateWithoutTagsInput!
+}
+
+input WordWhereInput {
+  id: ID
+  id_not: ID
+  id_in: [ID!]
+  id_not_in: [ID!]
+  id_lt: ID
+  id_lte: ID
+  id_gt: ID
+  id_gte: ID
+  id_contains: ID
+  id_not_contains: ID
+  id_starts_with: ID
+  id_not_starts_with: ID
+  id_ends_with: ID
+  id_not_ends_with: ID
+  english: String
+  english_not: String
+  english_in: [String!]
+  english_not_in: [String!]
+  english_lt: String
+  english_lte: String
+  english_gt: String
+  english_gte: String
+  english_contains: String
+  english_not_contains: String
+  english_starts_with: String
+  english_not_starts_with: String
+  english_ends_with: String
+  english_not_ends_with: String
+  chinese: String
+  chinese_not: String
+  chinese_in: [String!]
+  chinese_not_in: [String!]
+  chinese_lt: String
+  chinese_lte: String
+  chinese_gt: String
+  chinese_gte: String
+  chinese_contains: String
+  chinese_not_contains: String
+  chinese_starts_with: String
+  chinese_not_starts_with: String
+  chinese_ends_with: String
+  chinese_not_ends_with: String
+  audio: String
+  audio_not: String
+  audio_in: [String!]
+  audio_not_in: [String!]
+  audio_lt: String
+  audio_lte: String
+  audio_gt: String
+  audio_gte: String
+  audio_contains: String
+  audio_not_contains: String
+  audio_starts_with: String
+  audio_not_starts_with: String
+  audio_ends_with: String
+  audio_not_ends_with: String
+  lessons_every: LessonWhereInput
+  lessons_some: LessonWhereInput
+  lessons_none: LessonWhereInput
+  tags_every: TagWhereInput
+  tags_some: TagWhereInput
+  tags_none: TagWhereInput
+  AND: [WordWhereInput!]
+  OR: [WordWhereInput!]
+  NOT: [WordWhereInput!]
+}
+
+input WordWhereUniqueInput {
+  id: ID
+}
+

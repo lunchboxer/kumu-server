@@ -1,4 +1,6 @@
-# GraphQL based scorekeeper server
+# Kumu
+
+It's a prisma based server and two web clients functioning as a minimal learning management system for ESL lessons.
 
 ## Get going
 

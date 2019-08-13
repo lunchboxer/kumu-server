@@ -1,0 +1,8 @@
+node_modules
+admin/src
+admin/node_modules
+admin/.git
+.git
+parents/src
+parents/node_modules
+parents/.git

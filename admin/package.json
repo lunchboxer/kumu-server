@@ -1,0 +1,51 @@
+{
+  "name": "kumu-webclient",
+  "version": "0.2.0",
+  "scripts": {
+    "build": "npm run clean && rollup -c",
+    "clean": "rm -rf public/bundle",
+    "start": "sirv public --single",
+    "autobuild": "rollup -c -w",
+    "dev": "run-p start:dev autobuild",
+    "start:dev": "sirv public --dev --single"
+  },
+  "devDependencies": {
+    "bulma": "^0.7.5",
+    "eslint": "^6.1.0",
+    "eslint-config-standard": "^13.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "eslint-plugin-svelte3": "^2.7.3",
+    "eslint-plugin-unicorn": "^10.0.0",
+    "get-graphql-schema": "^2.1.2",
+    "node-sass": "^4.12.0",
+    "npm-run-all": "^4.1.5",
+    "nunito-fontface": "^0.7.3",
+    "rollup": "^1.18.0",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-commonjs-alternate": "0.0.5",
+    "rollup-plugin-livereload": "^1.0.1",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-notify": "^1.1.0",
+    "rollup-plugin-postcss": "^2.0.3",
+    "rollup-plugin-replace": "^2.2.0",
+    "rollup-plugin-sass": "^1.2.2",
+    "rollup-plugin-serve": "^1.0.1",
+    "rollup-plugin-svelte": "^5.1.0",
+    "rollup-plugin-terser": "^5.1.1",
+    "sirv-cli": "^0.4.4",
+    "svelte": "^3.6.10"
+  },
+  "dependencies": {
+    "@fortawesome/fontawesome-free": "^5.8.1",
+    "date-fns": "^2.0.0-beta.4",
+    "dotenv": "^8.0.0",
+    "fitty": "^2.2.6",
+    "flatpickr": "^4.5.7",
+    "graphql-subscriptions-client": "^0.11.0",
+    "marked": "^0.7.0",
+    "svelte-spa-router": "^1.2.0"
+  }
+}
