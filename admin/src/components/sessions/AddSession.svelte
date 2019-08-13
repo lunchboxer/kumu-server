@@ -15,14 +15,14 @@
   }
 
   const save = async ({ detail }) => {
-    const { id, groupId, lessonId, ...input } = detail
+    const { groupId, lessonId, startsAt, endsAt } = detail
     console.log(detail)
-    input.startsAt = new Date(input.startsAt).toISOString()
-    input.endsAt = new Date(input.endsAt).toISOString()
+    const startsAtUTC = new Date(startsAt).toISOString()
+    const endsAtUTC = new Date(endsAt).toISOString()
     loading = true
     try {
-      const newSession = await sessions.create(input, groupId, lessonId)
-      const date = formatRelative(new Date(input.startsAt), new Date(), { addSuffix: true })
+      const newSession = await sessions.create(startsAtUTC, endsAtUTC, groupId, lessonId)
+      const date = formatRelative(new Date(startsAt), new Date(), { addSuffix: true })
       notifications.add({ text: `Created new session ${date} with ${newSession.group.name} class`, type: 'success' })
       reset()
     } catch (error) {
@@ -40,7 +40,7 @@
   }
 </style>
 
-<button class="button add-button is-primary" on:click={() => open = true}><i class="fas fa-plus"></i>&nbsp;Add a
+<button class="button add-button is-primary" on:click={() => { open = true } }><i class="fas fa-plus"></i>&nbsp;Add a
   session</button>
 
 <Modal bind:open>

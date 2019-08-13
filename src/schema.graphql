@@ -88,11 +88,7 @@ type Mutation {
   markRestAbsent(classSessionId: ID!): Boolean
 
   ## ClassSession
-  createClassSession(
-    input: ClassSessionCreateInput!
-    groupId: ID!
-    lessonId: ID
-  ): ClassSession
+  createClassSession(input: ClassSessionCreateInput!): ClassSession
   updateClassSession(
     id: ID!
     input: ClassSessionUpdateInput

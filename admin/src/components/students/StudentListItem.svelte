@@ -13,7 +13,7 @@
   let showDelete = false
   let editShowing = false
   let groupsShowing = false
-  const gender = student.gender === 'M' ? 'boy' : 'girl'
+  $: gender = student.gender === 'M' ? 'boy' : 'girl'
 
   $: birthdate = !student.birthdate ? 'none' : student.birthdate.slice(0, 10)
   $: groups = !student.groups ? 'none' : student.groups.map(g => {
@@ -154,7 +154,7 @@
 
 <div class="card">
   <div class="card-content">
-    <div class="media" on:click={()=> { expanded = !expanded }}>
+    <div class="media" on:click={() => { expanded = !expanded }}>
       <div class="media-left">
         <figure class="image">
           <img src="images/{gender}.jpg" alt="portrait" class="is-rounded portrait {student.gender}">

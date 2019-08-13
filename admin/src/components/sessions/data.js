@@ -16,8 +16,11 @@ const createSessionsStore = () => {
       const response = await request(GET_SESSIONS, { where })
       set(response.classSessions)
     },
-    create: async (input, groupId, lessonId) => {
-      const response = await request(CREATE_SESSION, { input, groupId, lessonId })
+    create: async (startsAt, endsAt, groupId, lessonId) => {
+      const input = { startsAt, endsAt }
+      if (groupId) input.group = { connect: { id: groupId } }
+      if (lessonId) input.lesson = { connect: { id: lessonId } }
+      const response = await request(CREATE_SESSION, { input })
       sessions.get()
       return response.createClassSession
     },
