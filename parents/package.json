@@ -1,0 +1,40 @@
+{
+  "name": "kumu-client-parents",
+  "version": "0.3.0",
+  "scripts": {
+    "build": "rollup -c",
+    "start": "sirv public --single",
+    "autobuild": "rollup -c -w",
+    "dev": "run-p start:dev autobuild",
+    "start:dev": "sirv public --dev --single --port 5002"
+  },
+  "devDependencies": {
+    "eslint": "^6.1.0",
+    "eslint-config-standard": "^13.0.1",
+    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-node": "^9.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.0",
+    "eslint-plugin-svelte3": "^2.7.3",
+    "eslint-plugin-unicorn": "^10.0.0",
+    "npm-run-all": "^4.1.5",
+    "rollup": "^1.18.0",
+    "rollup-plugin-commonjs": "^10.0.1",
+    "rollup-plugin-commonjs-alternate": "0.0.5",
+    "rollup-plugin-livereload": "^1.0.1",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-notify": "^1.1.0",
+    "rollup-plugin-postcss": "^2.0.3",
+    "rollup-plugin-replace": "^2.2.0",
+    "rollup-plugin-serve": "^1.0.1",
+    "rollup-plugin-svelte": "^5.1.0",
+    "rollup-plugin-terser": "^5.1.1",
+    "sirv-cli": "^0.4.4",
+    "svelte": "^3.6.10"
+  },
+  "dependencies": {
+    "date-fns": "^2.0.0-beta.4",
+    "marked": "^0.7.0",
+    "svelte-spa-router": "^1.2.0"
+  }
+}
