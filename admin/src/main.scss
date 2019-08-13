@@ -1,0 +1,168 @@
+@charset "utf-8";
+
+// Customization
+
+// You can easily customize Bulma with your own variables.
+// Just uncomment the following block to see the result.
+
+// 1. Import the initial variables
+@import "../node_modules/bulma/sass/utilities/initial-variables";
+// 2. Set your own initial variables
+// Update the blue shade, used for links
+$turquoise: #14a098;
+// Add pink and its invert
+$pink: #cb2d6f;
+// $pink-invert: #ccc;
+// Update the sans-serif font family
+$family-sans-serif: "Nunito", sans-serif;
+// 3. Set the derived variables
+// Use the new pink as the primary color
+$primary: $pink;
+$primary-light: lighten($primary, 10);
+$link: $turquoise;
+// $primary-invert: $pink-invert;
+$body-background-color: $black;
+$background: rgba(0, 0, 0, 0.95);
+$text: $white;
+$text-light: lighten($text, 10);
+$text-strong: darken($text, 5);
+$title-color: $white;
+$subtitle-color: $white-ter;
+$subtitle-strong-color: $white-ter;
+
+$text: $white;
+$text-light: lighten($text, 10);
+$text-strong: darken($text, 5);
+
+$box-color: $text;
+$box-background-color: $grey-dark;
+$box-shadow: none;
+
+$link-hover: $primary-light;
+$link-focus: $primary-light;
+$link-active: $primary-light;
+$link-hover-border: $grey-dark;
+$link-active-border: $grey;
+
+$button-color: $text;
+$button-background-color: transparent;
+$button-border-color: $primary;
+$button-hover-color: $grey-lighter;
+$button-focus: $grey-light;
+$button-active-color: $grey-light;
+
+$table-color: $text;
+$table-head: $grey-lighter;
+$table-background-color: transparent;
+$table-cell-border: 1px solid $grey-dark;
+
+$table-row-hover-background-color: $grey-dark;
+$table-striped-row-even-background-color: $grey-dark;
+$table-striped-row-even-hover-background-color: lighten($grey-dark, 4);
+
+$pagination-border-color: $grey-darker;
+$pagination-disabled: $grey-light;
+$pagination-disabled-background-color: $grey-dark;
+
+$dropdown-content-background-color: $background;
+$dropdown-item-color: $text;
+
+$navbar-background-color: $background;
+$navbar-height: 3rem;
+$navbar-item-color: $white;
+$navbar-item-hover-color: $white;
+$navbar-item-hover-background-color: rgba($white, 0.12);
+$navbar-item-active-color: $link;
+$navbar-item-active-background-color: $navbar-item-hover-background-color;
+
+$navbar-dropdown-background-color: $body-background-color;
+$navbar-dropdown-item-hover-color: $white;
+$navbar-dropdown-item-hover-background-color: $navbar-item-hover-background-color;
+$navbar-dropdown-item-active-background-color: $navbar-item-hover-background-color;
+$navbar-dropdown-arrow: $white;
+
+$navbar-breakpoint: 1024px;
+
+$tabs-boxed-link-active-background-color: $body-background-color;
+
+$label-color: $white;
+
+$input-color: $black;
+$input-icon-color: $grey-light;
+$input-icon-active-color: $grey;
+$input-focus-border-color: $primary;
+$radius: 4px;
+$input-focus-box-shadow-size: 0;
+$input-shadow: none;
+
+$modal-content-width: auto;
+$modal-background-background-color: rgba($grey-darker, 0.8);
+
+$notification-radius: 4px;
+$notification-padding: 1rem 2.5rem 1rem 1rem;
+
+$card-background-color: $grey-darker;
+$card-footer-border-top: 1px solid $grey-dark;
+
+@import "../node_modules/bulma/bulma";
+
+@import "../node_modules/@fortawesome/fontawesome-free/scss/fontawesome.scss";
+
+$fa-font-path: "font-awesome";
+@import "../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  height: 100%;
+}
+
+body {
+  background: linear-gradient(228deg, #14a098, #000000, #cb2d6f);
+  background-size: 600% 600%;
+  -webkit-animation: wavyGradient 60s ease infinite;
+  -moz-animation: wavyGradient 60s ease infinite;
+  animation: wavyGradient 60s ease infinite;
+}
+@-webkit-keyframes wavyGradient {
+  0% {
+    background-position: 0% 18%;
+  }
+  50% {
+    background-position: 100% 83%;
+  }
+  100% {
+    background-position: 0% 18%;
+  }
+}
+@-moz-keyframes wavyGradient {
+  0% {
+    background-position: 0% 18%;
+  }
+  50% {
+    background-position: 100% 83%;
+  }
+  100% {
+    background-position: 0% 18%;
+  }
+}
+@keyframes wavyGradient {
+  0% {
+    background-position: 0% 18%;
+  }
+  50% {
+    background-position: 100% 83%;
+  }
+  100% {
+    background-position: 0% 18%;
+  }
+}
+.button i {
+  margin-right: 0.5rem;
+}
+ol {
+  list-style-position: inside;
+}
+
