@@ -7,18 +7,14 @@ const {
 } = require('../validation/classSession')
 
 exports.classSession = {
-  async createClassSession (_, { groupId, input, lessonId }, context) {
+  async createClassSession (_, { input }, context) {
     await Promise.all([
       withinYear(input.startsAt, input.endsAt),
       checkOrder(input.startsAt, input.endsAt, null, context),
-      duringGroupSemester(input.startsAt, input.endsAt, groupId, context),
+      // duringGroupSemester(input.startsAt, input.endsAt, input.groupId, context),
       checkConflicts(input.startsAt, input.endsAt, null, context)
     ])
-    return context.prisma.createClassSession({
-      ...input,
-      group: { connect: { id: groupId } },
-      lesson: { connect: { id: lessonId } }
-    })
+    return context.prisma.createClassSession(input)
   },
   // to avoid running every validation
   async activateSession (_, { id }, context) {

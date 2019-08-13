@@ -18,8 +18,8 @@ const server = new GraphQLServer({
 
 const options = {
   endpoint: '/api',
-  subscriptions: '/api',
-  playground: false
+  subscriptions: '/subscriptions',
+  playground: '/playground'
 }
 
 server.use('/parents', serveStatic('parents/public'))
