@@ -1,6 +1,6 @@
 export const CREATE_SESSION = /* GraphQL */`
-mutation newClassSession($groupId: ID!, $lessonId: ID, $input: ClassSessionCreateInput!) {
-  createClassSession(input: $input, groupId: $groupId, lessonId: $lessonId) {
+mutation newClassSession($input: ClassSessionCreateInput!) {
+  createClassSession(input: $input) {
     id
     stage
     startsAt
