@@ -6,7 +6,7 @@
 // Just uncomment the following block to see the result.
 
 // 1. Import the initial variables
-@import "../node_modules/bulma/sass/utilities/initial-variables";
+@import "../../node_modules/bulma/sass/utilities/initial-variables";
 // 2. Set your own initial variables
 // Update the blue shade, used for links
 $turquoise: #14a098;
@@ -104,12 +104,12 @@ $notification-padding: 1rem 2.5rem 1rem 1rem;
 $card-background-color: $grey-darker;
 $card-footer-border-top: 1px solid $grey-dark;
 
-@import "../node_modules/bulma/bulma";
+@import "../../node_modules/bulma/bulma";
 
-@import "../node_modules/@fortawesome/fontawesome-free/scss/fontawesome.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/fontawesome.scss";
 
 $fa-font-path: "font-awesome";
-@import "../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
+@import "../../node_modules/@fortawesome/fontawesome-free/scss/solid.scss";
 
 html,
 body {
@@ -165,4 +165,3 @@ body {
 ol {
   list-style-position: inside;
 }
-
