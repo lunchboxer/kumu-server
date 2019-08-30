@@ -543,99 +543,30 @@ var app = (function () {
         });
     }
 
-    const fetch = window.fetch;
-
-    const request = async (query, variables) => {
-      const coldAuth = window.localStorage.getItem('parentAuth');
-      const token = coldAuth ? JSON.parse(coldAuth).token : null;
-      const body = typeof query === 'function'
-        ? query(variables)
-        : JSON.stringify({ query, variables });
-      const response = await fetch("http://192.168.1.9:4000/api", {
-        method: 'post',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: token || ''
-        },
-        body
-      });
-      const result = response && await response.json();
-      if (response && response.ok && !result.errors && result.data) {
-        return result.data
-      } else {
-        throw result.errors
-      }
-    };
-
-    const LOGIN = /* GraphQL */`
-  mutation StudentLogin($studentId: ID!, $password: String!) {
-    studentLogin(studentId: $studentId, password: $password) {
-      token
-      student {
-        id
-        englishName
-        chineseName
-        lastLogin
-      }
-    }
-  }
-`;
-
-    const CREATE_STUDENT_PASSWORD = /* GraphQL */ `
- mutation CreateStudentPassword($studentId: ID!, $password: String!) {
-   createStudentPassword(studentId: $studentId, password: $password) {
-     token
-     student {
-       id
-       englishName
-       chineseName
-       lastLogin
-     }
-   }
- }`;
-
-    const getAuthFromStorage = () => {
-      const coldAuth = window.localStorage.getItem('parentAuth');
-      const student = coldAuth ? JSON.parse(coldAuth).student : null;
-      const token = coldAuth ? JSON.parse(coldAuth).token : null;
-      return { student, token }
-    };
-
-    const createAuthStore = () => {
-      // pull token and student from localStorage if it's there
-      const { student, token } = getAuthFromStorage();
-      const { subscribe, set, update } = writable({ ...student, token });
+    const createStudentStore = () => {
+      const myStudent = window.localStorage.getItem('myStudent');
+      const initial = myStudent ? JSON.parse(myStudent) : null;
+      const { subscribe, set } = writable(initial);
 
       return {
         subscribe,
-        login: async (studentId, password) => {
-          const response = await request(LOGIN, { studentId, password });
-          window.localStorage.setItem('parentAuth', JSON.stringify(response.studentLogin));
-          update(previous => ({
-            ...previous,
-            ...response.studentLogin.student,
-            token: response.studentLogin.token
-          }));
+        get: async (id) => {
+          const response = await fetch(`data/student-${id}.json`);
+          const result = response && await response.json();
+          set(result);
+        },
+        login: async (selected) => {
+          window.localStorage.setItem('myStudent', JSON.stringify(selected));
+          set(selected);
         },
         logout: () => {
-          const { student } = getAuthFromStorage();
-          window.localStorage.removeItem('parentAuth');
-          set({});
-          return student && student.id
-        },
-        register: async (studentId, password) => {
-          const response = await request(CREATE_STUDENT_PASSWORD, { studentId, password });
-          window.localStorage.setItem('parentAuth', JSON.stringify(response.createStudentPassword));
-          update(previous => ({
-            ...previous,
-            ...response.createStudentPassword.student,
-            token: response.createStudentPassword.token
-          }));
+          window.localStorage.removeItem('myStudent');
+          set();
         }
       }
     };
 
-    const auth = createAuthStore();
+    const student = createStudentStore();
 
     function regexparam (str, loose) {
     	if (str instanceof RegExp) return { keys:false, pattern:str };
@@ -1176,104 +1107,6 @@ var app = (function () {
     		throw new Error("<NotFound>: Props cannot be set directly on the component instance unless compiling with 'accessors: true' or '<svelte:options accessors/>'");
     	}
     }
-
-    const STUDENT = /* GraphQL */`
-query Student($id: ID!){
-  student(id: $id) {
-    id
-    englishName
-    chineseName
-    birthdate
-    pointsTally
-  }
-  attendances(where: { student: { id: $id } }) {
-    id
-    status
-    classSession {
-      id
-      lesson {
-        name
-      }
-      number
-      endsAt
-      endedAt
-      group {
-        id
-        name
-        semester{
-          id
-          startDate
-          endDate
-        }
-      }
-    }
-  }
-}`;
-
-    const STUDENTS = /* GraphQL */ `
- query Students ($searchString: String){
-   students(searchString: $searchString) {
-     id
-     englishName
-     chineseName
-     lastLogin
-   }
- }`;
-
-    const SESSION = /* GraphQL */ `
-  query Session ($id: ID!){
-    classSession (id: $id){
-      id
-      stage
-      number
-      startsAt
-      endsAt
-      endedAt
-      startedAt
-      lesson {
-        id
-        name
-      }
-      report {
-        summaryEN
-        summaryZH
-        homeworkEN
-        homeworkZH
-        performance
-        published
-        materials {
-          id
-          type
-          title
-          url
-        }
-        words {
-          id
-          english
-          chinese
-          audio
-        }
-      }
-      group {
-        id
-        name
-      }
-    }
-  }`;
-
-    const createStudentStore = () => {
-      const { subscribe, set } = writable();
-
-      return {
-        subscribe,
-        get: async (id) => {
-          const response = await request(STUDENT, { id });
-          set({ ...response.student, attendances: response.attendances });
-        }
-      }
-    };
-
-    const student = createStudentStore();
 
     /**
      * @name toDate
@@ -4462,46 +4295,15 @@ query Student($id: ID!){
 
     const file$4 = "parents/src/components/Home.svelte";
 
-    // (24:0) {#if errors}
-    function create_if_block_3$1(ctx) {
-    	var p, t;
-
-    	return {
-    		c: function create() {
-    			p = element("p");
-    			t = text(ctx.errors);
-    			attr(p, "class", "errors");
-    			add_location(p, file$4, 24, 2, 469);
-    		},
-
-    		m: function mount(target, anchor) {
-    			insert(target, p, anchor);
-    			append(p, t);
-    		},
-
-    		p: function update(changed, ctx) {
-    			if (changed.errors) {
-    				set_data(t, ctx.errors);
-    			}
-    		},
-
-    		d: function destroy(detaching) {
-    			if (detaching) {
-    				detach(p);
-    			}
-    		}
-    	};
-    }
-
-    // (32:18) 
-    function create_if_block_2$1(ctx) {
+    // (14:0) {:else}
+    function create_else_block$2(ctx) {
     	var p;
 
     	return {
     		c: function create() {
     			p = element("p");
     			p.textContent = "Loading student data...";
-    			add_location(p, file$4, 32, 2, 640);
+    			add_location(p, file$4, 14, 2, 375);
     		},
 
     		m: function mount(target, anchor) {
@@ -4520,25 +4322,38 @@ query Student($id: ID!){
     	};
     }
 
-    // (28:0) {#if $student}
+    // (9:0) {#if $student && $student.attendances}
     function create_if_block$3(ctx) {
-    	var if_block_anchor, current;
+    	var h2, t0_value = ctx.$student.englishName + "", t0, t1, t2, if_block_anchor, current;
 
     	var if_block = (ctx.$student.attendances) && create_if_block_1$1(ctx);
 
     	return {
     		c: function create() {
+    			h2 = element("h2");
+    			t0 = text(t0_value);
+    			t1 = text("'s lessons");
+    			t2 = space();
     			if (if_block) if_block.c();
     			if_block_anchor = empty();
+    			add_location(h2, file$4, 9, 2, 226);
     		},
 
     		m: function mount(target, anchor) {
+    			insert(target, h2, anchor);
+    			append(h2, t0);
+    			append(h2, t1);
+    			insert(target, t2, anchor);
     			if (if_block) if_block.m(target, anchor);
     			insert(target, if_block_anchor, anchor);
     			current = true;
     		},
 
     		p: function update(changed, ctx) {
+    			if ((!current || changed.$student) && t0_value !== (t0_value = ctx.$student.englishName + "")) {
+    				set_data(t0, t0_value);
+    			}
+
     			if (ctx.$student.attendances) {
     				if (if_block) {
     					if_block.p(changed, ctx);
@@ -4570,6 +4385,11 @@ query Student($id: ID!){
     		},
 
     		d: function destroy(detaching) {
+    			if (detaching) {
+    				detach(h2);
+    				detach(t2);
+    			}
+
     			if (if_block) if_block.d(detaching);
 
     			if (detaching) {
@@ -4579,7 +4399,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (29:2) {#if $student.attendances}
+    // (11:2) {#if $student.attendances}
     function create_if_block_1$1(ctx) {
     	var current;
 
@@ -4623,38 +4443,27 @@ query Student($id: ID!){
     }
 
     function create_fragment$5(ctx) {
-    	var h2, t0_value = ctx.$auth.englishName + "", t0, t1, t2, t3, current_block_type_index, if_block1, if_block1_anchor, current;
-
-    	var if_block0 = (ctx.errors) && create_if_block_3$1(ctx);
+    	var current_block_type_index, if_block, if_block_anchor, current;
 
     	var if_block_creators = [
     		create_if_block$3,
-    		create_if_block_2$1
+    		create_else_block$2
     	];
 
     	var if_blocks = [];
 
     	function select_block_type(changed, ctx) {
-    		if (ctx.$student) return 0;
-    		if (!ctx.errors) return 1;
-    		return -1;
+    		if (ctx.$student && ctx.$student.attendances) return 0;
+    		return 1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(null, ctx))) {
-    		if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
-    	}
+    	current_block_type_index = select_block_type(null, ctx);
+    	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
     		c: function create() {
-    			h2 = element("h2");
-    			t0 = text(t0_value);
-    			t1 = text("'s lessons");
-    			t2 = space();
-    			if (if_block0) if_block0.c();
-    			t3 = space();
-    			if (if_block1) if_block1.c();
-    			if_block1_anchor = empty();
-    			add_location(h2, file$4, 21, 0, 414);
+    			if_block.c();
+    			if_block_anchor = empty();
     		},
 
     		l: function claim(nodes) {
@@ -4662,118 +4471,65 @@ query Student($id: ID!){
     		},
 
     		m: function mount(target, anchor) {
-    			insert(target, h2, anchor);
-    			append(h2, t0);
-    			append(h2, t1);
-    			insert(target, t2, anchor);
-    			if (if_block0) if_block0.m(target, anchor);
-    			insert(target, t3, anchor);
-    			if (~current_block_type_index) if_blocks[current_block_type_index].m(target, anchor);
-    			insert(target, if_block1_anchor, anchor);
+    			if_blocks[current_block_type_index].m(target, anchor);
+    			insert(target, if_block_anchor, anchor);
     			current = true;
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$auth) && t0_value !== (t0_value = ctx.$auth.englishName + "")) {
-    				set_data(t0, t0_value);
-    			}
-
-    			if (ctx.errors) {
-    				if (if_block0) {
-    					if_block0.p(changed, ctx);
-    				} else {
-    					if_block0 = create_if_block_3$1(ctx);
-    					if_block0.c();
-    					if_block0.m(t3.parentNode, t3);
-    				}
-    			} else if (if_block0) {
-    				if_block0.d(1);
-    				if_block0 = null;
-    			}
-
     			var previous_block_index = current_block_type_index;
     			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
-    				if (~current_block_type_index) if_blocks[current_block_type_index].p(changed, ctx);
+    				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
-    				if (if_block1) {
-    					group_outros();
-    					transition_out(if_blocks[previous_block_index], 1, 1, () => {
-    						if_blocks[previous_block_index] = null;
-    					});
-    					check_outros();
-    				}
+    				group_outros();
+    				transition_out(if_blocks[previous_block_index], 1, 1, () => {
+    					if_blocks[previous_block_index] = null;
+    				});
+    				check_outros();
 
-    				if (~current_block_type_index) {
-    					if_block1 = if_blocks[current_block_type_index];
-    					if (!if_block1) {
-    						if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
-    						if_block1.c();
-    					}
-    					transition_in(if_block1, 1);
-    					if_block1.m(if_block1_anchor.parentNode, if_block1_anchor);
-    				} else {
-    					if_block1 = null;
+    				if_block = if_blocks[current_block_type_index];
+    				if (!if_block) {
+    					if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
+    					if_block.c();
     				}
+    				transition_in(if_block, 1);
+    				if_block.m(if_block_anchor.parentNode, if_block_anchor);
     			}
     		},
 
     		i: function intro(local) {
     			if (current) return;
-    			transition_in(if_block1);
+    			transition_in(if_block);
     			current = true;
     		},
 
     		o: function outro(local) {
-    			transition_out(if_block1);
+    			transition_out(if_block);
     			current = false;
     		},
 
     		d: function destroy(detaching) {
-    			if (detaching) {
-    				detach(h2);
-    				detach(t2);
-    			}
-
-    			if (if_block0) if_block0.d(detaching);
+    			if_blocks[current_block_type_index].d(detaching);
 
     			if (detaching) {
-    				detach(t3);
-    			}
-
-    			if (~current_block_type_index) if_blocks[current_block_type_index].d(detaching);
-
-    			if (detaching) {
-    				detach(if_block1_anchor);
+    				detach(if_block_anchor);
     			}
     		}
     	};
     }
 
     function instance$5($$self, $$props, $$invalidate) {
-    	let $auth, $student;
+    	let $student;
 
-    	validate_store(auth, 'auth');
-    	component_subscribe($$self, auth, $$value => { $auth = $$value; $$invalidate('$auth', $auth); });
     	validate_store(student, 'student');
     	component_subscribe($$self, student, $$value => { $student = $$value; $$invalidate('$student', $student); });
 
     	
 
-      let errors = '';
-
-      onMount(async () => {
-        try {
-          await student.get($auth.id);
-          // then
-        } catch (error) {
-          $$invalidate('errors', errors = error);
-        }
-      });
-
       title.set('果园英语');
 
-    	return { errors, $auth, $student };
+    	return { $student };
     }
 
     class Home extends SvelteComponentDev {
@@ -6993,7 +6749,7 @@ query Student($id: ID!){
 
     const file$8 = "parents/src/components/ClassSession.svelte";
 
-    // (35:0) {#if errors}
+    // (33:0) {#if errors}
     function create_if_block_9(ctx) {
     	var p, t;
 
@@ -7002,7 +6758,7 @@ query Student($id: ID!){
     			p = element("p");
     			t = text(ctx.errors);
     			attr(p, "class", "errors");
-    			add_location(p, file$8, 35, 2, 858);
+    			add_location(p, file$8, 33, 2, 781);
     		},
 
     		m: function mount(target, anchor) {
@@ -7024,7 +6780,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (71:18) 
+    // (69:18) 
     function create_if_block_8(ctx) {
     	var p;
 
@@ -7032,7 +6788,7 @@ query Student($id: ID!){
     		c: function create() {
     			p = element("p");
     			p.textContent = "Loading class session...";
-    			add_location(p, file$8, 71, 2, 1646);
+    			add_location(p, file$8, 69, 2, 1569);
     		},
 
     		m: function mount(target, anchor) {
@@ -7051,7 +6807,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (39:0) {#if session}
+    // (37:0) {#if session}
     function create_if_block$6(ctx) {
     	var t0, t1, current_block_type_index, if_block2, if_block2_anchor, current;
 
@@ -7061,7 +6817,7 @@ query Student($id: ID!){
 
     	var if_block_creators = [
     		create_if_block_1$2,
-    		create_else_block$2
+    		create_else_block$3
     	];
 
     	var if_blocks = [];
@@ -7175,7 +6931,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (40:2) {#if session.lesson}
+    // (38:2) {#if session.lesson}
     function create_if_block_7(ctx) {
     	var h2, t_value = ctx.session.lesson.name + "", t;
 
@@ -7183,7 +6939,7 @@ query Student($id: ID!){
     		c: function create() {
     			h2 = element("h2");
     			t = text(t_value);
-    			add_location(h2, file$8, 40, 4, 937);
+    			add_location(h2, file$8, 38, 4, 860);
     		},
 
     		m: function mount(target, anchor) {
@@ -7205,7 +6961,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (44:2) {#if session.endedAt}
+    // (42:2) {#if session.endedAt}
     function create_if_block_6(ctx) {
     	var p, t_value = ctx.format(ctx.session.endedAt) + "", t;
 
@@ -7213,7 +6969,7 @@ query Student($id: ID!){
     		c: function create() {
     			p = element("p");
     			t = text(t_value);
-    			add_location(p, file$8, 44, 4, 1007);
+    			add_location(p, file$8, 42, 4, 930);
     		},
 
     		m: function mount(target, anchor) {
@@ -7235,15 +6991,15 @@ query Student($id: ID!){
     	};
     }
 
-    // (68:2) {:else}
-    function create_else_block$2(ctx) {
+    // (66:2) {:else}
+    function create_else_block$3(ctx) {
     	var p;
 
     	return {
     		c: function create() {
     			p = element("p");
     			p.textContent = "No report is available yet.";
-    			add_location(p, file$8, 68, 4, 1582);
+    			add_location(p, file$8, 66, 4, 1505);
     		},
 
     		m: function mount(target, anchor) {
@@ -7262,7 +7018,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (48:2) {#if session.report && session.report.published}
+    // (46:2) {#if session.report && session.report.published}
     function create_if_block_1$2(ctx) {
     	var t0, t1, t2, if_block3_anchor, current;
 
@@ -7270,9 +7026,9 @@ query Student($id: ID!){
 
     	var if_block1 = (ctx.session.report.homeworkZH) && create_if_block_4(ctx);
 
-    	var if_block2 = (ctx.session.report.materials) && create_if_block_3$2(ctx);
+    	var if_block2 = (ctx.session.report.materials) && create_if_block_3$1(ctx);
 
-    	var if_block3 = (ctx.session.report.words) && create_if_block_2$2(ctx);
+    	var if_block3 = (ctx.session.report.words) && create_if_block_2$1(ctx);
 
     	return {
     		c: function create() {
@@ -7330,7 +7086,7 @@ query Student($id: ID!){
     					if_block2.p(changed, ctx);
     					transition_in(if_block2, 1);
     				} else {
-    					if_block2 = create_if_block_3$2(ctx);
+    					if_block2 = create_if_block_3$1(ctx);
     					if_block2.c();
     					transition_in(if_block2, 1);
     					if_block2.m(t2.parentNode, t2);
@@ -7348,7 +7104,7 @@ query Student($id: ID!){
     					if_block3.p(changed, ctx);
     					transition_in(if_block3, 1);
     				} else {
-    					if_block3 = create_if_block_2$2(ctx);
+    					if_block3 = create_if_block_2$1(ctx);
     					if_block3.c();
     					transition_in(if_block3, 1);
     					if_block3.m(if_block3_anchor.parentNode, if_block3_anchor);
@@ -7403,7 +7159,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (50:4) {#if session.report.summaryZH}
+    // (48:4) {#if session.report.summaryZH}
     function create_if_block_5(ctx) {
     	var h3, t_1, html_tag, raw_value = marked(ctx.session.report.summaryZH, { breaks: true }) + "";
 
@@ -7412,7 +7168,7 @@ query Student($id: ID!){
     			h3 = element("h3");
     			h3.textContent = "Summary";
     			t_1 = space();
-    			add_location(h3, file$8, 50, 6, 1142);
+    			add_location(h3, file$8, 48, 6, 1065);
     			html_tag = new HtmlTag(raw_value, null);
     		},
 
@@ -7438,7 +7194,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (55:4) {#if session.report.homeworkZH}
+    // (53:4) {#if session.report.homeworkZH}
     function create_if_block_4(ctx) {
     	var h3, t_1, html_tag, raw_value = marked(ctx.session.report.homeworkZH, { breaks: true }) + "";
 
@@ -7447,7 +7203,7 @@ query Student($id: ID!){
     			h3 = element("h3");
     			h3.textContent = "Homework";
     			t_1 = space();
-    			add_location(h3, file$8, 55, 6, 1277);
+    			add_location(h3, file$8, 53, 6, 1200);
     			html_tag = new HtmlTag(raw_value, null);
     		},
 
@@ -7473,8 +7229,8 @@ query Student($id: ID!){
     	};
     }
 
-    // (60:4) {#if session.report.materials}
-    function create_if_block_3$2(ctx) {
+    // (58:4) {#if session.report.materials}
+    function create_if_block_3$1(ctx) {
     	var current;
 
     	var materiallist = new MaterialList({
@@ -7516,8 +7272,8 @@ query Student($id: ID!){
     	};
     }
 
-    // (64:4) {#if session.report.words}
-    function create_if_block_2$2(ctx) {
+    // (62:4) {#if session.report.words}
+    function create_if_block_2$1(ctx) {
     	var current;
 
     	var wordlist = new WordList({
@@ -7591,7 +7347,7 @@ query Student($id: ID!){
     			if (if_block1) if_block1.c();
     			if_block1_anchor = empty();
     			attr(a, "href", "#/");
-    			add_location(a, file$8, 32, 0, 798);
+    			add_location(a, file$8, 30, 0, 721);
     		},
 
     		l: function claim(nodes) {
@@ -7691,8 +7447,8 @@ query Student($id: ID!){
 
       onMount(async () => {
         try {
-          const response = await request(SESSION, { id: params.id });
-          $$invalidate('session', session = response.classSession);
+          const response = await fetch(`data/session-${params.id}.json`);
+          $$invalidate('session', session = response && await response.json());
           title.set(`${session.group.name}班第${session.number}课`);
           $$invalidate('errors', errors = '');
         } catch (error) {
@@ -7738,6 +7494,8 @@ query Student($id: ID!){
       '*': NotFound
     };
 
+    var students = [{id:"cjuwaa52a0f2d0710in0agic7",englishName:"Sally",chineseName:""},{id:"cjuwabm1l0f2p0710koz6te3a",englishName:"Kevin",chineseName:""},{id:"cjuwackwo0f310710ghphl795",englishName:"Tim",chineseName:""},{id:"cjuwadixa0f3d0710pydfdcqm",englishName:"Alisa",chineseName:""},{id:"cjuwadpmt0f3p0710ylk6x5kj",englishName:"Peter",chineseName:""},{id:"cjuwadwrt0f410710zi2luj73",englishName:"Elsa",chineseName:""}];
+
     /* parents/src/components/Login.svelte generated by Svelte v3.9.1 */
 
     const file$9 = "parents/src/components/Login.svelte";
@@ -7748,11 +7506,11 @@ query Student($id: ID!){
     	return child_ctx;
     }
 
-    // (70:2) {#if students && students.length > 0}
-    function create_if_block_3$3(ctx) {
-    	var p, t0_value = ctx.students.length + "", t0, t1, t2, select, option, each_blocks = [], each_1_lookup = new Map(), dispose;
+    // (29:2) {#if students && students.length > 0}
+    function create_if_block$7(ctx) {
+    	var p, t0_value = ctx.filteredStudents.length + "", t0, t1, t2, select, option, each_blocks = [], each_1_lookup = new Map(), t4, button, t5, button_disabled_value, dispose;
 
-    	var each_value = ctx.students;
+    	var each_value = ctx.filteredStudents;
 
     	const get_key = ctx => ctx.student.id;
 
@@ -7773,13 +7531,23 @@ query Student($id: ID!){
     			option.textContent = "Select a student";
 
     			for (i = 0; i < each_blocks.length; i += 1) each_blocks[i].c();
-    			add_location(p, file$9, 70, 4, 1504);
+
+    			t4 = space();
+    			button = element("button");
+    			t5 = text("Enter");
+    			add_location(p, file$9, 29, 2, 654);
     			option.__value = "Select a student";
     			option.value = option.__value;
-    			add_location(option, file$9, 72, 6, 1588);
+    			add_location(option, file$9, 31, 4, 744);
     			if (ctx.selected === void 0) add_render_callback(() => ctx.select_change_handler.call(select));
-    			add_location(select, file$9, 71, 4, 1551);
-    			dispose = listen(select, "change", ctx.select_change_handler);
+    			add_location(select, file$9, 30, 2, 707);
+    			button.disabled = button_disabled_value = !ctx.selected;
+    			add_location(button, file$9, 39, 2, 995);
+
+    			dispose = [
+    				listen(select, "change", ctx.select_change_handler),
+    				listen(button, "click", ctx.enter)
+    			];
     		},
 
     		m: function mount(target, anchor) {
@@ -7793,17 +7561,25 @@ query Student($id: ID!){
     			for (i = 0; i < each_blocks.length; i += 1) each_blocks[i].m(select, null);
 
     			select_option(select, ctx.selected);
+
+    			insert(target, t4, anchor);
+    			insert(target, button, anchor);
+    			append(button, t5);
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.students) && t0_value !== (t0_value = ctx.students.length + "")) {
+    			if ((changed.filteredStudents) && t0_value !== (t0_value = ctx.filteredStudents.length + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			const each_value = ctx.students;
+    			const each_value = ctx.filteredStudents;
     			each_blocks = update_keyed_each(each_blocks, changed, get_key, 1, ctx, each_value, each_1_lookup, select, destroy_block, create_each_block$3, null, get_each_context$3);
 
     			if (changed.selected) select_option(select, ctx.selected);
+
+    			if ((changed.selected) && button_disabled_value !== (button_disabled_value = !ctx.selected)) {
+    				button.disabled = button_disabled_value;
+    			}
     		},
 
     		d: function destroy(detaching) {
@@ -7815,13 +7591,18 @@ query Student($id: ID!){
 
     			for (i = 0; i < each_blocks.length; i += 1) each_blocks[i].d();
 
-    			dispose();
+    			if (detaching) {
+    				detach(t4);
+    				detach(button);
+    			}
+
+    			run_all(dispose);
     		}
     	};
     }
 
-    // (77:10) {#if student.chineseName}
-    function create_if_block_4$1(ctx) {
+    // (35:28) {#if student.chineseName}
+    function create_if_block_1$3(ctx) {
     	var t0, t1_value = ctx.student.chineseName + "", t1, t2;
 
     	return {
@@ -7838,7 +7619,7 @@ query Student($id: ID!){
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.students) && t1_value !== (t1_value = ctx.student.chineseName + "")) {
+    			if ((changed.filteredStudents) && t1_value !== (t1_value = ctx.student.chineseName + "")) {
     				set_data(t1, t1_value);
     			}
     		},
@@ -7853,11 +7634,11 @@ query Student($id: ID!){
     	};
     }
 
-    // (74:6) {#each students as student (student.id)}
+    // (33:4) {#each filteredStudents as student (student.id)}
     function create_each_block$3(key_1, ctx) {
     	var option, t0_value = ctx.student.englishName + "", t0, t1, t2, option_value_value;
 
-    	var if_block = (ctx.student.chineseName) && create_if_block_4$1(ctx);
+    	var if_block = (ctx.student.chineseName) && create_if_block_1$3(ctx);
 
     	return {
     		key: key_1,
@@ -7872,7 +7653,7 @@ query Student($id: ID!){
     			t2 = space();
     			option.__value = option_value_value = ctx.student.id;
     			option.value = option.__value;
-    			add_location(option, file$9, 74, 8, 1677);
+    			add_location(option, file$9, 33, 4, 835);
     			this.first = option;
     		},
 
@@ -7885,7 +7666,7 @@ query Student($id: ID!){
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.students) && t0_value !== (t0_value = ctx.student.englishName + "")) {
+    			if ((changed.filteredStudents) && t0_value !== (t0_value = ctx.student.englishName + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -7893,7 +7674,7 @@ query Student($id: ID!){
     				if (if_block) {
     					if_block.p(changed, ctx);
     				} else {
-    					if_block = create_if_block_4$1(ctx);
+    					if_block = create_if_block_1$3(ctx);
     					if_block.c();
     					if_block.m(option, t2);
     				}
@@ -7902,7 +7683,7 @@ query Student($id: ID!){
     				if_block = null;
     			}
 
-    			if ((changed.students) && option_value_value !== (option_value_value = ctx.student.id)) {
+    			if ((changed.filteredStudents) && option_value_value !== (option_value_value = ctx.student.id)) {
     				option.__value = option_value_value;
     			}
 
@@ -7919,235 +7700,10 @@ query Student($id: ID!){
     	};
     }
 
-    // (86:0) {#if selected}
-    function create_if_block$7(ctx) {
-    	var if_block_anchor;
-
-    	function select_block_type(changed, ctx) {
-    		if (!ctx.selectedStudent.lastLogin) return create_if_block_1$3;
-    		return create_else_block$3;
-    	}
-
-    	var current_block_type = select_block_type(null, ctx);
-    	var if_block = current_block_type(ctx);
-
-    	return {
-    		c: function create() {
-    			if_block.c();
-    			if_block_anchor = empty();
-    		},
-
-    		m: function mount(target, anchor) {
-    			if_block.m(target, anchor);
-    			insert(target, if_block_anchor, anchor);
-    		},
-
-    		p: function update(changed, ctx) {
-    			if (current_block_type === (current_block_type = select_block_type(changed, ctx)) && if_block) {
-    				if_block.p(changed, ctx);
-    			} else {
-    				if_block.d(1);
-    				if_block = current_block_type(ctx);
-    				if (if_block) {
-    					if_block.c();
-    					if_block.m(if_block_anchor.parentNode, if_block_anchor);
-    				}
-    			}
-    		},
-
-    		d: function destroy(detaching) {
-    			if_block.d(detaching);
-
-    			if (detaching) {
-    				detach(if_block_anchor);
-    			}
-    		}
-    	};
-    }
-
-    // (100:2) {:else}
-    function create_else_block$3(ctx) {
-    	var label, t1, input, t2, button, dispose;
-
-    	return {
-    		c: function create() {
-    			label = element("label");
-    			label.textContent = "Password";
-    			t1 = space();
-    			input = element("input");
-    			t2 = space();
-    			button = element("button");
-    			button.textContent = "Log in";
-    			add_location(label, file$9, 100, 4, 2336);
-    			attr(input, "type", "password");
-    			add_location(input, file$9, 101, 4, 2364);
-    			add_location(button, file$9, 103, 4, 2417);
-
-    			dispose = [
-    				listen(input, "input", ctx.input_input_handler_1),
-    				listen(button, "click", ctx.login)
-    			];
-    		},
-
-    		m: function mount(target, anchor) {
-    			insert(target, label, anchor);
-    			insert(target, t1, anchor);
-    			insert(target, input, anchor);
-
-    			set_input_value(input, ctx.password);
-
-    			insert(target, t2, anchor);
-    			insert(target, button, anchor);
-    		},
-
-    		p: function update(changed, ctx) {
-    			if (changed.password && (input.value !== ctx.password)) set_input_value(input, ctx.password);
-    		},
-
-    		d: function destroy(detaching) {
-    			if (detaching) {
-    				detach(label);
-    				detach(t1);
-    				detach(input);
-    				detach(t2);
-    				detach(button);
-    			}
-
-    			run_all(dispose);
-    		}
-    	};
-    }
-
-    // (87:2) {#if !selectedStudent.lastLogin}
-    function create_if_block_1$3(ctx) {
-    	var label0, t1, input0, t2, label1, t4, t5, input1, t6, button, dispose;
-
-    	var if_block = (!ctx.passwordsMatch) && create_if_block_2$3();
-
-    	return {
-    		c: function create() {
-    			label0 = element("label");
-    			label0.textContent = "Create a password";
-    			t1 = space();
-    			input0 = element("input");
-    			t2 = space();
-    			label1 = element("label");
-    			label1.textContent = "Confirm password";
-    			t4 = space();
-    			if (if_block) if_block.c();
-    			t5 = space();
-    			input1 = element("input");
-    			t6 = space();
-    			button = element("button");
-    			button.textContent = "Register";
-    			add_location(label0, file$9, 87, 4, 1942);
-    			attr(input0, "type", "password");
-    			add_location(input0, file$9, 88, 4, 1979);
-    			add_location(label1, file$9, 90, 4, 2057);
-    			attr(input1, "type", "password");
-    			add_location(input1, file$9, 94, 4, 2179);
-    			add_location(button, file$9, 98, 4, 2276);
-
-    			dispose = [
-    				listen(input0, "input", ctx.input0_input_handler),
-    				listen(input0, "change", ctx.checkPasswords),
-    				listen(input1, "input", ctx.input1_input_handler),
-    				listen(input1, "change", ctx.checkPasswords),
-    				listen(button, "click", ctx.register)
-    			];
-    		},
-
-    		m: function mount(target, anchor) {
-    			insert(target, label0, anchor);
-    			insert(target, t1, anchor);
-    			insert(target, input0, anchor);
-
-    			set_input_value(input0, ctx.password);
-
-    			insert(target, t2, anchor);
-    			insert(target, label1, anchor);
-    			insert(target, t4, anchor);
-    			if (if_block) if_block.m(target, anchor);
-    			insert(target, t5, anchor);
-    			insert(target, input1, anchor);
-
-    			set_input_value(input1, ctx.passwordConfirm);
-
-    			insert(target, t6, anchor);
-    			insert(target, button, anchor);
-    		},
-
-    		p: function update(changed, ctx) {
-    			if (changed.password && (input0.value !== ctx.password)) set_input_value(input0, ctx.password);
-
-    			if (!ctx.passwordsMatch) {
-    				if (!if_block) {
-    					if_block = create_if_block_2$3();
-    					if_block.c();
-    					if_block.m(t5.parentNode, t5);
-    				}
-    			} else if (if_block) {
-    				if_block.d(1);
-    				if_block = null;
-    			}
-
-    			if (changed.passwordConfirm && (input1.value !== ctx.passwordConfirm)) set_input_value(input1, ctx.passwordConfirm);
-    		},
-
-    		d: function destroy(detaching) {
-    			if (detaching) {
-    				detach(label0);
-    				detach(t1);
-    				detach(input0);
-    				detach(t2);
-    				detach(label1);
-    				detach(t4);
-    			}
-
-    			if (if_block) if_block.d(detaching);
-
-    			if (detaching) {
-    				detach(t5);
-    				detach(input1);
-    				detach(t6);
-    				detach(button);
-    			}
-
-    			run_all(dispose);
-    		}
-    	};
-    }
-
-    // (92:4) {#if !passwordsMatch}
-    function create_if_block_2$3(ctx) {
-    	var p;
-
-    	return {
-    		c: function create() {
-    			p = element("p");
-    			p.textContent = "Passwords don't match.";
-    			attr(p, "class", "error svelte-1w3vxkk");
-    			add_location(p, file$9, 92, 6, 2121);
-    		},
-
-    		m: function mount(target, anchor) {
-    			insert(target, p, anchor);
-    		},
-
-    		d: function destroy(detaching) {
-    			if (detaching) {
-    				detach(p);
-    			}
-    		}
-    	};
-    }
-
     function create_fragment$a(ctx) {
-    	var div, h2, t1, label, t3, input, t4, t5, if_block1_anchor, dispose;
+    	var div, h2, t1, label, t3, input, t4, dispose;
 
-    	var if_block0 = (ctx.students && ctx.students.length > 0) && create_if_block_3$3(ctx);
-
-    	var if_block1 = (ctx.selected) && create_if_block$7(ctx);
+    	var if_block = (students && students.length > 0) && create_if_block$7(ctx);
 
     	return {
     		c: function create() {
@@ -8160,20 +7716,13 @@ query Student($id: ID!){
     			t3 = space();
     			input = element("input");
     			t4 = space();
-    			if (if_block0) if_block0.c();
-    			t5 = space();
-    			if (if_block1) if_block1.c();
-    			if_block1_anchor = empty();
-    			add_location(h2, file$9, 64, 2, 1333);
-    			add_location(label, file$9, 66, 2, 1351);
+    			if (if_block) if_block.c();
+    			add_location(h2, file$9, 23, 2, 501);
+    			add_location(label, file$9, 25, 2, 519);
     			attr(input, "type", "text");
-    			add_location(input, file$9, 67, 2, 1393);
-    			add_location(div, file$9, 63, 0, 1325);
-
-    			dispose = [
-    				listen(input, "input", ctx.input_input_handler),
-    				listen(input, "input", ctx.reload)
-    			];
+    			add_location(input, file$9, 26, 2, 561);
+    			add_location(div, file$9, 22, 0, 493);
+    			dispose = listen(input, "input", ctx.input_input_handler);
     		},
 
     		l: function claim(nodes) {
@@ -8191,39 +7740,23 @@ query Student($id: ID!){
     			set_input_value(input, ctx.searchString);
 
     			append(div, t4);
-    			if (if_block0) if_block0.m(div, null);
-    			insert(target, t5, anchor);
-    			if (if_block1) if_block1.m(target, anchor);
-    			insert(target, if_block1_anchor, anchor);
+    			if (if_block) if_block.m(div, null);
     		},
 
     		p: function update(changed, ctx) {
     			if (changed.searchString && (input.value !== ctx.searchString)) set_input_value(input, ctx.searchString);
 
-    			if (ctx.students && ctx.students.length > 0) {
-    				if (if_block0) {
-    					if_block0.p(changed, ctx);
+    			if (students && students.length > 0) {
+    				if (if_block) {
+    					if_block.p(changed, ctx);
     				} else {
-    					if_block0 = create_if_block_3$3(ctx);
-    					if_block0.c();
-    					if_block0.m(div, null);
+    					if_block = create_if_block$7(ctx);
+    					if_block.c();
+    					if_block.m(div, null);
     				}
-    			} else if (if_block0) {
-    				if_block0.d(1);
-    				if_block0 = null;
-    			}
-
-    			if (ctx.selected) {
-    				if (if_block1) {
-    					if_block1.p(changed, ctx);
-    				} else {
-    					if_block1 = create_if_block$7(ctx);
-    					if_block1.c();
-    					if_block1.m(if_block1_anchor.parentNode, if_block1_anchor);
-    				}
-    			} else if (if_block1) {
-    				if_block1.d(1);
-    				if_block1 = null;
+    			} else if (if_block) {
+    				if_block.d(1);
+    				if_block = null;
     			}
     		},
 
@@ -8235,19 +7768,8 @@ query Student($id: ID!){
     				detach(div);
     			}
 
-    			if (if_block0) if_block0.d();
-
-    			if (detaching) {
-    				detach(t5);
-    			}
-
-    			if (if_block1) if_block1.d(detaching);
-
-    			if (detaching) {
-    				detach(if_block1_anchor);
-    			}
-
-    			run_all(dispose);
+    			if (if_block) if_block.d();
+    			dispose();
     		}
     	};
     }
@@ -8255,49 +7777,11 @@ query Student($id: ID!){
     function instance$a($$self, $$props, $$invalidate) {
     	
 
-      let students = [];
       let searchString = '';
       let selected = '';
-      let password = '';
-      let passwordConfirm = '';
-      let passwordsMatch = true;
 
-      onMount(async () => {
-        try {
-          const response = await request(STUDENTS);
-          $$invalidate('students', students = response.students);
-        } catch (error) {
-          console.error(error);
-        }
-      });
-
-      const reload = async () => {
-        const response = await request(STUDENTS, { searchString });
-        $$invalidate('students', students = response.students);
-      };
-
-      const checkPasswords = () => {
-        if (!passwordConfirm) return
-        $$invalidate('passwordsMatch', passwordsMatch = password === passwordConfirm);
-      };
-
-      const register = async () => {
-        checkPasswords();
-        if (!password || !passwordConfirm || !passwordsMatch) return
-        try {
-          await auth.register(selected, password);
-        } catch (error) {
-          console.error(error);
-        }
-      };
-
-      const login = async () => {
-        if (!password) return
-        try {
-          await auth.login(selected, password);
-        } catch (error) {
-          console.error(error);
-        }
+      const enter = () => {
+        student.login(selectedStudent);
       };
 
     	function input_input_handler() {
@@ -8308,47 +7792,29 @@ query Student($id: ID!){
     	function select_change_handler() {
     		selected = select_value(this);
     		$$invalidate('selected', selected);
-    		$$invalidate('students', students);
+    		$$invalidate('filteredStudents', filteredStudents), $$invalidate('searchString', searchString);
     	}
 
-    	function input0_input_handler() {
-    		password = this.value;
-    		$$invalidate('password', password);
-    	}
+    	let filteredStudents, selectedStudent;
 
-    	function input1_input_handler() {
-    		passwordConfirm = this.value;
-    		$$invalidate('passwordConfirm', passwordConfirm);
-    	}
-
-    	function input_input_handler_1() {
-    		password = this.value;
-    		$$invalidate('password', password);
-    	}
-
-    	let selectedStudent;
-
-    	$$self.$$.update = ($$dirty = { students: 1, selected: 1 }) => {
-    		if ($$dirty.students || $$dirty.selected) { $$invalidate('selectedStudent', selectedStudent = students.find(s => s.id === selected)); }
+    	$$self.$$.update = ($$dirty = { searchString: 1, selected: 1 }) => {
+    		if ($$dirty.searchString) { $$invalidate('filteredStudents', filteredStudents = students.filter(s => {
+            if (searchString === '') return true
+            return (
+              s.englishName.includes(searchString) ||
+              s.chineseName.includes(searchString)
+            )
+          })); }
+    		if ($$dirty.selected) { selectedStudent = students.find(s => s.id === selected); }
     	};
 
     	return {
-    		students,
     		searchString,
     		selected,
-    		password,
-    		passwordConfirm,
-    		passwordsMatch,
-    		reload,
-    		checkPasswords,
-    		register,
-    		login,
-    		selectedStudent,
+    		enter,
+    		filteredStudents,
     		input_input_handler,
-    		select_change_handler,
-    		input0_input_handler,
-    		input1_input_handler,
-    		input_input_handler_1
+    		select_change_handler
     	};
     }
 
@@ -8363,7 +7829,7 @@ query Student($id: ID!){
 
     const file$a = "parents/src/App.svelte";
 
-    // (14:2) {:else}
+    // (16:2) {:else}
     function create_else_block$4(ctx) {
     	var current;
 
@@ -8399,7 +7865,7 @@ query Student($id: ID!){
     	};
     }
 
-    // (12:2) {#if $auth.token}
+    // (14:2) {#if $student && $student.id}
     function create_if_block$8(ctx) {
     	var current;
 
@@ -8455,7 +7921,7 @@ query Student($id: ID!){
     	var if_blocks = [];
 
     	function select_block_type(changed, ctx) {
-    		if (ctx.$auth.token) return 0;
+    		if (ctx.$student && ctx.$student.id) return 0;
     		return 1;
     	}
 
@@ -8469,7 +7935,7 @@ query Student($id: ID!){
     			main = element("main");
     			if_block.c();
     			attr(main, "class", "container");
-    			add_location(main, file$a, 10, 0, 240);
+    			add_location(main, file$a, 12, 0, 318);
     		},
 
     		l: function claim(nodes) {
@@ -8534,12 +8000,16 @@ query Student($id: ID!){
     }
 
     function instance$b($$self, $$props, $$invalidate) {
-    	let $auth;
+    	let $student;
 
-    	validate_store(auth, 'auth');
-    	component_subscribe($$self, auth, $$value => { $auth = $$value; $$invalidate('$auth', $auth); });
+    	validate_store(student, 'student');
+    	component_subscribe($$self, student, $$value => { $student = $$value; $$invalidate('$student', $student); });
 
-    	return { $auth };
+    	$$self.$$.update = ($$dirty = { $student: 1 }) => {
+    		if ($$dirty.$student) { if (!$student.attendances && $student.id) student.get($student.id); }
+    	};
+
+    	return { $student };
     }
 
     class App extends SvelteComponentDev {
