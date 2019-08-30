@@ -39,11 +39,17 @@ var app = (function () {
             throw new Error(`'${name}' is not a store with a 'subscribe' method`);
         }
     }
-    function subscribe(component, store, callback) {
+    function subscribe(store, callback) {
         const unsub = store.subscribe(callback);
-        component.$$.on_destroy.push(unsub.unsubscribe
-            ? () => unsub.unsubscribe()
-            : unsub);
+        return unsub.unsubscribe ? () => unsub.unsubscribe() : unsub;
+    }
+    function get_store_value(store) {
+        let value;
+        subscribe(store, _ => value = _)();
+        return value;
+    }
+    function component_subscribe(component, store, callback) {
+        component.$$.on_destroy.push(subscribe(store, callback));
     }
     function create_slot(definition, ctx, fn) {
         if (definition) {
@@ -61,12 +67,15 @@ var app = (function () {
             ? assign({}, assign(ctx.$$scope.changed || {}, definition[1](fn ? fn(changed) : {})))
             : ctx.$$scope.changed || {};
     }
+    function null_to_empty(value) {
+        return value == null ? '' : value;
+    }
 
     const is_client = typeof window !== 'undefined';
     let now = is_client
         ? () => window.performance.now()
         : () => Date.now();
-    let raf = cb => requestAnimationFrame(cb);
+    let raf = is_client ? cb => requestAnimationFrame(cb) : noop;
 
     const tasks = new Set();
     let running = false;
@@ -105,16 +114,6 @@ var app = (function () {
     }
     function detach(node) {
         node.parentNode.removeChild(node);
-    }
-    function detach_between(before, after) {
-        while (before.nextSibling && before.nextSibling !== after) {
-            before.parentNode.removeChild(before.nextSibling);
-        }
-    }
-    function detach_after(before) {
-        while (before.nextSibling) {
-            before.parentNode.removeChild(before.nextSibling);
-        }
     }
     function destroy_each(iterations, detaching) {
         for (let i = 0; i < iterations.length; i += 1) {
@@ -162,8 +161,13 @@ var app = (function () {
         if (text.data !== data)
             text.data = data;
     }
-    function set_style(node, key, value) {
-        node.style.setProperty(key, value);
+    function set_input_value(input, value) {
+        if (value != null || input.value) {
+            input.value = value;
+        }
+    }
+    function set_style(node, key, value, important) {
+        node.style.setProperty(key, value, important ? 'important' : '');
     }
     function select_option(select, value) {
         for (let i = 0; i < select.options.length; i += 1) {
@@ -185,6 +189,31 @@ var app = (function () {
         const e = document.createEvent('CustomEvent');
         e.initCustomEvent(type, false, false, detail);
         return e;
+    }
+    class HtmlTag {
+        constructor(html, anchor = null) {
+            this.e = element('div');
+            this.a = anchor;
+            this.u(html);
+        }
+        m(target, anchor = null) {
+            for (let i = 0; i < this.n.length; i += 1) {
+                insert(target, this.n[i], anchor);
+            }
+            this.t = target;
+        }
+        u(html) {
+            this.e.innerHTML = html;
+            this.n = Array.from(this.e.childNodes);
+        }
+        p(html) {
+            this.d();
+            this.u(html);
+            this.m(this.t, this.a);
+        }
+        d() {
+            this.n.forEach(detach);
+        }
     }
 
     let stylesheet;
@@ -390,6 +419,7 @@ var app = (function () {
             block.o(local);
         }
     }
+    const null_transition = { duration: 0 };
     function create_in_transition(node, fn, params) {
         let config = fn(node, params);
         let running = false;
@@ -401,7 +431,7 @@ var app = (function () {
                 delete_rule(node, animation_name);
         }
         function go() {
-            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config;
+            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config || null_transition;
             if (css)
                 animation_name = create_rule(node, 0, 1, duration, delay, easing, css, uid++);
             tick(0, 1);
@@ -459,7 +489,7 @@ var app = (function () {
         const group = outros;
         group.r += 1;
         function go() {
-            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config;
+            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config || null_transition;
             if (css)
                 animation_name = create_rule(node, 1, 0, duration, delay, easing, css);
             const start_time = now() + delay;
@@ -532,7 +562,7 @@ var app = (function () {
             };
         }
         function go(b) {
-            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config;
+            const { delay = 0, duration = 300, easing = identity, tick = noop, css } = config || null_transition;
             const program = {
                 start: now() + delay,
                 b
@@ -647,10 +677,15 @@ var app = (function () {
                 info.blocks[index] = block;
         }
         if (is_promise(promise)) {
+            const current_component = get_current_component();
             promise.then(value => {
+                set_current_component(current_component);
                 update(info.then, 1, info.value, value);
+                set_current_component(null);
             }, error => {
+                set_current_component(current_component);
                 update(info.catch, 2, info.error, error);
+                set_current_component(null);
             });
             // if we previously had a then/catch block, destroy it
             if (info.current !== info.pending) {
@@ -786,19 +821,6 @@ var app = (function () {
                 update[key] = undefined;
         }
         return update;
-    }
-    /**
-     * Get the current value from a store by subscribing and immediately unsubscribing.
-     * @param store readable
-     */
-    function get_store_value(store) {
-        let value;
-        const unsubscribe = store.subscribe(_ => value = _);
-        if (unsubscribe.unsubscribe)
-            unsubscribe.unsubscribe();
-        else
-            unsubscribe();
-        return value;
     }
 
     function bind(component, name, callback) {
@@ -1126,9 +1148,9 @@ var app = (function () {
         };
     }
 
-    /* src/components/notifications/NotificationItem.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/notifications/NotificationItem.svelte generated by Svelte v3.9.1 */
 
-    const file = "src/components/notifications/NotificationItem.svelte";
+    const file = "admin/src/components/notifications/NotificationItem.svelte";
 
     function create_fragment(ctx) {
     	var div, button, t0, t1, div_class_value, dispose;
@@ -1237,9 +1259,9 @@ var app = (function () {
     	}
     }
 
-    /* src/components/notifications/NotificationList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/notifications/NotificationList.svelte generated by Svelte v3.9.1 */
 
-    const file$1 = "src/components/notifications/NotificationList.svelte";
+    const file$1 = "admin/src/components/notifications/NotificationList.svelte";
 
     function get_each_context(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -1447,7 +1469,7 @@ var app = (function () {
     	let $notifications;
 
     	validate_store(notifications, 'notifications');
-    	subscribe($$self, notifications, $$value => { $notifications = $$value; $$invalidate('$notifications', $notifications); });
+    	component_subscribe($$self, notifications, $$value => { $notifications = $$value; $$invalidate('$notifications', $notifications); });
 
     	return { $notifications };
     }
@@ -1461,7 +1483,9 @@ var app = (function () {
 
     const fetch = window.fetch;
 
-    const endpoint =  "http://localhost:4000/api";
+    // const endpoint = "development" === 'production'
+    //   ? process.env.PROD_API_ENDPOINT
+    //   : process.env.DEV_API_ENDPOINT
 
     const request = async (query, variables) => {
       const coldAuth = window.localStorage.getItem('auth');
@@ -1469,7 +1493,7 @@ var app = (function () {
       const body = typeof query === 'function'
         ? query(variables)
         : JSON.stringify({ query, variables });
-      const response = await fetch(endpoint, {
+      const response = await fetch("http://192.168.1.9:4000/api", {
         method: 'post',
         headers: {
           'Content-Type': 'application/json',
@@ -1558,7 +1582,7 @@ var app = (function () {
     	};
     }
 
-    /* node_modules/svelte-spa-router/Router.svelte generated by Svelte v3.6.10 */
+    /* node_modules/svelte-spa-router/Router.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1, Object: Object_1 } = globals;
 
     function create_fragment$2(ctx) {
@@ -1738,7 +1762,7 @@ var app = (function () {
     	let $loc;
 
     	validate_store(loc, 'loc');
-    	subscribe($$self, loc, $$value => { $loc = $$value; $$invalidate('$loc', $loc); });
+    	component_subscribe($$self, loc, $$value => { $loc = $$value; $$invalidate('$loc', $loc); });
 
     	/**
      * Dictionary of all routes, in the format `'/path': component`.
@@ -1869,9 +1893,9 @@ var app = (function () {
     	}
     }
 
-    /* src/components/NotFound.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/NotFound.svelte generated by Svelte v3.9.1 */
 
-    const file$2 = "src/components/NotFound.svelte";
+    const file$2 = "admin/src/components/NotFound.svelte";
 
     // (30:4) {:else }
     function create_else_block(ctx) {
@@ -1909,7 +1933,7 @@ var app = (function () {
 
     // (28:4) {#if params.item}
     function create_if_block$1(ctx) {
-    	var p, t0, strong, t1_value = ctx.params.item, t1, t2, t3_value = ctx.params.id ? `'${ctx.params.id}'` : '', t3, t4;
+    	var p, t0, strong, t1_value = ctx.params.item + "", t1, t2, t3_value = ctx.params.id ? `'${ctx.params.id}'` : '' + "", t3, t4;
 
     	return {
     		c: function create() {
@@ -1935,11 +1959,11 @@ var app = (function () {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.params) && t1_value !== (t1_value = ctx.params.item)) {
+    			if ((changed.params) && t1_value !== (t1_value = ctx.params.item + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((changed.params) && t3_value !== (t3_value = ctx.params.id ? `'${ctx.params.id}'` : '')) {
+    			if ((changed.params) && t3_value !== (t3_value = ctx.params.id ? `'${ctx.params.id}'` : '' + "")) {
     				set_data(t3, t3_value);
     			}
     		},
@@ -1955,12 +1979,12 @@ var app = (function () {
     function create_fragment$3(ctx) {
     	var div, section, h1, i0, t0, t1, h2, t3, t4, p, t5, a, t7, t8, button, i1, t9, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.params.item) return create_if_block$1;
     		return create_else_block;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	return {
@@ -2030,7 +2054,7 @@ var app = (function () {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type(changed, ctx)) && if_block) {
     				if_block.p(changed, ctx);
     			} else {
     				if_block.d(1);
@@ -2060,7 +2084,7 @@ var app = (function () {
     	let $location;
 
     	validate_store(location$1, 'location');
-    	subscribe($$self, location$1, $$value => { $location = $$value; $$invalidate('$location', $location); });
+    	component_subscribe($$self, location$1, $$value => { $location = $$value; $$invalidate('$location', $location); });
 
     	let { params = {} } = $$props;
 
@@ -2091,9 +2115,9 @@ var app = (function () {
     	}
     }
 
-    /* src/components/dashboard/Dashboard.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/dashboard/Dashboard.svelte generated by Svelte v3.9.1 */
 
-    const file$3 = "src/components/dashboard/Dashboard.svelte";
+    const file$3 = "admin/src/components/dashboard/Dashboard.svelte";
 
     function create_fragment$4(ctx) {
     	var t, h1;
@@ -2222,14 +2246,14 @@ var app = (function () {
 
     const semesters = createSemesterStore();
 
-    /* src/components/Error.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/Error.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$1 } = globals;
 
-    const file$4 = "src/components/Error.svelte";
+    const file$4 = "admin/src/components/Error.svelte";
 
     // (30:0) {#if getMessage(errors)}
     function create_if_block$2(ctx) {
-    	var p, span, i, strong, t1, t2_value = ctx.getMessage(ctx.errors), t2;
+    	var p, span, i, strong, t1, t2_value = ctx.getMessage(ctx.errors) + "", t2;
 
     	return {
     		c: function create() {
@@ -2260,7 +2284,7 @@ var app = (function () {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.errors) && t2_value !== (t2_value = ctx.getMessage(ctx.errors))) {
+    			if ((changed.errors) && t2_value !== (t2_value = ctx.getMessage(ctx.errors) + "")) {
     				set_data(t2, t2_value);
     			}
     		},
@@ -2274,9 +2298,9 @@ var app = (function () {
     }
 
     function create_fragment$5(ctx) {
-    	var if_block_anchor;
+    	var show_if = ctx.getMessage(ctx.errors), if_block_anchor;
 
-    	var if_block = (ctx.getMessage(ctx.errors)) && create_if_block$2(ctx);
+    	var if_block = (show_if) && create_if_block$2(ctx);
 
     	return {
     		c: function create() {
@@ -2294,7 +2318,9 @@ var app = (function () {
     		},
 
     		p: function update(changed, ctx) {
-    			if (ctx.getMessage(ctx.errors)) {
+    			if (changed.errors) show_if = ctx.getMessage(ctx.errors);
+
+    			if (show_if) {
     				if (if_block) {
     					if_block.p(changed, ctx);
     				} else {
@@ -2358,10 +2384,10 @@ var app = (function () {
     	}
     }
 
-    /* src/components/ConfirmDelete.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/ConfirmDelete.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$2 } = globals;
 
-    const file$5 = "src/components/ConfirmDelete.svelte";
+    const file$5 = "admin/src/components/ConfirmDelete.svelte";
 
     function create_fragment$6(ctx) {
     	var h1, t0, t1, t2, t3, p, t4, span, t6, t7, div, button0, t8, t9, button1, current, dispose;
@@ -2371,8 +2397,8 @@ var app = (function () {
     		$$inline: true
     	});
 
-    	const default_slot_1 = ctx.$$slots.default;
-    	const default_slot = create_slot(default_slot_1, ctx, null);
+    	const default_slot_template = ctx.$$slots.default;
+    	const default_slot = create_slot(default_slot_template, ctx, null);
 
     	return {
     		c: function create() {
@@ -2466,7 +2492,10 @@ var app = (function () {
     			error.$set(error_changes);
 
     			if (default_slot && default_slot.p && changed.$$scope) {
-    				default_slot.p(get_slot_changes(default_slot_1, ctx, changed, null), get_slot_context(default_slot_1, ctx, null));
+    				default_slot.p(
+    					get_slot_changes(default_slot_template, ctx, changed, null),
+    					get_slot_context(default_slot_template, ctx, null)
+    				);
     			}
 
     			if (!current || changed.loading) {
@@ -2595,16 +2624,16 @@ var app = (function () {
     	}
     }
 
-    /* src/components/Modal.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/Modal.svelte generated by Svelte v3.9.1 */
 
-    const file$6 = "src/components/Modal.svelte";
+    const file$6 = "admin/src/components/Modal.svelte";
 
     // (24:0) {#if open}
     function create_if_block$3(ctx) {
     	var div2, div0, div0_transition, t, div1, section, div1_intro, div1_outro, current, dispose;
 
-    	const default_slot_1 = ctx.$$slots.default;
-    	const default_slot = create_slot(default_slot_1, ctx, null);
+    	const default_slot_template = ctx.$$slots.default;
+    	const default_slot = create_slot(default_slot_template, ctx, null);
 
     	return {
     		c: function create() {
@@ -2647,7 +2676,10 @@ var app = (function () {
 
     		p: function update(changed, ctx) {
     			if (default_slot && default_slot.p && changed.$$scope) {
-    				default_slot.p(get_slot_changes(default_slot_1, ctx, changed, null), get_slot_context(default_slot_1, ctx, null));
+    				default_slot.p(
+    					get_slot_changes(default_slot_template, ctx, changed, null),
+    					get_slot_context(default_slot_template, ctx, null)
+    				);
     			}
     		},
 
@@ -2801,7 +2833,7 @@ var app = (function () {
     	}
     }
 
-    /* src/components/DeleteItem.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/DeleteItem.svelte generated by Svelte v3.9.1 */
 
     // (35:2) {#if open}
     function create_if_block$4(ctx) {
@@ -3162,9 +3194,9 @@ var app = (function () {
     	}
     }
 
-    /* src/components/Input.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/Input.svelte generated by Svelte v3.9.1 */
 
-    const file$7 = "src/components/Input.svelte";
+    const file$7 = "admin/src/components/Input.svelte";
 
     // (30:4) {#if description}
     function create_if_block_7(ctx) {
@@ -3231,13 +3263,13 @@ var app = (function () {
     		m: function mount(target, anchor) {
     			insert(target, input_1, anchor);
 
-    			input_1.value = ctx.value;
+    			set_input_value(input_1, ctx.value);
 
     			ctx.input_1_binding(input_1);
     		},
 
     		p: function update(changed, ctx) {
-    			if (changed.value && (input_1.value !== ctx.value)) input_1.value = ctx.value;
+    			if (changed.value && (input_1.value !== ctx.value)) set_input_value(input_1, ctx.value);
 
     			if (changed.name) {
     				attr(input_1, "name", ctx.name);
@@ -3312,13 +3344,13 @@ var app = (function () {
     		m: function mount(target, anchor) {
     			insert(target, input_1, anchor);
 
-    			input_1.value = ctx.value;
+    			set_input_value(input_1, ctx.value);
 
     			ctx.input_1_binding_1(input_1);
     		},
 
     		p: function update(changed, ctx) {
-    			if (changed.value && (input_1.value !== ctx.value)) input_1.value = ctx.value;
+    			if (changed.value && (input_1.value !== ctx.value)) set_input_value(input_1, ctx.value);
 
     			if (changed.name) {
     				attr(input_1, "name", ctx.name);
@@ -3391,13 +3423,13 @@ var app = (function () {
     		m: function mount(target, anchor) {
     			insert(target, input_1, anchor);
 
-    			input_1.value = ctx.value;
+    			set_input_value(input_1, ctx.value);
 
     			ctx.input_1_binding_2(input_1);
     		},
 
     		p: function update(changed, ctx) {
-    			if (changed.value) input_1.value = ctx.value;
+    			if (changed.value) set_input_value(input_1, ctx.value);
 
     			if (changed.name) {
     				attr(input_1, "name", ctx.name);
@@ -3457,13 +3489,13 @@ var app = (function () {
     		m: function mount(target, anchor) {
     			insert(target, input_1, anchor);
 
-    			input_1.value = ctx.value;
+    			set_input_value(input_1, ctx.value);
 
     			ctx.input_1_binding_3(input_1);
     		},
 
     		p: function update(changed, ctx) {
-    			if (changed.value) input_1.value = ctx.value;
+    			if (changed.value) set_input_value(input_1, ctx.value);
 
     			if (changed.name) {
     				attr(input_1, "name", ctx.name);
@@ -4070,7 +4102,7 @@ var app = (function () {
     }
 
     var flatpickr = createCommonjsModule(function (module, exports) {
-    /* flatpickr v4.5.7, @license MIT */
+    /* flatpickr v4.6.2, @license MIT */
     (function (global, factory) {
          module.exports = factory() ;
     }(commonjsGlobal, function () {
@@ -4159,6 +4191,7 @@ var app = (function () {
             locale: "default",
             minuteIncrement: 5,
             mode: "single",
+            monthSelectorType: "dropdown",
             nextArrow: "<svg version='1.1' xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 17 17'><g></g><path d='M13.207 8.472l-7.854 7.854-0.707-0.707 7.146-7.146-7.146-7.148 0.707-0.707 7.854 7.854z' /></svg>",
             noCalendar: false,
             now: new Date(),
@@ -4251,7 +4284,10 @@ var app = (function () {
             scrollTitle: "Scroll to increment",
             toggleTitle: "Click to toggle",
             amPM: ["AM", "PM"],
-            yearAriaLabel: "Year"
+            yearAriaLabel: "Year",
+            hourAriaLabel: "Hour",
+            minuteAriaLabel: "Minute",
+            time_24hr: false
         };
 
         var pad = function (number) { return ("0" + number).slice(-2); };
@@ -4326,10 +4362,10 @@ var app = (function () {
             return event.target;
         }
 
-        var do_nothing = function () { return undefined; };
+        var doNothing = function () { return undefined; };
         var monthToStr = function (monthNumber, shorthand, locale) { return locale.months[shorthand ? "shorthand" : "longhand"][monthNumber]; };
         var revFormat = {
-            D: do_nothing,
+            D: doNothing,
             F: function (dateObj, monthName, locale) {
                 dateObj.setMonth(locale.months.longhand.indexOf(monthName));
             },
@@ -4353,9 +4389,11 @@ var app = (function () {
                 dateObj.setSeconds(parseFloat(seconds));
             },
             U: function (_, unixSeconds) { return new Date(parseFloat(unixSeconds) * 1000); },
-            W: function (dateObj, weekNum) {
+            W: function (dateObj, weekNum, locale) {
                 var weekNumber = parseInt(weekNum);
-                return new Date(dateObj.getFullYear(), 0, 2 + (weekNumber - 1) * 7, 0, 0, 0, 0);
+                var date = new Date(dateObj.getFullYear(), 0, 2 + (weekNumber - 1) * 7, 0, 0, 0, 0);
+                date.setDate(date.getDate() - date.getDay() + locale.firstDayOfWeek);
+                return date;
             },
             Y: function (dateObj, year) {
                 dateObj.setFullYear(parseFloat(year));
@@ -4373,7 +4411,7 @@ var app = (function () {
             j: function (dateObj, day) {
                 dateObj.setDate(parseFloat(day));
             },
-            l: do_nothing,
+            l: doNothing,
             m: function (dateObj, month) {
                 dateObj.setMonth(parseFloat(month) - 1);
             },
@@ -4386,7 +4424,7 @@ var app = (function () {
             u: function (_, unixMillSeconds) {
                 return new Date(parseFloat(unixMillSeconds));
             },
-            w: do_nothing,
+            w: doNothing,
             y: function (dateObj, year) {
                 dateObj.setFullYear(2000 + parseFloat(year));
             }
@@ -4506,7 +4544,7 @@ var app = (function () {
                     return undefined;
                 var locale = customLocale || l10n;
                 var parsedDate;
-                var date_orig = date;
+                var dateOrig = date;
                 if (date instanceof Date)
                     parsedDate = new Date(date.getTime());
                 else if (typeof date !== "string" &&
@@ -4560,7 +4598,7 @@ var app = (function () {
                 }
                 /* istanbul ignore next */
                 if (!(parsedDate instanceof Date && !isNaN(parsedDate.getTime()))) {
-                    config.errorHandler(new Error("Invalid date provided: " + date_orig));
+                    config.errorHandler(new Error("Invalid date provided: " + dateOrig));
                     return undefined;
                 }
                 if (timeless === true)
@@ -4611,11 +4649,13 @@ var app = (function () {
         var DEBOUNCED_CHANGE_MS = 300;
         function FlatpickrInstance(element, instanceConfig) {
             var self = {
-                config: __assign({}, flatpickr.defaultConfig),
+                config: __assign({}, defaults, flatpickr.defaultConfig),
                 l10n: english
             };
             self.parseDate = createDateParser({ config: self.config, l10n: self.l10n });
             self._handlers = [];
+            self.pluginElements = [];
+            self.loadedPlugins = [];
             self._bind = bind;
             self._setHoursFromDate = setHoursFromDate;
             self._positionCalendar = positionCalendar;
@@ -4795,21 +4835,21 @@ var app = (function () {
                 var minutes = self.config.defaultMinute;
                 var seconds = self.config.defaultSeconds;
                 if (self.config.minDate !== undefined) {
-                    var min_hr = self.config.minDate.getHours();
-                    var min_minutes = self.config.minDate.getMinutes();
-                    hours = Math.max(hours, min_hr);
-                    if (hours === min_hr)
-                        minutes = Math.max(min_minutes, minutes);
-                    if (hours === min_hr && minutes === min_minutes)
+                    var minHr = self.config.minDate.getHours();
+                    var minMinutes = self.config.minDate.getMinutes();
+                    hours = Math.max(hours, minHr);
+                    if (hours === minHr)
+                        minutes = Math.max(minMinutes, minutes);
+                    if (hours === minHr && minutes === minMinutes)
                         seconds = self.config.minDate.getSeconds();
                 }
                 if (self.config.maxDate !== undefined) {
-                    var max_hr = self.config.maxDate.getHours();
-                    var max_minutes = self.config.maxDate.getMinutes();
-                    hours = Math.min(hours, max_hr);
-                    if (hours === max_hr)
-                        minutes = Math.min(max_minutes, minutes);
-                    if (hours === max_hr && minutes === max_minutes)
+                    var maxHr = self.config.maxDate.getHours();
+                    var maxMinutes = self.config.maxDate.getMinutes();
+                    hours = Math.min(hours, maxHr);
+                    if (hours === maxHr)
+                        minutes = Math.min(maxMinutes, minutes);
+                    if (hours === maxHr && minutes === maxMinutes)
                         seconds = self.config.maxDate.getSeconds();
                 }
                 setHours(hours, minutes, seconds);
@@ -4906,12 +4946,10 @@ var app = (function () {
                             onMouseOver(e.target);
                     });
                 bind(window.document.body, "keydown", onKeyDown);
-                if (!self.config.static)
-                    bind(self._input, "keydown", onKeyDown);
                 if (!self.config.inline && !self.config.static)
                     bind(window, "resize", debouncedResize);
                 if (window.ontouchstart !== undefined)
-                    bind(window.document, "click", documentClick);
+                    bind(window.document, "touchstart", documentClick);
                 else
                     bind(window.document, "mousedown", onClick(documentClick));
                 bind(window.document, "focus", documentClick, { capture: true });
@@ -4947,8 +4985,9 @@ var app = (function () {
             /**
              * Set the calendar view to a particular date.
              * @param {Date} jumpDate the date to set the view to
+             * @param {boolean} triggerChange if change events should be triggered
              */
-            function jumpToDate(jumpDate) {
+            function jumpToDate(jumpDate, triggerChange) {
                 var jumpTo = jumpDate !== undefined
                     ? self.parseDate(jumpDate)
                     : self.latestSelectedDateObj ||
@@ -4957,6 +4996,8 @@ var app = (function () {
                             : self.config.maxDate && self.config.maxDate < self.now
                                 ? self.config.maxDate
                                 : self.now);
+                var oldYear = self.currentYear;
+                var oldMonth = self.currentMonth;
                 try {
                     if (jumpTo !== undefined) {
                         self.currentYear = jumpTo.getFullYear();
@@ -4967,6 +5008,14 @@ var app = (function () {
                     /* istanbul ignore next */
                     e.message = "Invalid date supplied: " + jumpTo;
                     self.config.errorHandler(e);
+                }
+                if (triggerChange && self.currentYear !== oldYear) {
+                    triggerEvent("onYearChange");
+                    buildMonthSwitch();
+                }
+                if (triggerChange &&
+                    (self.currentYear !== oldYear || self.currentMonth !== oldMonth)) {
+                    triggerEvent("onMonthChange");
                 }
                 self.redraw();
             }
@@ -5078,7 +5127,7 @@ var app = (function () {
                     }
                 }
                 else {
-                    dayElement.classList.add("disabled");
+                    dayElement.classList.add("flatpickr-disabled");
                 }
                 if (self.config.mode === "range") {
                     if (isDateInRange(date) && !isDateSelected(date))
@@ -5199,10 +5248,54 @@ var app = (function () {
                     onMouseOver();
                 }
             }
+            function buildMonthSwitch() {
+                if (self.config.showMonths > 1 ||
+                    self.config.monthSelectorType !== "dropdown")
+                    return;
+                var shouldBuildMonth = function (month) {
+                    if (self.config.minDate !== undefined &&
+                        self.currentYear === self.config.minDate.getFullYear() &&
+                        month < self.config.minDate.getMonth()) {
+                        return false;
+                    }
+                    return !(self.config.maxDate !== undefined &&
+                        self.currentYear === self.config.maxDate.getFullYear() &&
+                        month > self.config.maxDate.getMonth());
+                };
+                self.monthsDropdownContainer.tabIndex = -1;
+                self.monthsDropdownContainer.innerHTML = "";
+                for (var i = 0; i < 12; i++) {
+                    if (!shouldBuildMonth(i))
+                        continue;
+                    var month = createElement("option", "flatpickr-monthDropdown-month");
+                    month.value = new Date(self.currentYear, i).getMonth().toString();
+                    month.textContent = monthToStr(i, self.config.shorthandCurrentMonth, self.l10n);
+                    month.tabIndex = -1;
+                    if (self.currentMonth === i) {
+                        month.selected = true;
+                    }
+                    self.monthsDropdownContainer.appendChild(month);
+                }
+            }
             function buildMonth() {
                 var container = createElement("div", "flatpickr-month");
                 var monthNavFragment = window.document.createDocumentFragment();
-                var monthElement = createElement("span", "cur-month");
+                var monthElement;
+                if (self.config.showMonths > 1 ||
+                    self.config.monthSelectorType === "static") {
+                    monthElement = createElement("span", "cur-month");
+                }
+                else {
+                    self.monthsDropdownContainer = createElement("select", "flatpickr-monthDropdown-months");
+                    bind(self.monthsDropdownContainer, "change", function (e) {
+                        var target = e.target;
+                        var selectedMonth = parseInt(target.value, 10);
+                        self.changeMonth(selectedMonth - self.currentMonth);
+                        triggerEvent("onMonthChange");
+                    });
+                    buildMonthSwitch();
+                    monthElement = self.monthsDropdownContainer;
+                }
                 var yearInput = createNumberInput("cur-year", { tabindex: "-1" });
                 var yearElement = yearInput.getElementsByTagName("input")[0];
                 yearElement.setAttribute("aria-label", self.l10n.yearAriaLabel);
@@ -5254,7 +5347,7 @@ var app = (function () {
                     get: function () { return self.__hidePrevMonthArrow; },
                     set: function (bool) {
                         if (self.__hidePrevMonthArrow !== bool) {
-                            toggleClass(self.prevMonthNav, "disabled", bool);
+                            toggleClass(self.prevMonthNav, "flatpickr-disabled", bool);
                             self.__hidePrevMonthArrow = bool;
                         }
                     }
@@ -5263,7 +5356,7 @@ var app = (function () {
                     get: function () { return self.__hideNextMonthArrow; },
                     set: function (bool) {
                         if (self.__hideNextMonthArrow !== bool) {
-                            toggleClass(self.nextMonthNav, "disabled", bool);
+                            toggleClass(self.nextMonthNav, "flatpickr-disabled", bool);
                             self.__hideNextMonthArrow = bool;
                         }
                     }
@@ -5279,9 +5372,13 @@ var app = (function () {
                 self.timeContainer = createElement("div", "flatpickr-time");
                 self.timeContainer.tabIndex = -1;
                 var separator = createElement("span", "flatpickr-time-separator", ":");
-                var hourInput = createNumberInput("flatpickr-hour");
+                var hourInput = createNumberInput("flatpickr-hour", {
+                    "aria-label": self.l10n.hourAriaLabel
+                });
                 self.hourElement = hourInput.getElementsByTagName("input")[0];
-                var minuteInput = createNumberInput("flatpickr-minute");
+                var minuteInput = createNumberInput("flatpickr-minute", {
+                    "aria-label": self.l10n.minuteAriaLabel
+                });
                 self.minuteElement = minuteInput.getElementsByTagName("input")[0];
                 self.hourElement.tabIndex = self.minuteElement.tabIndex = -1;
                 self.hourElement.value = pad(self.latestSelectedDateObj
@@ -5361,9 +5458,9 @@ var app = (function () {
                     weekNumbers: weekNumbers
                 };
             }
-            function changeMonth(value, is_offset) {
-                if (is_offset === void 0) { is_offset = true; }
-                var delta = is_offset ? value : value - self.currentMonth;
+            function changeMonth(value, isOffset) {
+                if (isOffset === void 0) { isOffset = true; }
+                var delta = isOffset ? value : value - self.currentMonth;
                 if ((delta < 0 && self._hidePrevMonthArrow === true) ||
                     (delta > 0 && self._hideNextMonthArrow === true))
                     return;
@@ -5372,6 +5469,7 @@ var app = (function () {
                     self.currentYear += self.currentMonth > 11 ? 1 : -1;
                     self.currentMonth = (self.currentMonth + 12) % 12;
                     triggerEvent("onYearChange");
+                    buildMonthSwitch();
                 }
                 buildDays();
                 triggerEvent("onMonthChange");
@@ -5474,6 +5572,7 @@ var app = (function () {
                     "weekdayContainer",
                     "prevMonthNav",
                     "nextMonthNav",
+                    "monthsDropdownContainer",
                     "currentMonthElement",
                     "currentYearElement",
                     "navigationCurrentMonth",
@@ -5541,6 +5640,7 @@ var app = (function () {
                 if (isNewYear) {
                     self.redraw();
                     triggerEvent("onYearChange");
+                    buildMonthSwitch();
                 }
             }
             function isEnabled(date, timeless) {
@@ -5616,8 +5716,9 @@ var app = (function () {
                             : self.config.dateFormat);
                         return e.target.blur();
                     }
-                    else
+                    else {
                         self.open();
+                    }
                 }
                 else if (isCalendarElem(e.target) ||
                     allowKeydown ||
@@ -5627,6 +5728,7 @@ var app = (function () {
                     switch (e.keyCode) {
                         case 13:
                             if (isTimeObj) {
+                                e.preventDefault();
                                 updateTime();
                                 focusAndClose();
                             }
@@ -5646,7 +5748,7 @@ var app = (function () {
                             break;
                         case 37:
                         case 39:
-                            if (!isTimeObj) {
+                            if (!isTimeObj && !isInput) {
                                 e.preventDefault();
                                 if (self.daysContainer !== undefined &&
                                     (allowInput === false ||
@@ -5678,6 +5780,9 @@ var app = (function () {
                                 else if (!isTimeObj)
                                     focusOnDay(undefined, delta * 7);
                             }
+                            else if (e.target === self.currentYearElement) {
+                                changeYear(self.currentYear - delta);
+                            }
                             else if (self.config.enableTime) {
                                 if (!isTimeObj && self.hourElement)
                                     self.hourElement.focus();
@@ -5692,19 +5797,22 @@ var app = (function () {
                                     self.minuteElement,
                                     self.secondElement,
                                     self.amPM,
-                                ].filter(function (x) { return x; });
+                                ]
+                                    .concat(self.pluginElements)
+                                    .filter(function (x) { return x; });
                                 var i = elems.indexOf(e.target);
                                 if (i !== -1) {
                                     var target = elems[i + (e.shiftKey ? -1 : 1)];
-                                    if (target !== undefined) {
-                                        e.preventDefault();
-                                        target.focus();
-                                    }
-                                    else if (e.shiftKey) {
-                                        e.preventDefault();
-                                        self._input.focus();
-                                    }
+                                    e.preventDefault();
+                                    (target || self._input).focus();
                                 }
+                            }
+                            else if (!self.config.noCalendar &&
+                                self.daysContainer &&
+                                self.daysContainer.contains(e.target) &&
+                                e.shiftKey) {
+                                e.preventDefault();
+                                self._input.focus();
                             }
                             break;
                         default:
@@ -5727,21 +5835,22 @@ var app = (function () {
                             break;
                     }
                 }
-                triggerEvent("onKeyDown", e);
+                if (isInput || isCalendarElem(e.target)) {
+                    triggerEvent("onKeyDown", e);
+                }
             }
             function onMouseOver(elem) {
                 if (self.selectedDates.length !== 1 ||
                     (elem &&
                         (!elem.classList.contains("flatpickr-day") ||
-                            elem.classList.contains("disabled"))))
+                            elem.classList.contains("flatpickr-disabled"))))
                     return;
                 var hoverDate = elem
                     ? elem.dateObj.getTime()
-                    : self.days.firstElementChild.dateObj.getTime(), initialDate = self.parseDate(self.selectedDates[0], undefined, true).getTime(), rangeStartDate = Math.min(hoverDate, self.selectedDates[0].getTime()), rangeEndDate = Math.max(hoverDate, self.selectedDates[0].getTime()), lastDate = self.daysContainer.lastChild
-                    .lastChild.dateObj.getTime();
+                    : self.days.firstElementChild.dateObj.getTime(), initialDate = self.parseDate(self.selectedDates[0], undefined, true).getTime(), rangeStartDate = Math.min(hoverDate, self.selectedDates[0].getTime()), rangeEndDate = Math.max(hoverDate, self.selectedDates[0].getTime());
                 var containsDisabled = false;
                 var minRange = 0, maxRange = 0;
-                for (var t = rangeStartDate; t < lastDate; t += duration.DAY) {
+                for (var t = rangeStartDate; t < rangeEndDate; t += duration.DAY) {
                     if (!isEnabled(new Date(t), true)) {
                         containsDisabled =
                             containsDisabled || (t > rangeStartDate && t < rangeEndDate);
@@ -5753,7 +5862,6 @@ var app = (function () {
                 }
                 for (var m = 0; m < self.config.showMonths; m++) {
                     var month = self.daysContainer.children[m];
-                    var prevMonth = self.daysContainer.children[m - 1];
                     var _loop_1 = function (i, l) {
                         var dayElem = month.children[i], date = dayElem.dateObj;
                         var timestamp = date.getTime();
@@ -5772,22 +5880,17 @@ var app = (function () {
                             dayElem.classList.remove(c);
                         });
                         if (elem !== undefined) {
-                            elem.classList.add(hoverDate < self.selectedDates[0].getTime()
+                            elem.classList.add(hoverDate <= self.selectedDates[0].getTime()
                                 ? "startRange"
                                 : "endRange");
-                            if (month.contains(elem) ||
-                                !(m > 0 &&
-                                    prevMonth &&
-                                    prevMonth.lastChild.dateObj.getTime() >= timestamp)) {
-                                if (initialDate < hoverDate && timestamp === initialDate)
-                                    dayElem.classList.add("startRange");
-                                else if (initialDate > hoverDate && timestamp === initialDate)
-                                    dayElem.classList.add("endRange");
-                                if (timestamp >= minRange &&
-                                    (maxRange === 0 || timestamp <= maxRange) &&
-                                    isBetween(timestamp, initialDate, hoverDate))
-                                    dayElem.classList.add("inRange");
-                            }
+                            if (initialDate < hoverDate && timestamp === initialDate)
+                                dayElem.classList.add("startRange");
+                            else if (initialDate > hoverDate && timestamp === initialDate)
+                                dayElem.classList.add("endRange");
+                            if (timestamp >= minRange &&
+                                (maxRange === 0 || timestamp <= maxRange) &&
+                                isBetween(timestamp, initialDate, hoverDate))
+                                dayElem.classList.add("inRange");
                         }
                     };
                     for (var i = 0, l = month.children.length; i < l; i++) {
@@ -5802,7 +5905,7 @@ var app = (function () {
             function setDefaultTime() {
                 self.setDate(self.config.minDate !== undefined
                     ? new Date(self.config.minDate.getTime())
-                    : new Date(), false);
+                    : new Date(), true);
                 setDefaultHours();
                 updateValue();
             }
@@ -5904,21 +6007,24 @@ var app = (function () {
                 });
                 var timeMode = userConfig.mode === "time";
                 if (!userConfig.dateFormat && (userConfig.enableTime || timeMode)) {
+                    var defaultDateFormat = flatpickr.defaultConfig.dateFormat || defaults.dateFormat;
                     formats.dateFormat =
                         userConfig.noCalendar || timeMode
                             ? "H:i" + (userConfig.enableSeconds ? ":S" : "")
-                            : flatpickr.defaultConfig.dateFormat +
-                                " H:i" +
-                                (userConfig.enableSeconds ? ":S" : "");
+                            : defaultDateFormat + " H:i" + (userConfig.enableSeconds ? ":S" : "");
                 }
                 if (userConfig.altInput &&
                     (userConfig.enableTime || timeMode) &&
                     !userConfig.altFormat) {
+                    var defaultAltFormat = flatpickr.defaultConfig.altFormat || defaults.altFormat;
                     formats.altFormat =
                         userConfig.noCalendar || timeMode
                             ? "h:i" + (userConfig.enableSeconds ? ":S K" : " K")
-                            : flatpickr.defaultConfig.altFormat +
-                                (" h:i" + (userConfig.enableSeconds ? ":S" : "") + " K");
+                            : defaultAltFormat + (" h:i" + (userConfig.enableSeconds ? ":S" : "") + " K");
+                }
+                if (!userConfig.altInputClass) {
+                    self.config.altInputClass =
+                        self.input.className + " " + self.config.altInputClass;
                 }
                 Object.defineProperty(self.config, "minDate", {
                     get: function () { return self.config._minDate; },
@@ -5983,6 +6089,11 @@ var app = (function () {
                         ? flatpickr.l10ns[self.config.locale]
                         : undefined));
                 tokenRegex.K = "(" + self.l10n.amPM[0] + "|" + self.l10n.amPM[1] + "|" + self.l10n.amPM[0].toLowerCase() + "|" + self.l10n.amPM[1].toLowerCase() + ")";
+                var userConfig = __assign({}, instanceConfig, JSON.parse(JSON.stringify(element.dataset || {})));
+                if (userConfig.time_24hr === undefined &&
+                    flatpickr.defaultConfig.time_24hr === undefined) {
+                    self.config.time_24hr = self.l10n.time_24hr;
+                }
                 self.formatDate = createDateFormatter(self);
                 self.parseDate = createDateParser({ config: self.config, l10n: self.l10n });
             }
@@ -6063,7 +6174,7 @@ var app = (function () {
                 var isSelectable = function (day) {
                     return day.classList &&
                         day.classList.contains("flatpickr-day") &&
-                        !day.classList.contains("disabled") &&
+                        !day.classList.contains("flatpickr-disabled") &&
                         !day.classList.contains("notAllowed");
                 };
                 var t = findParent(e.target, isSelectable);
@@ -6100,8 +6211,10 @@ var app = (function () {
                     var isNewYear = self.currentYear !== selectedDate.getFullYear();
                     self.currentYear = selectedDate.getFullYear();
                     self.currentMonth = selectedDate.getMonth();
-                    if (isNewYear)
+                    if (isNewYear) {
                         triggerEvent("onYearChange");
+                        buildMonthSwitch();
+                    }
                     triggerEvent("onMonthChange");
                 }
                 updateNavigationCurrentMonth();
@@ -6133,11 +6246,18 @@ var app = (function () {
             }
             var CALLBACKS = {
                 locale: [setupLocale, updateWeekdays],
-                showMonths: [buildMonths, setCalendarWidth, buildWeekdays]
+                showMonths: [buildMonths, setCalendarWidth, buildWeekdays],
+                minDate: [jumpToDate],
+                maxDate: [jumpToDate]
             };
             function set(option, value) {
-                if (option !== null && typeof option === "object")
+                if (option !== null && typeof option === "object") {
                     Object.assign(self.config, option);
+                    for (var key in option) {
+                        if (CALLBACKS[key] !== undefined)
+                            CALLBACKS[key].forEach(function (x) { return x(); });
+                    }
+                }
                 else {
                     self.config[option] = value;
                     if (CALLBACKS[option] !== undefined)
@@ -6187,10 +6307,14 @@ var app = (function () {
                     return self.clear(triggerChange);
                 setSelectedDate(date, format);
                 self.showTimeInput = self.selectedDates.length > 0;
-                self.latestSelectedDateObj = self.selectedDates[0];
+                self.latestSelectedDateObj =
+                    self.selectedDates[self.selectedDates.length - 1];
                 self.redraw();
                 jumpToDate();
                 setHoursFromDate();
+                if (self.selectedDates.length === 0) {
+                    self.clear(false);
+                }
                 updateValue(triggerChange);
                 if (triggerChange)
                     triggerEvent("onChange");
@@ -6283,7 +6407,7 @@ var app = (function () {
                 self._input = self.input;
                 if (self.config.altInput) {
                     // replicate self.element
-                    self.altInput = createElement(self.input.nodeName, self.input.className + " " + self.config.altInputClass);
+                    self.altInput = createElement(self.input.nodeName, self.config.altInputClass);
                     self._input = self.altInput;
                     self.altInput.placeholder = self.input.placeholder;
                     self.altInput.disabled = self.input.disabled;
@@ -6382,9 +6506,14 @@ var app = (function () {
                 self.yearElements.forEach(function (yearElement, i) {
                     var d = new Date(self.currentYear, self.currentMonth, 1);
                     d.setMonth(self.currentMonth + i);
-                    self.monthElements[i].textContent =
-                        monthToStr(d.getMonth(), self.config.shorthandCurrentMonth, self.l10n) +
-                            " ";
+                    if (self.config.showMonths > 1 ||
+                        self.config.monthSelectorType === "static") {
+                        self.monthElements[i].textContent =
+                            monthToStr(d.getMonth(), self.config.shorthandCurrentMonth, self.l10n) + " ";
+                    }
+                    else {
+                        self.monthsDropdownContainer.value = d.getMonth().toString();
+                    }
                     yearElement.value = d.getFullYear().toString();
                 });
                 self._hidePrevMonthArrow =
@@ -6415,8 +6544,6 @@ var app = (function () {
              */
             function updateValue(triggerChange) {
                 if (triggerChange === void 0) { triggerChange = true; }
-                if (self.selectedDates.length === 0)
-                    return self.clear(triggerChange);
                 if (self.mobileInput !== undefined && self.mobileFormatStr) {
                     self.mobileInput.value =
                         self.latestSelectedDateObj !== undefined
@@ -6431,7 +6558,6 @@ var app = (function () {
                     triggerEvent("onValueUpdate");
             }
             function onMonthNavClick(e) {
-                e.preventDefault();
                 var isPrevMonth = self.prevMonthNav.contains(e.target);
                 var isNextMonth = self.nextMonthNav.contains(e.target);
                 if (isPrevMonth || isNextMonth) {
@@ -6514,7 +6640,9 @@ var app = (function () {
             return instances.length === 1 ? instances[0] : instances;
         }
         /* istanbul ignore next */
-        if (typeof HTMLElement !== "undefined") {
+        if (typeof HTMLElement !== "undefined" &&
+            typeof HTMLCollection !== "undefined" &&
+            typeof NodeList !== "undefined") {
             // browser env
             HTMLCollection.prototype.flatpickr = NodeList.prototype.flatpickr = function (config) {
                 return _flatpickr(this, config);
@@ -6536,7 +6664,7 @@ var app = (function () {
             }
         };
         /* istanbul ignore next */
-        flatpickr.defaultConfig = defaults;
+        flatpickr.defaultConfig = {};
         flatpickr.l10ns = {
             en: __assign({}, english),
             "default": __assign({}, english)
@@ -6551,11 +6679,12 @@ var app = (function () {
         flatpickr.formatDate = createDateFormatter({});
         flatpickr.compareDates = compareDates;
         /* istanbul ignore next */
-        if (typeof jQuery !== "undefined") {
+        if (typeof jQuery !== "undefined" && typeof jQuery.fn !== "undefined") {
             jQuery.fn.flatpickr = function (config) {
                 return _flatpickr(this, config);
             };
         }
+        // eslint-disable-next-line @typescript-eslint/camelcase
         Date.prototype.fp_incr = function (days) {
             return new Date(this.getFullYear(), this.getMonth(), this.getDate() + (typeof days === "string" ? parseInt(days, 10) : days));
         };
@@ -6595,16 +6724,16 @@ var app = (function () {
       }
     }
 
-    var css = ".flatpickr-calendar {\n  background: transparent;\n  opacity: 0;\n  display: none;\n  text-align: center;\n  visibility: hidden;\n  padding: 0;\n  -webkit-animation: none;\n          animation: none;\n  direction: ltr;\n  border: 0;\n  font-size: 14px;\n  line-height: 24px;\n  border-radius: 5px;\n  position: absolute;\n  width: 307.875px;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  -ms-touch-action: manipulation;\n      touch-action: manipulation;\n  background: #fff;\n  -webkit-box-shadow: 1px 0 0 #e6e6e6, -1px 0 0 #e6e6e6, 0 1px 0 #e6e6e6, 0 -1px 0 #e6e6e6, 0 3px 13px rgba(0,0,0,0.08);\n          box-shadow: 1px 0 0 #e6e6e6, -1px 0 0 #e6e6e6, 0 1px 0 #e6e6e6, 0 -1px 0 #e6e6e6, 0 3px 13px rgba(0,0,0,0.08);\n}\n.flatpickr-calendar.open,\n.flatpickr-calendar.inline {\n  opacity: 1;\n  max-height: 640px;\n  visibility: visible;\n}\n.flatpickr-calendar.open {\n  display: inline-block;\n  z-index: 99999;\n}\n.flatpickr-calendar.animate.open {\n  -webkit-animation: fpFadeInDown 300ms cubic-bezier(0.23, 1, 0.32, 1);\n          animation: fpFadeInDown 300ms cubic-bezier(0.23, 1, 0.32, 1);\n}\n.flatpickr-calendar.inline {\n  display: block;\n  position: relative;\n  top: 2px;\n}\n.flatpickr-calendar.static {\n  position: absolute;\n  top: calc(100% + 2px);\n}\n.flatpickr-calendar.static.open {\n  z-index: 999;\n  display: block;\n}\n.flatpickr-calendar.multiMonth .flatpickr-days .dayContainer:nth-child(n+1) .flatpickr-day.inRange:nth-child(7n+7) {\n  -webkit-box-shadow: none !important;\n          box-shadow: none !important;\n}\n.flatpickr-calendar.multiMonth .flatpickr-days .dayContainer:nth-child(n+2) .flatpickr-day.inRange:nth-child(7n+1) {\n  -webkit-box-shadow: -2px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n          box-shadow: -2px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n}\n.flatpickr-calendar .hasWeeks .dayContainer,\n.flatpickr-calendar .hasTime .dayContainer {\n  border-bottom: 0;\n  border-bottom-right-radius: 0;\n  border-bottom-left-radius: 0;\n}\n.flatpickr-calendar .hasWeeks .dayContainer {\n  border-left: 0;\n}\n.flatpickr-calendar.showTimeInput.hasTime .flatpickr-time {\n  height: 40px;\n  border-top: 1px solid #e6e6e6;\n}\n.flatpickr-calendar.noCalendar.hasTime .flatpickr-time {\n  height: auto;\n}\n.flatpickr-calendar:before,\n.flatpickr-calendar:after {\n  position: absolute;\n  display: block;\n  pointer-events: none;\n  border: solid transparent;\n  content: '';\n  height: 0;\n  width: 0;\n  left: 22px;\n}\n.flatpickr-calendar.rightMost:before,\n.flatpickr-calendar.rightMost:after {\n  left: auto;\n  right: 22px;\n}\n.flatpickr-calendar:before {\n  border-width: 5px;\n  margin: 0 -5px;\n}\n.flatpickr-calendar:after {\n  border-width: 4px;\n  margin: 0 -4px;\n}\n.flatpickr-calendar.arrowTop:before,\n.flatpickr-calendar.arrowTop:after {\n  bottom: 100%;\n}\n.flatpickr-calendar.arrowTop:before {\n  border-bottom-color: #e6e6e6;\n}\n.flatpickr-calendar.arrowTop:after {\n  border-bottom-color: #fff;\n}\n.flatpickr-calendar.arrowBottom:before,\n.flatpickr-calendar.arrowBottom:after {\n  top: 100%;\n}\n.flatpickr-calendar.arrowBottom:before {\n  border-top-color: #e6e6e6;\n}\n.flatpickr-calendar.arrowBottom:after {\n  border-top-color: #fff;\n}\n.flatpickr-calendar:focus {\n  outline: 0;\n}\n.flatpickr-wrapper {\n  position: relative;\n  display: inline-block;\n}\n.flatpickr-months {\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n}\n.flatpickr-months .flatpickr-month {\n  background: transparent;\n  color: rgba(0,0,0,0.9);\n  fill: rgba(0,0,0,0.9);\n  height: 28px;\n  line-height: 1;\n  text-align: center;\n  position: relative;\n  -webkit-user-select: none;\n     -moz-user-select: none;\n      -ms-user-select: none;\n          user-select: none;\n  overflow: hidden;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n}\n.flatpickr-months .flatpickr-prev-month,\n.flatpickr-months .flatpickr-next-month {\n  text-decoration: none;\n  cursor: pointer;\n  position: absolute;\n  top: 0px;\n  line-height: 16px;\n  height: 28px;\n  padding: 10px;\n  z-index: 3;\n  color: rgba(0,0,0,0.9);\n  fill: rgba(0,0,0,0.9);\n}\n.flatpickr-months .flatpickr-prev-month.disabled,\n.flatpickr-months .flatpickr-next-month.disabled {\n  display: none;\n}\n.flatpickr-months .flatpickr-prev-month i,\n.flatpickr-months .flatpickr-next-month i {\n  position: relative;\n}\n.flatpickr-months .flatpickr-prev-month.flatpickr-prev-month,\n.flatpickr-months .flatpickr-next-month.flatpickr-prev-month {\n/*\n      /*rtl:begin:ignore*/\n/*\n      */\n  left: 0;\n/*\n      /*rtl:end:ignore*/\n/*\n      */\n}\n/*\n      /*rtl:begin:ignore*/\n/*\n      /*rtl:end:ignore*/\n.flatpickr-months .flatpickr-prev-month.flatpickr-next-month,\n.flatpickr-months .flatpickr-next-month.flatpickr-next-month {\n/*\n      /*rtl:begin:ignore*/\n/*\n      */\n  right: 0;\n/*\n      /*rtl:end:ignore*/\n/*\n      */\n}\n/*\n      /*rtl:begin:ignore*/\n/*\n      /*rtl:end:ignore*/\n.flatpickr-months .flatpickr-prev-month:hover,\n.flatpickr-months .flatpickr-next-month:hover {\n  color: #959ea9;\n}\n.flatpickr-months .flatpickr-prev-month:hover svg,\n.flatpickr-months .flatpickr-next-month:hover svg {\n  fill: #f64747;\n}\n.flatpickr-months .flatpickr-prev-month svg,\n.flatpickr-months .flatpickr-next-month svg {\n  width: 14px;\n  height: 14px;\n}\n.flatpickr-months .flatpickr-prev-month svg path,\n.flatpickr-months .flatpickr-next-month svg path {\n  -webkit-transition: fill 0.1s;\n  transition: fill 0.1s;\n  fill: inherit;\n}\n.numInputWrapper {\n  position: relative;\n  height: auto;\n}\n.numInputWrapper input,\n.numInputWrapper span {\n  display: inline-block;\n}\n.numInputWrapper input {\n  width: 100%;\n}\n.numInputWrapper input::-ms-clear {\n  display: none;\n}\n.numInputWrapper input::-webkit-outer-spin-button,\n.numInputWrapper input::-webkit-inner-spin-button {\n  margin: 0;\n  -webkit-appearance: none;\n}\n.numInputWrapper span {\n  position: absolute;\n  right: 0;\n  width: 14px;\n  padding: 0 4px 0 2px;\n  height: 50%;\n  line-height: 50%;\n  opacity: 0;\n  cursor: pointer;\n  border: 1px solid rgba(57,57,57,0.15);\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n}\n.numInputWrapper span:hover {\n  background: rgba(0,0,0,0.1);\n}\n.numInputWrapper span:active {\n  background: rgba(0,0,0,0.2);\n}\n.numInputWrapper span:after {\n  display: block;\n  content: \"\";\n  position: absolute;\n}\n.numInputWrapper span.arrowUp {\n  top: 0;\n  border-bottom: 0;\n}\n.numInputWrapper span.arrowUp:after {\n  border-left: 4px solid transparent;\n  border-right: 4px solid transparent;\n  border-bottom: 4px solid rgba(57,57,57,0.6);\n  top: 26%;\n}\n.numInputWrapper span.arrowDown {\n  top: 50%;\n}\n.numInputWrapper span.arrowDown:after {\n  border-left: 4px solid transparent;\n  border-right: 4px solid transparent;\n  border-top: 4px solid rgba(57,57,57,0.6);\n  top: 40%;\n}\n.numInputWrapper span svg {\n  width: inherit;\n  height: auto;\n}\n.numInputWrapper span svg path {\n  fill: rgba(0,0,0,0.5);\n}\n.numInputWrapper:hover {\n  background: rgba(0,0,0,0.05);\n}\n.numInputWrapper:hover span {\n  opacity: 1;\n}\n.flatpickr-current-month {\n  font-size: 135%;\n  line-height: inherit;\n  font-weight: 300;\n  color: inherit;\n  position: absolute;\n  width: 75%;\n  left: 12.5%;\n  padding: 6.16px 0 0 0;\n  line-height: 1;\n  height: 28px;\n  display: inline-block;\n  text-align: center;\n  -webkit-transform: translate3d(0px, 0px, 0px);\n          transform: translate3d(0px, 0px, 0px);\n}\n.flatpickr-current-month span.cur-month {\n  font-family: inherit;\n  font-weight: 700;\n  color: inherit;\n  display: inline-block;\n  margin-left: 0.5ch;\n  padding: 0;\n}\n.flatpickr-current-month span.cur-month:hover {\n  background: rgba(0,0,0,0.05);\n}\n.flatpickr-current-month .numInputWrapper {\n  width: 6ch;\n  width: 7ch\\0;\n  display: inline-block;\n}\n.flatpickr-current-month .numInputWrapper span.arrowUp:after {\n  border-bottom-color: rgba(0,0,0,0.9);\n}\n.flatpickr-current-month .numInputWrapper span.arrowDown:after {\n  border-top-color: rgba(0,0,0,0.9);\n}\n.flatpickr-current-month input.cur-year {\n  background: transparent;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  color: inherit;\n  cursor: text;\n  padding: 0 0 0 0.5ch;\n  margin: 0;\n  display: inline-block;\n  font-size: inherit;\n  font-family: inherit;\n  font-weight: 300;\n  line-height: inherit;\n  height: auto;\n  border: 0;\n  border-radius: 0;\n  vertical-align: initial;\n  -webkit-appearance: textfield;\n  -moz-appearance: textfield;\n  appearance: textfield;\n}\n.flatpickr-current-month input.cur-year:focus {\n  outline: 0;\n}\n.flatpickr-current-month input.cur-year[disabled],\n.flatpickr-current-month input.cur-year[disabled]:hover {\n  font-size: 100%;\n  color: rgba(0,0,0,0.5);\n  background: transparent;\n  pointer-events: none;\n}\n.flatpickr-weekdays {\n  background: transparent;\n  text-align: center;\n  overflow: hidden;\n  width: 100%;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-align: center;\n  -webkit-align-items: center;\n      -ms-flex-align: center;\n          align-items: center;\n  height: 28px;\n}\n.flatpickr-weekdays .flatpickr-weekdaycontainer {\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n}\nspan.flatpickr-weekday {\n  cursor: default;\n  font-size: 90%;\n  background: transparent;\n  color: rgba(0,0,0,0.54);\n  line-height: 1;\n  margin: 0;\n  text-align: center;\n  display: block;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n  font-weight: bolder;\n}\n.dayContainer,\n.flatpickr-weeks {\n  padding: 1px 0 0 0;\n}\n.flatpickr-days {\n  position: relative;\n  overflow: hidden;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-align: start;\n  -webkit-align-items: flex-start;\n      -ms-flex-align: start;\n          align-items: flex-start;\n  width: 307.875px;\n}\n.flatpickr-days:focus {\n  outline: 0;\n}\n.dayContainer {\n  padding: 0;\n  outline: 0;\n  text-align: left;\n  width: 307.875px;\n  min-width: 307.875px;\n  max-width: 307.875px;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  display: inline-block;\n  display: -ms-flexbox;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: flex;\n  -webkit-flex-wrap: wrap;\n          flex-wrap: wrap;\n  -ms-flex-wrap: wrap;\n  -ms-flex-pack: justify;\n  -webkit-justify-content: space-around;\n          justify-content: space-around;\n  -webkit-transform: translate3d(0px, 0px, 0px);\n          transform: translate3d(0px, 0px, 0px);\n  opacity: 1;\n}\n.dayContainer + .dayContainer {\n  -webkit-box-shadow: -1px 0 0 #e6e6e6;\n          box-shadow: -1px 0 0 #e6e6e6;\n}\n.flatpickr-day {\n  background: none;\n  border: 1px solid transparent;\n  border-radius: 150px;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  color: #393939;\n  cursor: pointer;\n  font-weight: 400;\n  width: 14.2857143%;\n  -webkit-flex-basis: 14.2857143%;\n      -ms-flex-preferred-size: 14.2857143%;\n          flex-basis: 14.2857143%;\n  max-width: 39px;\n  height: 39px;\n  line-height: 39px;\n  margin: 0;\n  display: inline-block;\n  position: relative;\n  -webkit-box-pack: center;\n  -webkit-justify-content: center;\n      -ms-flex-pack: center;\n          justify-content: center;\n  text-align: center;\n}\n.flatpickr-day.inRange,\n.flatpickr-day.prevMonthDay.inRange,\n.flatpickr-day.nextMonthDay.inRange,\n.flatpickr-day.today.inRange,\n.flatpickr-day.prevMonthDay.today.inRange,\n.flatpickr-day.nextMonthDay.today.inRange,\n.flatpickr-day:hover,\n.flatpickr-day.prevMonthDay:hover,\n.flatpickr-day.nextMonthDay:hover,\n.flatpickr-day:focus,\n.flatpickr-day.prevMonthDay:focus,\n.flatpickr-day.nextMonthDay:focus {\n  cursor: pointer;\n  outline: 0;\n  background: #e6e6e6;\n  border-color: #e6e6e6;\n}\n.flatpickr-day.today {\n  border-color: #959ea9;\n}\n.flatpickr-day.today:hover,\n.flatpickr-day.today:focus {\n  border-color: #959ea9;\n  background: #959ea9;\n  color: #fff;\n}\n.flatpickr-day.selected,\n.flatpickr-day.startRange,\n.flatpickr-day.endRange,\n.flatpickr-day.selected.inRange,\n.flatpickr-day.startRange.inRange,\n.flatpickr-day.endRange.inRange,\n.flatpickr-day.selected:focus,\n.flatpickr-day.startRange:focus,\n.flatpickr-day.endRange:focus,\n.flatpickr-day.selected:hover,\n.flatpickr-day.startRange:hover,\n.flatpickr-day.endRange:hover,\n.flatpickr-day.selected.prevMonthDay,\n.flatpickr-day.startRange.prevMonthDay,\n.flatpickr-day.endRange.prevMonthDay,\n.flatpickr-day.selected.nextMonthDay,\n.flatpickr-day.startRange.nextMonthDay,\n.flatpickr-day.endRange.nextMonthDay {\n  background: #569ff7;\n  -webkit-box-shadow: none;\n          box-shadow: none;\n  color: #fff;\n  border-color: #569ff7;\n}\n.flatpickr-day.selected.startRange,\n.flatpickr-day.startRange.startRange,\n.flatpickr-day.endRange.startRange {\n  border-radius: 50px 0 0 50px;\n}\n.flatpickr-day.selected.endRange,\n.flatpickr-day.startRange.endRange,\n.flatpickr-day.endRange.endRange {\n  border-radius: 0 50px 50px 0;\n}\n.flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n+1)),\n.flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n+1)),\n.flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n+1)) {\n  -webkit-box-shadow: -10px 0 0 #569ff7;\n          box-shadow: -10px 0 0 #569ff7;\n}\n.flatpickr-day.selected.startRange.endRange,\n.flatpickr-day.startRange.startRange.endRange,\n.flatpickr-day.endRange.startRange.endRange {\n  border-radius: 50px;\n}\n.flatpickr-day.inRange {\n  border-radius: 0;\n  -webkit-box-shadow: -5px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n          box-shadow: -5px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n}\n.flatpickr-day.disabled,\n.flatpickr-day.disabled:hover,\n.flatpickr-day.prevMonthDay,\n.flatpickr-day.nextMonthDay,\n.flatpickr-day.notAllowed,\n.flatpickr-day.notAllowed.prevMonthDay,\n.flatpickr-day.notAllowed.nextMonthDay {\n  color: rgba(57,57,57,0.3);\n  background: transparent;\n  border-color: transparent;\n  cursor: default;\n}\n.flatpickr-day.disabled,\n.flatpickr-day.disabled:hover {\n  cursor: not-allowed;\n  color: rgba(57,57,57,0.1);\n}\n.flatpickr-day.week.selected {\n  border-radius: 0;\n  -webkit-box-shadow: -5px 0 0 #569ff7, 5px 0 0 #569ff7;\n          box-shadow: -5px 0 0 #569ff7, 5px 0 0 #569ff7;\n}\n.flatpickr-day.hidden {\n  visibility: hidden;\n}\n.rangeMode .flatpickr-day {\n  margin-top: 1px;\n}\n.flatpickr-weekwrapper {\n  display: inline-block;\n  float: left;\n}\n.flatpickr-weekwrapper .flatpickr-weeks {\n  padding: 0 12px;\n  -webkit-box-shadow: 1px 0 0 #e6e6e6;\n          box-shadow: 1px 0 0 #e6e6e6;\n}\n.flatpickr-weekwrapper .flatpickr-weekday {\n  float: none;\n  width: 100%;\n  line-height: 28px;\n}\n.flatpickr-weekwrapper span.flatpickr-day,\n.flatpickr-weekwrapper span.flatpickr-day:hover {\n  display: block;\n  width: 100%;\n  max-width: none;\n  color: rgba(57,57,57,0.3);\n  background: transparent;\n  cursor: default;\n  border: none;\n}\n.flatpickr-innerContainer {\n  display: block;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  overflow: hidden;\n}\n.flatpickr-rContainer {\n  display: inline-block;\n  padding: 0;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n}\n.flatpickr-time {\n  text-align: center;\n  outline: 0;\n  display: block;\n  height: 0;\n  line-height: 40px;\n  max-height: 40px;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  overflow: hidden;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n}\n.flatpickr-time:after {\n  content: \"\";\n  display: table;\n  clear: both;\n}\n.flatpickr-time .numInputWrapper {\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n  width: 40%;\n  height: 40px;\n  float: left;\n}\n.flatpickr-time .numInputWrapper span.arrowUp:after {\n  border-bottom-color: #393939;\n}\n.flatpickr-time .numInputWrapper span.arrowDown:after {\n  border-top-color: #393939;\n}\n.flatpickr-time.hasSeconds .numInputWrapper {\n  width: 26%;\n}\n.flatpickr-time.time24hr .numInputWrapper {\n  width: 49%;\n}\n.flatpickr-time input {\n  background: transparent;\n  -webkit-box-shadow: none;\n          box-shadow: none;\n  border: 0;\n  border-radius: 0;\n  text-align: center;\n  margin: 0;\n  padding: 0;\n  height: inherit;\n  line-height: inherit;\n  color: #393939;\n  font-size: 14px;\n  position: relative;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  -webkit-appearance: textfield;\n  -moz-appearance: textfield;\n  appearance: textfield;\n}\n.flatpickr-time input.flatpickr-hour {\n  font-weight: bold;\n}\n.flatpickr-time input.flatpickr-minute,\n.flatpickr-time input.flatpickr-second {\n  font-weight: 400;\n}\n.flatpickr-time input:focus {\n  outline: 0;\n  border: 0;\n}\n.flatpickr-time .flatpickr-time-separator,\n.flatpickr-time .flatpickr-am-pm {\n  height: inherit;\n  display: inline-block;\n  float: left;\n  line-height: inherit;\n  color: #393939;\n  font-weight: bold;\n  width: 2%;\n  -webkit-user-select: none;\n     -moz-user-select: none;\n      -ms-user-select: none;\n          user-select: none;\n  -webkit-align-self: center;\n      -ms-flex-item-align: center;\n          align-self: center;\n}\n.flatpickr-time .flatpickr-am-pm {\n  outline: 0;\n  width: 18%;\n  cursor: pointer;\n  text-align: center;\n  font-weight: 400;\n}\n.flatpickr-time input:hover,\n.flatpickr-time .flatpickr-am-pm:hover,\n.flatpickr-time input:focus,\n.flatpickr-time .flatpickr-am-pm:focus {\n  background: #eee;\n}\n.flatpickr-input[readonly] {\n  cursor: pointer;\n}\n@-webkit-keyframes fpFadeInDown {\n  from {\n    opacity: 0;\n    -webkit-transform: translate3d(0, -20px, 0);\n            transform: translate3d(0, -20px, 0);\n  }\n  to {\n    opacity: 1;\n    -webkit-transform: translate3d(0, 0, 0);\n            transform: translate3d(0, 0, 0);\n  }\n}\n@keyframes fpFadeInDown {\n  from {\n    opacity: 0;\n    -webkit-transform: translate3d(0, -20px, 0);\n            transform: translate3d(0, -20px, 0);\n  }\n  to {\n    opacity: 1;\n    -webkit-transform: translate3d(0, 0, 0);\n            transform: translate3d(0, 0, 0);\n  }\n}\n";
+    var css = ".flatpickr-calendar {\n  background: transparent;\n  opacity: 0;\n  display: none;\n  text-align: center;\n  visibility: hidden;\n  padding: 0;\n  -webkit-animation: none;\n          animation: none;\n  direction: ltr;\n  border: 0;\n  font-size: 14px;\n  line-height: 24px;\n  border-radius: 5px;\n  position: absolute;\n  width: 307.875px;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  -ms-touch-action: manipulation;\n      touch-action: manipulation;\n  background: #fff;\n  -webkit-box-shadow: 1px 0 0 #e6e6e6, -1px 0 0 #e6e6e6, 0 1px 0 #e6e6e6, 0 -1px 0 #e6e6e6, 0 3px 13px rgba(0,0,0,0.08);\n          box-shadow: 1px 0 0 #e6e6e6, -1px 0 0 #e6e6e6, 0 1px 0 #e6e6e6, 0 -1px 0 #e6e6e6, 0 3px 13px rgba(0,0,0,0.08);\n}\n.flatpickr-calendar.open,\n.flatpickr-calendar.inline {\n  opacity: 1;\n  max-height: 640px;\n  visibility: visible;\n}\n.flatpickr-calendar.open {\n  display: inline-block;\n  z-index: 99999;\n}\n.flatpickr-calendar.animate.open {\n  -webkit-animation: fpFadeInDown 300ms cubic-bezier(0.23, 1, 0.32, 1);\n          animation: fpFadeInDown 300ms cubic-bezier(0.23, 1, 0.32, 1);\n}\n.flatpickr-calendar.inline {\n  display: block;\n  position: relative;\n  top: 2px;\n}\n.flatpickr-calendar.static {\n  position: absolute;\n  top: calc(100% + 2px);\n}\n.flatpickr-calendar.static.open {\n  z-index: 999;\n  display: block;\n}\n.flatpickr-calendar.multiMonth .flatpickr-days .dayContainer:nth-child(n+1) .flatpickr-day.inRange:nth-child(7n+7) {\n  -webkit-box-shadow: none !important;\n          box-shadow: none !important;\n}\n.flatpickr-calendar.multiMonth .flatpickr-days .dayContainer:nth-child(n+2) .flatpickr-day.inRange:nth-child(7n+1) {\n  -webkit-box-shadow: -2px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n          box-shadow: -2px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n}\n.flatpickr-calendar .hasWeeks .dayContainer,\n.flatpickr-calendar .hasTime .dayContainer {\n  border-bottom: 0;\n  border-bottom-right-radius: 0;\n  border-bottom-left-radius: 0;\n}\n.flatpickr-calendar .hasWeeks .dayContainer {\n  border-left: 0;\n}\n.flatpickr-calendar.showTimeInput.hasTime .flatpickr-time {\n  height: 40px;\n  border-top: 1px solid #e6e6e6;\n}\n.flatpickr-calendar.noCalendar.hasTime .flatpickr-time {\n  height: auto;\n}\n.flatpickr-calendar:before,\n.flatpickr-calendar:after {\n  position: absolute;\n  display: block;\n  pointer-events: none;\n  border: solid transparent;\n  content: '';\n  height: 0;\n  width: 0;\n  left: 22px;\n}\n.flatpickr-calendar.rightMost:before,\n.flatpickr-calendar.rightMost:after {\n  left: auto;\n  right: 22px;\n}\n.flatpickr-calendar:before {\n  border-width: 5px;\n  margin: 0 -5px;\n}\n.flatpickr-calendar:after {\n  border-width: 4px;\n  margin: 0 -4px;\n}\n.flatpickr-calendar.arrowTop:before,\n.flatpickr-calendar.arrowTop:after {\n  bottom: 100%;\n}\n.flatpickr-calendar.arrowTop:before {\n  border-bottom-color: #e6e6e6;\n}\n.flatpickr-calendar.arrowTop:after {\n  border-bottom-color: #fff;\n}\n.flatpickr-calendar.arrowBottom:before,\n.flatpickr-calendar.arrowBottom:after {\n  top: 100%;\n}\n.flatpickr-calendar.arrowBottom:before {\n  border-top-color: #e6e6e6;\n}\n.flatpickr-calendar.arrowBottom:after {\n  border-top-color: #fff;\n}\n.flatpickr-calendar:focus {\n  outline: 0;\n}\n.flatpickr-wrapper {\n  position: relative;\n  display: inline-block;\n}\n.flatpickr-months {\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n}\n.flatpickr-months .flatpickr-month {\n  background: transparent;\n  color: rgba(0,0,0,0.9);\n  fill: rgba(0,0,0,0.9);\n  height: 34px;\n  line-height: 1;\n  text-align: center;\n  position: relative;\n  -webkit-user-select: none;\n     -moz-user-select: none;\n      -ms-user-select: none;\n          user-select: none;\n  overflow: hidden;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n}\n.flatpickr-months .flatpickr-prev-month,\n.flatpickr-months .flatpickr-next-month {\n  text-decoration: none;\n  cursor: pointer;\n  position: absolute;\n  top: 0;\n  height: 34px;\n  padding: 10px;\n  z-index: 3;\n  color: rgba(0,0,0,0.9);\n  fill: rgba(0,0,0,0.9);\n}\n.flatpickr-months .flatpickr-prev-month.flatpickr-disabled,\n.flatpickr-months .flatpickr-next-month.flatpickr-disabled {\n  display: none;\n}\n.flatpickr-months .flatpickr-prev-month i,\n.flatpickr-months .flatpickr-next-month i {\n  position: relative;\n}\n.flatpickr-months .flatpickr-prev-month.flatpickr-prev-month,\n.flatpickr-months .flatpickr-next-month.flatpickr-prev-month {\n/*\n      /*rtl:begin:ignore*/\n/*\n      */\n  left: 0;\n/*\n      /*rtl:end:ignore*/\n/*\n      */\n}\n/*\n      /*rtl:begin:ignore*/\n/*\n      /*rtl:end:ignore*/\n.flatpickr-months .flatpickr-prev-month.flatpickr-next-month,\n.flatpickr-months .flatpickr-next-month.flatpickr-next-month {\n/*\n      /*rtl:begin:ignore*/\n/*\n      */\n  right: 0;\n/*\n      /*rtl:end:ignore*/\n/*\n      */\n}\n/*\n      /*rtl:begin:ignore*/\n/*\n      /*rtl:end:ignore*/\n.flatpickr-months .flatpickr-prev-month:hover,\n.flatpickr-months .flatpickr-next-month:hover {\n  color: #959ea9;\n}\n.flatpickr-months .flatpickr-prev-month:hover svg,\n.flatpickr-months .flatpickr-next-month:hover svg {\n  fill: #f64747;\n}\n.flatpickr-months .flatpickr-prev-month svg,\n.flatpickr-months .flatpickr-next-month svg {\n  width: 14px;\n  height: 14px;\n}\n.flatpickr-months .flatpickr-prev-month svg path,\n.flatpickr-months .flatpickr-next-month svg path {\n  -webkit-transition: fill 0.1s;\n  transition: fill 0.1s;\n  fill: inherit;\n}\n.numInputWrapper {\n  position: relative;\n  height: auto;\n}\n.numInputWrapper input,\n.numInputWrapper span {\n  display: inline-block;\n}\n.numInputWrapper input {\n  width: 100%;\n}\n.numInputWrapper input::-ms-clear {\n  display: none;\n}\n.numInputWrapper input::-webkit-outer-spin-button,\n.numInputWrapper input::-webkit-inner-spin-button {\n  margin: 0;\n  -webkit-appearance: none;\n}\n.numInputWrapper span {\n  position: absolute;\n  right: 0;\n  width: 14px;\n  padding: 0 4px 0 2px;\n  height: 50%;\n  line-height: 50%;\n  opacity: 0;\n  cursor: pointer;\n  border: 1px solid rgba(57,57,57,0.15);\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n}\n.numInputWrapper span:hover {\n  background: rgba(0,0,0,0.1);\n}\n.numInputWrapper span:active {\n  background: rgba(0,0,0,0.2);\n}\n.numInputWrapper span:after {\n  display: block;\n  content: \"\";\n  position: absolute;\n}\n.numInputWrapper span.arrowUp {\n  top: 0;\n  border-bottom: 0;\n}\n.numInputWrapper span.arrowUp:after {\n  border-left: 4px solid transparent;\n  border-right: 4px solid transparent;\n  border-bottom: 4px solid rgba(57,57,57,0.6);\n  top: 26%;\n}\n.numInputWrapper span.arrowDown {\n  top: 50%;\n}\n.numInputWrapper span.arrowDown:after {\n  border-left: 4px solid transparent;\n  border-right: 4px solid transparent;\n  border-top: 4px solid rgba(57,57,57,0.6);\n  top: 40%;\n}\n.numInputWrapper span svg {\n  width: inherit;\n  height: auto;\n}\n.numInputWrapper span svg path {\n  fill: rgba(0,0,0,0.5);\n}\n.numInputWrapper:hover {\n  background: rgba(0,0,0,0.05);\n}\n.numInputWrapper:hover span {\n  opacity: 1;\n}\n.flatpickr-current-month {\n  font-size: 135%;\n  line-height: inherit;\n  font-weight: 300;\n  color: inherit;\n  position: absolute;\n  width: 75%;\n  left: 12.5%;\n  padding: 7.48px 0 0 0;\n  line-height: 1;\n  height: 34px;\n  display: inline-block;\n  text-align: center;\n  -webkit-transform: translate3d(0px, 0px, 0px);\n          transform: translate3d(0px, 0px, 0px);\n}\n.flatpickr-current-month span.cur-month {\n  font-family: inherit;\n  font-weight: 700;\n  color: inherit;\n  display: inline-block;\n  margin-left: 0.5ch;\n  padding: 0;\n}\n.flatpickr-current-month span.cur-month:hover {\n  background: rgba(0,0,0,0.05);\n}\n.flatpickr-current-month .numInputWrapper {\n  width: 6ch;\n  width: 7ch\\0;\n  display: inline-block;\n}\n.flatpickr-current-month .numInputWrapper span.arrowUp:after {\n  border-bottom-color: rgba(0,0,0,0.9);\n}\n.flatpickr-current-month .numInputWrapper span.arrowDown:after {\n  border-top-color: rgba(0,0,0,0.9);\n}\n.flatpickr-current-month input.cur-year {\n  background: transparent;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  color: inherit;\n  cursor: text;\n  padding: 0 0 0 0.5ch;\n  margin: 0;\n  display: inline-block;\n  font-size: inherit;\n  font-family: inherit;\n  font-weight: 300;\n  line-height: inherit;\n  height: auto;\n  border: 0;\n  border-radius: 0;\n  vertical-align: initial;\n  -webkit-appearance: textfield;\n  -moz-appearance: textfield;\n  appearance: textfield;\n}\n.flatpickr-current-month input.cur-year:focus {\n  outline: 0;\n}\n.flatpickr-current-month input.cur-year[disabled],\n.flatpickr-current-month input.cur-year[disabled]:hover {\n  font-size: 100%;\n  color: rgba(0,0,0,0.5);\n  background: transparent;\n  pointer-events: none;\n}\n.flatpickr-current-month .flatpickr-monthDropdown-months {\n  appearance: menulist;\n  background: transparent;\n  border: none;\n  border-radius: 0;\n  box-sizing: border-box;\n  color: inherit;\n  cursor: pointer;\n  font-size: inherit;\n  font-family: inherit;\n  font-weight: 300;\n  height: auto;\n  line-height: inherit;\n  margin: -1px 0 0 0;\n  outline: none;\n  padding: 0 0 0 0.5ch;\n  position: relative;\n  vertical-align: initial;\n  -webkit-box-sizing: border-box;\n  -webkit-appearance: menulist;\n  -moz-appearance: menulist;\n  width: auto;\n}\n.flatpickr-current-month .flatpickr-monthDropdown-months:focus,\n.flatpickr-current-month .flatpickr-monthDropdown-months:active {\n  outline: none;\n}\n.flatpickr-current-month .flatpickr-monthDropdown-months:hover {\n  background: rgba(0,0,0,0.05);\n}\n.flatpickr-current-month .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month {\n  background-color: transparent;\n  outline: none;\n  padding: 0;\n}\n.flatpickr-weekdays {\n  background: transparent;\n  text-align: center;\n  overflow: hidden;\n  width: 100%;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-align: center;\n  -webkit-align-items: center;\n      -ms-flex-align: center;\n          align-items: center;\n  height: 28px;\n}\n.flatpickr-weekdays .flatpickr-weekdaycontainer {\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n}\nspan.flatpickr-weekday {\n  cursor: default;\n  font-size: 90%;\n  background: transparent;\n  color: rgba(0,0,0,0.54);\n  line-height: 1;\n  margin: 0;\n  text-align: center;\n  display: block;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n  font-weight: bolder;\n}\n.dayContainer,\n.flatpickr-weeks {\n  padding: 1px 0 0 0;\n}\n.flatpickr-days {\n  position: relative;\n  overflow: hidden;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-align: start;\n  -webkit-align-items: flex-start;\n      -ms-flex-align: start;\n          align-items: flex-start;\n  width: 307.875px;\n}\n.flatpickr-days:focus {\n  outline: 0;\n}\n.dayContainer {\n  padding: 0;\n  outline: 0;\n  text-align: left;\n  width: 307.875px;\n  min-width: 307.875px;\n  max-width: 307.875px;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  display: inline-block;\n  display: -ms-flexbox;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: flex;\n  -webkit-flex-wrap: wrap;\n          flex-wrap: wrap;\n  -ms-flex-wrap: wrap;\n  -ms-flex-pack: justify;\n  -webkit-justify-content: space-around;\n          justify-content: space-around;\n  -webkit-transform: translate3d(0px, 0px, 0px);\n          transform: translate3d(0px, 0px, 0px);\n  opacity: 1;\n}\n.dayContainer + .dayContainer {\n  -webkit-box-shadow: -1px 0 0 #e6e6e6;\n          box-shadow: -1px 0 0 #e6e6e6;\n}\n.flatpickr-day {\n  background: none;\n  border: 1px solid transparent;\n  border-radius: 150px;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  color: #393939;\n  cursor: pointer;\n  font-weight: 400;\n  width: 14.2857143%;\n  -webkit-flex-basis: 14.2857143%;\n      -ms-flex-preferred-size: 14.2857143%;\n          flex-basis: 14.2857143%;\n  max-width: 39px;\n  height: 39px;\n  line-height: 39px;\n  margin: 0;\n  display: inline-block;\n  position: relative;\n  -webkit-box-pack: center;\n  -webkit-justify-content: center;\n      -ms-flex-pack: center;\n          justify-content: center;\n  text-align: center;\n}\n.flatpickr-day.inRange,\n.flatpickr-day.prevMonthDay.inRange,\n.flatpickr-day.nextMonthDay.inRange,\n.flatpickr-day.today.inRange,\n.flatpickr-day.prevMonthDay.today.inRange,\n.flatpickr-day.nextMonthDay.today.inRange,\n.flatpickr-day:hover,\n.flatpickr-day.prevMonthDay:hover,\n.flatpickr-day.nextMonthDay:hover,\n.flatpickr-day:focus,\n.flatpickr-day.prevMonthDay:focus,\n.flatpickr-day.nextMonthDay:focus {\n  cursor: pointer;\n  outline: 0;\n  background: #e6e6e6;\n  border-color: #e6e6e6;\n}\n.flatpickr-day.today {\n  border-color: #959ea9;\n}\n.flatpickr-day.today:hover,\n.flatpickr-day.today:focus {\n  border-color: #959ea9;\n  background: #959ea9;\n  color: #fff;\n}\n.flatpickr-day.selected,\n.flatpickr-day.startRange,\n.flatpickr-day.endRange,\n.flatpickr-day.selected.inRange,\n.flatpickr-day.startRange.inRange,\n.flatpickr-day.endRange.inRange,\n.flatpickr-day.selected:focus,\n.flatpickr-day.startRange:focus,\n.flatpickr-day.endRange:focus,\n.flatpickr-day.selected:hover,\n.flatpickr-day.startRange:hover,\n.flatpickr-day.endRange:hover,\n.flatpickr-day.selected.prevMonthDay,\n.flatpickr-day.startRange.prevMonthDay,\n.flatpickr-day.endRange.prevMonthDay,\n.flatpickr-day.selected.nextMonthDay,\n.flatpickr-day.startRange.nextMonthDay,\n.flatpickr-day.endRange.nextMonthDay {\n  background: #569ff7;\n  -webkit-box-shadow: none;\n          box-shadow: none;\n  color: #fff;\n  border-color: #569ff7;\n}\n.flatpickr-day.selected.startRange,\n.flatpickr-day.startRange.startRange,\n.flatpickr-day.endRange.startRange {\n  border-radius: 50px 0 0 50px;\n}\n.flatpickr-day.selected.endRange,\n.flatpickr-day.startRange.endRange,\n.flatpickr-day.endRange.endRange {\n  border-radius: 0 50px 50px 0;\n}\n.flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n+1)),\n.flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n+1)),\n.flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n+1)) {\n  -webkit-box-shadow: -10px 0 0 #569ff7;\n          box-shadow: -10px 0 0 #569ff7;\n}\n.flatpickr-day.selected.startRange.endRange,\n.flatpickr-day.startRange.startRange.endRange,\n.flatpickr-day.endRange.startRange.endRange {\n  border-radius: 50px;\n}\n.flatpickr-day.inRange {\n  border-radius: 0;\n  -webkit-box-shadow: -5px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n          box-shadow: -5px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n}\n.flatpickr-day.flatpickr-disabled,\n.flatpickr-day.flatpickr-disabled:hover,\n.flatpickr-day.prevMonthDay,\n.flatpickr-day.nextMonthDay,\n.flatpickr-day.notAllowed,\n.flatpickr-day.notAllowed.prevMonthDay,\n.flatpickr-day.notAllowed.nextMonthDay {\n  color: rgba(57,57,57,0.3);\n  background: transparent;\n  border-color: transparent;\n  cursor: default;\n}\n.flatpickr-day.flatpickr-disabled,\n.flatpickr-day.flatpickr-disabled:hover {\n  cursor: not-allowed;\n  color: rgba(57,57,57,0.1);\n}\n.flatpickr-day.week.selected {\n  border-radius: 0;\n  -webkit-box-shadow: -5px 0 0 #569ff7, 5px 0 0 #569ff7;\n          box-shadow: -5px 0 0 #569ff7, 5px 0 0 #569ff7;\n}\n.flatpickr-day.hidden {\n  visibility: hidden;\n}\n.rangeMode .flatpickr-day {\n  margin-top: 1px;\n}\n.flatpickr-weekwrapper {\n  float: left;\n}\n.flatpickr-weekwrapper .flatpickr-weeks {\n  padding: 0 12px;\n  -webkit-box-shadow: 1px 0 0 #e6e6e6;\n          box-shadow: 1px 0 0 #e6e6e6;\n}\n.flatpickr-weekwrapper .flatpickr-weekday {\n  float: none;\n  width: 100%;\n  line-height: 28px;\n}\n.flatpickr-weekwrapper span.flatpickr-day,\n.flatpickr-weekwrapper span.flatpickr-day:hover {\n  display: block;\n  width: 100%;\n  max-width: none;\n  color: rgba(57,57,57,0.3);\n  background: transparent;\n  cursor: default;\n  border: none;\n}\n.flatpickr-innerContainer {\n  display: block;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  overflow: hidden;\n}\n.flatpickr-rContainer {\n  display: inline-block;\n  padding: 0;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n}\n.flatpickr-time {\n  text-align: center;\n  outline: 0;\n  display: block;\n  height: 0;\n  line-height: 40px;\n  max-height: 40px;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  overflow: hidden;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n}\n.flatpickr-time:after {\n  content: \"\";\n  display: table;\n  clear: both;\n}\n.flatpickr-time .numInputWrapper {\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n      -ms-flex: 1;\n          flex: 1;\n  width: 40%;\n  height: 40px;\n  float: left;\n}\n.flatpickr-time .numInputWrapper span.arrowUp:after {\n  border-bottom-color: #393939;\n}\n.flatpickr-time .numInputWrapper span.arrowDown:after {\n  border-top-color: #393939;\n}\n.flatpickr-time.hasSeconds .numInputWrapper {\n  width: 26%;\n}\n.flatpickr-time.time24hr .numInputWrapper {\n  width: 49%;\n}\n.flatpickr-time input {\n  background: transparent;\n  -webkit-box-shadow: none;\n          box-shadow: none;\n  border: 0;\n  border-radius: 0;\n  text-align: center;\n  margin: 0;\n  padding: 0;\n  height: inherit;\n  line-height: inherit;\n  color: #393939;\n  font-size: 14px;\n  position: relative;\n  -webkit-box-sizing: border-box;\n          box-sizing: border-box;\n  -webkit-appearance: textfield;\n  -moz-appearance: textfield;\n  appearance: textfield;\n}\n.flatpickr-time input.flatpickr-hour {\n  font-weight: bold;\n}\n.flatpickr-time input.flatpickr-minute,\n.flatpickr-time input.flatpickr-second {\n  font-weight: 400;\n}\n.flatpickr-time input:focus {\n  outline: 0;\n  border: 0;\n}\n.flatpickr-time .flatpickr-time-separator,\n.flatpickr-time .flatpickr-am-pm {\n  height: inherit;\n  float: left;\n  line-height: inherit;\n  color: #393939;\n  font-weight: bold;\n  width: 2%;\n  -webkit-user-select: none;\n     -moz-user-select: none;\n      -ms-user-select: none;\n          user-select: none;\n  -webkit-align-self: center;\n      -ms-flex-item-align: center;\n          align-self: center;\n}\n.flatpickr-time .flatpickr-am-pm {\n  outline: 0;\n  width: 18%;\n  cursor: pointer;\n  text-align: center;\n  font-weight: 400;\n}\n.flatpickr-time input:hover,\n.flatpickr-time .flatpickr-am-pm:hover,\n.flatpickr-time input:focus,\n.flatpickr-time .flatpickr-am-pm:focus {\n  background: #eee;\n}\n.flatpickr-input[readonly] {\n  cursor: pointer;\n}\n@-webkit-keyframes fpFadeInDown {\n  from {\n    opacity: 0;\n    -webkit-transform: translate3d(0, -20px, 0);\n            transform: translate3d(0, -20px, 0);\n  }\n  to {\n    opacity: 1;\n    -webkit-transform: translate3d(0, 0, 0);\n            transform: translate3d(0, 0, 0);\n  }\n}\n@keyframes fpFadeInDown {\n  from {\n    opacity: 0;\n    -webkit-transform: translate3d(0, -20px, 0);\n            transform: translate3d(0, -20px, 0);\n  }\n  to {\n    opacity: 1;\n    -webkit-transform: translate3d(0, 0, 0);\n            transform: translate3d(0, 0, 0);\n  }\n}\n";
     styleInject(css);
 
     var css$1 = ".flatpickr-calendar {\n  opacity: 0;\n  display: none;\n  text-align: center;\n  visibility: hidden;\n  padding: 0;\n  -webkit-animation: none;\n  animation: none;\n  direction: ltr;\n  border: 0;\n  font-size: 14px;\n  line-height: 24px;\n  border-radius: 4px;\n  position: absolute;\n  width: 307.875px;\n  -webkit-box-shadow: none !important;\n  box-shadow: none !important;\n  background: rgba(0, 0, 0, 0.9);\n}\n.flatpickr-calendar.open,\n.flatpickr-calendar.inline {\n  opacity: 1;\n  max-height: 640px;\n  visibility: visible;\n}\n.flatpickr-calendar.open {\n  display: inline-block;\n  z-index: 99999;\n}\n.flatpickr-calendar.animate.open {\n  -webkit-animation: fpFadeInDown 300ms cubic-bezier(0.23, 1, 0.32, 1);\n  animation: fpFadeInDown 300ms cubic-bezier(0.23, 1, 0.32, 1);\n}\n.flatpickr-calendar.inline {\n  display: block;\n  position: relative;\n  top: 4px;\n}\n.flatpickr-calendar.static {\n  position: absolute;\n  top: calc(100% + 4px);\n}\n.flatpickr-calendar.static.open {\n  z-index: 999;\n  display: block;\n}\n.flatpickr-calendar.multiMonth\n  .flatpickr-days\n  .dayContainer:nth-child(n + 1)\n  .flatpickr-day.inRange:nth-child(7n + 7) {\n  -webkit-box-shadow: none !important;\n  box-shadow: none !important;\n}\n.flatpickr-calendar.multiMonth\n  .flatpickr-days\n  .dayContainer:nth-child(n + 2)\n  .flatpickr-day.inRange:nth-child(7n + 1) {\n  -webkit-box-shadow: -2px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n  box-shadow: -2px 0 0 #e6e6e6, 5px 0 0 #e6e6e6;\n}\n.flatpickr-calendar .hasWeeks .dayContainer,\n.flatpickr-calendar .hasTime .dayContainer {\n  border-bottom: 0;\n  border-bottom-right-radius: 0;\n  border-bottom-left-radius: 0;\n}\n.flatpickr-calendar .hasWeeks .dayContainer {\n  border-left: 0;\n}\n.flatpickr-calendar.showTimeInput.hasTime .flatpickr-time {\n  height: 40px;\n  border-top: 1px solid #20222c;\n}\n.flatpickr-calendar.noCalendar.hasTime .flatpickr-time {\n  height: auto;\n}\n.flatpickr-calendar:before,\n.flatpickr-calendar:after {\n  position: absolute;\n  display: block;\n  pointer-events: none;\n  border: solid transparent;\n  content: \"\";\n  height: 0;\n  width: 0;\n  left: 22px;\n}\n.flatpickr-calendar.rightMost:before,\n.flatpickr-calendar.rightMost:after {\n  left: auto;\n  right: 22px;\n}\n.flatpickr-calendar:before {\n  border-width: 5px;\n  margin: 0 -5px;\n}\n.flatpickr-calendar:after {\n  border-width: 4px;\n  margin: 0 -4px;\n}\n.flatpickr-calendar.arrowTop:before,\n.flatpickr-calendar.arrowTop:after {\n  bottom: 100%;\n}\n.flatpickr-calendar.arrowTop:before {\n  border-bottom-color: #20222c;\n}\n.flatpickr-calendar.arrowTop:after {\n  border-bottom-color: #3f4458;\n}\n.flatpickr-calendar.arrowBottom:before,\n.flatpickr-calendar.arrowBottom:after {\n  top: 100%;\n}\n.flatpickr-calendar.arrowBottom:before {\n  border-top-color: #20222c;\n}\n.flatpickr-calendar.arrowBottom:after {\n  border-top-color: #3f4458;\n}\n.flatpickr-calendar:focus {\n  outline: 0;\n}\n.flatpickr-wrapper {\n  position: relative;\n  display: inline-block;\n}\n.flatpickr-months {\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n}\n.flatpickr-months .flatpickr-month {\n  background: transparent;\n  color: #fff;\n  fill: #fff;\n  height: 28px;\n  line-height: 1;\n  text-align: center;\n  position: relative;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  overflow: hidden;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n  -ms-flex: 1;\n  flex: 1;\n}\n.flatpickr-months .flatpickr-prev-month,\n.flatpickr-months .flatpickr-next-month {\n  text-decoration: none;\n  cursor: pointer;\n  position: absolute;\n  top: 0px;\n  line-height: 16px;\n  height: 28px;\n  padding: 10px;\n  z-index: 3;\n  color: #fff;\n  fill: #fff;\n}\n.flatpickr-months .flatpickr-prev-month.disabled,\n.flatpickr-months .flatpickr-next-month.disabled {\n  display: none;\n}\n.flatpickr-months .flatpickr-prev-month i,\n.flatpickr-months .flatpickr-next-month i {\n  position: relative;\n}\n.flatpickr-months .flatpickr-prev-month.flatpickr-prev-month,\n.flatpickr-months .flatpickr-next-month.flatpickr-prev-month {\n  /*\n      /*rtl:begin:ignore*/\n  /*\n      */\n  left: 0;\n  /*\n      /*rtl:end:ignore*/\n  /*\n      */\n}\n/*\n      /*rtl:begin:ignore*/\n/*\n      /*rtl:end:ignore*/\n.flatpickr-months .flatpickr-prev-month.flatpickr-next-month,\n.flatpickr-months .flatpickr-next-month.flatpickr-next-month {\n  /*\n      /*rtl:begin:ignore*/\n  /*\n      */\n  right: 0;\n  /*\n      /*rtl:end:ignore*/\n  /*\n      */\n}\n/*\n      /*rtl:begin:ignore*/\n/*\n      /*rtl:end:ignore*/\n.flatpickr-months .flatpickr-prev-month:hover,\n.flatpickr-months .flatpickr-next-month:hover {\n  color: #eee;\n}\n.flatpickr-months .flatpickr-prev-month:hover svg,\n.flatpickr-months .flatpickr-next-month:hover svg {\n  fill: #f64747;\n}\n.flatpickr-months .flatpickr-prev-month svg,\n.flatpickr-months .flatpickr-next-month svg {\n  width: 14px;\n  height: 14px;\n}\n.flatpickr-months .flatpickr-prev-month svg path,\n.flatpickr-months .flatpickr-next-month svg path {\n  -webkit-transition: fill 0.1s;\n  transition: fill 0.1s;\n  fill: inherit;\n}\n.numInputWrapper {\n  position: relative;\n  height: auto;\n}\n.numInputWrapper input,\n.numInputWrapper span {\n  display: inline-block;\n}\n.numInputWrapper input {\n  width: 100%;\n}\n.numInputWrapper input::-ms-clear {\n  display: none;\n}\n.numInputWrapper span {\n  position: absolute;\n  right: 0;\n  width: 14px;\n  padding: 0 4px 0 2px;\n  height: 50%;\n  line-height: 50%;\n  opacity: 0;\n  cursor: pointer;\n  border: 1px solid rgba(255, 255, 255, 0.15);\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.numInputWrapper span:hover {\n  background: rgba(192, 187, 167, 0.1);\n}\n.numInputWrapper span:active {\n  background: rgba(192, 187, 167, 0.2);\n}\n.numInputWrapper span:after {\n  display: block;\n  content: \"\";\n  position: absolute;\n}\n.numInputWrapper span.arrowUp {\n  top: 0;\n  border-bottom: 0;\n}\n.numInputWrapper span.arrowUp:after {\n  border-left: 4px solid transparent;\n  border-right: 4px solid transparent;\n  border-bottom: 4px solid rgba(255, 255, 255, 0.6);\n  top: 26%;\n}\n.numInputWrapper span.arrowDown {\n  top: 50%;\n}\n.numInputWrapper span.arrowDown:after {\n  border-left: 4px solid transparent;\n  border-right: 4px solid transparent;\n  border-top: 4px solid rgba(255, 255, 255, 0.6);\n  top: 40%;\n}\n.numInputWrapper span svg {\n  width: inherit;\n  height: auto;\n}\n.numInputWrapper span svg path {\n  fill: rgba(255, 255, 255, 0.5);\n}\n.numInputWrapper:hover {\n  background: rgba(192, 187, 167, 0.05);\n}\n.numInputWrapper:hover span {\n  opacity: 1;\n}\n.flatpickr-current-month {\n  font-size: 135%;\n  line-height: inherit;\n  font-weight: 300;\n  color: inherit;\n  position: absolute;\n  width: 75%;\n  left: 12.5%;\n  padding: 6.16px 0 0 0;\n  line-height: 1;\n  height: 28px;\n  display: inline-block;\n  text-align: center;\n  -webkit-transform: translate3d(0px, 0px, 0px);\n  transform: translate3d(0px, 0px, 0px);\n}\n.flatpickr-current-month span.cur-month {\n  font-family: inherit;\n  font-weight: 700;\n  color: inherit;\n  display: inline-block;\n  margin-left: 0.5ch;\n  padding: 0;\n}\n.flatpickr-current-month span.cur-month:hover {\n  background: rgba(192, 187, 167, 0.05);\n}\n.flatpickr-current-month .numInputWrapper {\n  width: 6ch;\n  width: 7ch\\0;\n  display: inline-block;\n}\n.flatpickr-current-month .numInputWrapper span.arrowUp:after {\n  border-bottom-color: #fff;\n}\n.flatpickr-current-month .numInputWrapper span.arrowDown:after {\n  border-top-color: #fff;\n}\n.flatpickr-current-month input.cur-year {\n  background: transparent;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n  color: inherit;\n  cursor: text;\n  padding: 0 0 0 0.5ch;\n  margin: 0;\n  display: inline-block;\n  font-size: inherit;\n  font-family: inherit;\n  font-weight: 300;\n  line-height: inherit;\n  height: auto;\n  border: 0;\n  border-radius: 0;\n  vertical-align: initial;\n}\n.flatpickr-current-month input.cur-year:focus {\n  outline: 0;\n}\n.flatpickr-current-month input.cur-year[disabled],\n.flatpickr-current-month input.cur-year[disabled]:hover {\n  font-size: 100%;\n  color: rgba(255, 255, 255, 0.5);\n  background: transparent;\n  pointer-events: none;\n}\n.flatpickr-weekdays {\n  background: transparent;\n  text-align: center;\n  overflow: hidden;\n  width: 100%;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-align: center;\n  -webkit-align-items: center;\n  -ms-flex-align: center;\n  align-items: center;\n  height: 28px;\n}\n.flatpickr-weekdays .flatpickr-weekdaycontainer {\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n  -ms-flex: 1;\n  flex: 1;\n}\nspan.flatpickr-weekday {\n  cursor: default;\n  font-size: 90%;\n  background: transparent;\n  color: #fff;\n  line-height: 1;\n  margin: 0;\n  text-align: center;\n  display: block;\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n  -ms-flex: 1;\n  flex: 1;\n  font-weight: bolder;\n}\n.dayContainer,\n.flatpickr-weeks {\n  padding: 1px 0 0 0;\n}\n.flatpickr-days {\n  position: relative;\n  overflow: hidden;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-align: start;\n  -webkit-align-items: flex-start;\n  -ms-flex-align: start;\n  align-items: flex-start;\n  width: 307.875px;\n}\n.flatpickr-days:focus {\n  outline: 0;\n}\n.dayContainer {\n  padding: 0;\n  outline: 0;\n  text-align: left;\n  width: 307.875px;\n  min-width: 307.875px;\n  max-width: 307.875px;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n  display: inline-block;\n  display: -ms-flexbox;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: flex;\n  -webkit-flex-wrap: wrap;\n  flex-wrap: wrap;\n  -ms-flex-wrap: wrap;\n  -ms-flex-pack: justify;\n  -webkit-justify-content: space-around;\n  justify-content: space-around;\n  -webkit-transform: translate3d(0px, 0px, 0px);\n  transform: translate3d(0px, 0px, 0px);\n  opacity: 1;\n}\n.dayContainer + .dayContainer {\n  -webkit-box-shadow: -1px 0 0 #20222c;\n  box-shadow: -1px 0 0 #20222c;\n}\n.flatpickr-day {\n  background: none;\n  border: 1px solid transparent;\n  border-radius: 150px;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n  color: rgba(255, 255, 255, 0.95);\n  cursor: pointer;\n  font-weight: 400;\n  width: 14.2857143%;\n  -webkit-flex-basis: 14.2857143%;\n  -ms-flex-preferred-size: 14.2857143%;\n  flex-basis: 14.2857143%;\n  max-width: 39px;\n  height: 39px;\n  line-height: 39px;\n  margin: 0;\n  display: inline-block;\n  position: relative;\n  -webkit-box-pack: center;\n  -webkit-justify-content: center;\n  -ms-flex-pack: center;\n  justify-content: center;\n  text-align: center;\n}\n.flatpickr-day.inRange,\n.flatpickr-day.prevMonthDay.inRange,\n.flatpickr-day.nextMonthDay.inRange,\n.flatpickr-day.today.inRange,\n.flatpickr-day.prevMonthDay.today.inRange,\n.flatpickr-day.nextMonthDay.today.inRange,\n.flatpickr-day:hover,\n.flatpickr-day.prevMonthDay:hover,\n.flatpickr-day.nextMonthDay:hover,\n.flatpickr-day:focus,\n.flatpickr-day.prevMonthDay:focus,\n.flatpickr-day.nextMonthDay:focus {\n  cursor: pointer;\n  outline: 0;\n  background: #98003c;\n  border-color: #98003c;\n}\n.flatpickr-day.today {\n  border-color: #eee;\n}\n.flatpickr-day.today:hover,\n.flatpickr-day.today:focus {\n  border-color: #eee;\n  background: #eee;\n  color: #3f4458;\n}\n.flatpickr-day.selected,\n.flatpickr-day.startRange,\n.flatpickr-day.endRange,\n.flatpickr-day.selected.inRange,\n.flatpickr-day.startRange.inRange,\n.flatpickr-day.endRange.inRange,\n.flatpickr-day.selected:focus,\n.flatpickr-day.startRange:focus,\n.flatpickr-day.endRange:focus,\n.flatpickr-day.selected:hover,\n.flatpickr-day.startRange:hover,\n.flatpickr-day.endRange:hover,\n.flatpickr-day.selected.prevMonthDay,\n.flatpickr-day.startRange.prevMonthDay,\n.flatpickr-day.endRange.prevMonthDay,\n.flatpickr-day.selected.nextMonthDay,\n.flatpickr-day.startRange.nextMonthDay,\n.flatpickr-day.endRange.nextMonthDay {\n  background: #cb2d6f;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  color: #fff;\n  border-color: #cb2d6f;\n}\n.flatpickr-day.selected.startRange,\n.flatpickr-day.startRange.startRange,\n.flatpickr-day.endRange.startRange {\n  border-radius: 50px 0 0 50px;\n}\n.flatpickr-day.selected.endRange,\n.flatpickr-day.startRange.endRange,\n.flatpickr-day.endRange.endRange {\n  border-radius: 0 50px 50px 0;\n}\n.flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n + 1)),\n.flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n + 1)),\n.flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n + 1)) {\n  -webkit-box-shadow: -10px 0 0 #98003c;\n  box-shadow: -10px 0 0 #98003c;\n}\n.flatpickr-day.selected.startRange.endRange,\n.flatpickr-day.startRange.startRange.endRange,\n.flatpickr-day.endRange.startRange.endRange {\n  border-radius: 50px;\n}\n.flatpickr-day.inRange {\n  border-radius: 0;\n  -webkit-box-shadow: -5px 0 0 #98003c, 5px 0 0 #98003c;\n  box-shadow: -5px 0 0 #98003c, 5px 0 0 #98003c;\n}\n.flatpickr-day.disabled,\n.flatpickr-day.disabled:hover,\n.flatpickr-day.prevMonthDay,\n.flatpickr-day.nextMonthDay,\n.flatpickr-day.notAllowed,\n.flatpickr-day.notAllowed.prevMonthDay,\n.flatpickr-day.notAllowed.nextMonthDay {\n  color: rgba(255, 255, 255, 0.3);\n  background: transparent;\n  border-color: transparent;\n  cursor: default;\n}\n.flatpickr-day.disabled,\n.flatpickr-day.disabled:hover {\n  cursor: not-allowed;\n  color: rgba(255, 255, 255, 0.1);\n}\n.flatpickr-day.week.selected {\n  border-radius: 0;\n  -webkit-box-shadow: -5px 0 0 #80cbc4, 5px 0 0 #80cbc4;\n  box-shadow: -5px 0 0 #80cbc4, 5px 0 0 #80cbc4;\n}\n.flatpickr-day.hidden {\n  visibility: hidden;\n}\n.rangeMode .flatpickr-day {\n  margin-top: 1px;\n}\n.flatpickr-weekwrapper {\n  display: inline-block;\n  float: left;\n}\n.flatpickr-weekwrapper .flatpickr-weeks {\n  padding: 0 12px;\n  -webkit-box-shadow: 1px 0 0 #20222c;\n  box-shadow: 1px 0 0 #20222c;\n}\n.flatpickr-weekwrapper .flatpickr-weekday {\n  float: none;\n  width: 100%;\n  line-height: 28px;\n}\n.flatpickr-weekwrapper span.flatpickr-day,\n.flatpickr-weekwrapper span.flatpickr-day:hover {\n  display: block;\n  width: 100%;\n  max-width: none;\n  color: rgba(255, 255, 255, 0.3);\n  background: transparent;\n  cursor: default;\n  border: none;\n}\n.flatpickr-innerContainer {\n  display: block;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n  overflow: hidden;\n}\n.flatpickr-rContainer {\n  display: inline-block;\n  padding: 0;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.flatpickr-time {\n  text-align: center;\n  outline: 0;\n  display: block;\n  height: 0;\n  line-height: 40px;\n  max-height: 40px;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n  overflow: hidden;\n  display: -webkit-box;\n  display: -webkit-flex;\n  display: -ms-flexbox;\n  display: flex;\n}\n.flatpickr-time:after {\n  content: \"\";\n  display: table;\n  clear: both;\n}\n.flatpickr-time .numInputWrapper {\n  -webkit-box-flex: 1;\n  -webkit-flex: 1;\n  -ms-flex: 1;\n  flex: 1;\n  width: 40%;\n  height: 40px;\n  float: left;\n}\n.flatpickr-time .numInputWrapper span.arrowUp:after {\n  border-bottom-color: rgba(255, 255, 255, 0.95);\n}\n.flatpickr-time .numInputWrapper span.arrowDown:after {\n  border-top-color: rgba(255, 255, 255, 0.95);\n}\n.flatpickr-time.hasSeconds .numInputWrapper {\n  width: 26%;\n}\n.flatpickr-time.time24hr .numInputWrapper {\n  width: 49%;\n}\n.flatpickr-time input {\n  background: transparent;\n  -webkit-box-shadow: none;\n  box-shadow: none;\n  border: 0;\n  border-radius: 0;\n  text-align: center;\n  margin: 0;\n  padding: 0;\n  height: inherit;\n  line-height: inherit;\n  color: rgba(255, 255, 255, 0.95);\n  font-size: 14px;\n  position: relative;\n  -webkit-box-sizing: border-box;\n  box-sizing: border-box;\n}\n.flatpickr-time input.flatpickr-hour {\n  font-weight: bold;\n}\n.flatpickr-time input.flatpickr-minute,\n.flatpickr-time input.flatpickr-second {\n  font-weight: 400;\n}\n.flatpickr-time input:focus {\n  outline: 0;\n  border: 0;\n}\n.flatpickr-time .flatpickr-time-separator,\n.flatpickr-time .flatpickr-am-pm {\n  height: inherit;\n  display: inline-block;\n  float: left;\n  line-height: inherit;\n  color: rgba(255, 255, 255, 0.95);\n  font-weight: bold;\n  width: 2%;\n  -webkit-user-select: none;\n  -moz-user-select: none;\n  -ms-user-select: none;\n  user-select: none;\n  -webkit-align-self: center;\n  -ms-flex-item-align: center;\n  align-self: center;\n}\n.flatpickr-time .flatpickr-am-pm {\n  outline: 0;\n  width: 18%;\n  cursor: pointer;\n  text-align: center;\n  font-weight: 400;\n}\n.flatpickr-time input:hover,\n.flatpickr-time .flatpickr-am-pm:hover,\n.flatpickr-time input:focus,\n.flatpickr-time .flatpickr-am-pm:focus {\n  background: #707999;\n}\n.flatpickr-input[readonly] {\n  cursor: pointer;\n}\n@-webkit-keyframes fpFadeInDown {\n  from {\n    opacity: 0;\n    -webkit-transform: translate3d(0, -20px, 0);\n    transform: translate3d(0, -20px, 0);\n  }\n  to {\n    opacity: 1;\n    -webkit-transform: translate3d(0, 0, 0);\n    transform: translate3d(0, 0, 0);\n  }\n}\n@keyframes fpFadeInDown {\n  from {\n    opacity: 0;\n    -webkit-transform: translate3d(0, -20px, 0);\n    transform: translate3d(0, -20px, 0);\n  }\n  to {\n    opacity: 1;\n    -webkit-transform: translate3d(0, 0, 0);\n    transform: translate3d(0, 0, 0);\n  }\n}\n";
     styleInject(css$1);
 
-    /* src/components/DatePicker.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/DatePicker.svelte generated by Svelte v3.9.1 */
     const { Object: Object_1$1 } = globals;
 
-    const file$8 = "src/components/DatePicker.svelte";
+    const file$8 = "admin/src/components/DatePicker.svelte";
 
     function create_fragment$a(ctx) {
     	var input, dispose;
@@ -6613,7 +6742,7 @@ var app = (function () {
     		c: function create() {
     			input = element("input");
     			attr(input, "type", "date");
-    			attr(input, "class", "" + ctx.className + " svelte-4yoq4p");
+    			attr(input, "class", "" + null_to_empty(ctx.className) + " svelte-4yoq4p");
     			attr(input, "placeholder", ctx.placeholder);
     			add_location(input, file$8, 75, 0, 1784);
     			dispose = listen(input, "input", ctx.input_input_handler);
@@ -6626,16 +6755,16 @@ var app = (function () {
     		m: function mount(target, anchor) {
     			insert(target, input, anchor);
 
-    			input.value = ctx.value;
+    			set_input_value(input, ctx.value);
 
     			ctx.input_binding(input);
     		},
 
     		p: function update(changed, ctx) {
-    			if (changed.value) input.value = ctx.value;
+    			if (changed.value) set_input_value(input, ctx.value);
 
     			if (changed.className) {
-    				attr(input, "class", "" + ctx.className + " svelte-4yoq4p");
+    				attr(input, "class", "" + null_to_empty(ctx.className) + " svelte-4yoq4p");
     			}
 
     			if (changed.placeholder) {
@@ -6799,10 +6928,10 @@ var app = (function () {
     	}
     }
 
-    /* src/components/semesters/SemesterForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/semesters/SemesterForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$3 } = globals;
 
-    const file$9 = "src/components/semesters/SemesterForm.svelte";
+    const file$9 = "admin/src/components/semesters/SemesterForm.svelte";
 
     // (58:39) {:else}
     function create_else_block$1(ctx) {
@@ -6849,12 +6978,12 @@ var app = (function () {
     function create_fragment$b(ctx) {
     	var h1, t0, t1, form_1, t2, updating_value, t3, label, t5, updating_value_1, t6, div, button, t8, input1, current, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.defaultDate) return create_if_block$6;
     		return create_else_block$1;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	var error = new Error$1({
@@ -6972,7 +7101,7 @@ var app = (function () {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    			if (current_block_type !== (current_block_type = select_block_type(changed, ctx))) {
     				if_block.d(1);
     				if_block = current_block_type(ctx);
     				if (if_block) {
@@ -7196,7 +7325,7 @@ var app = (function () {
     	}
     }
 
-    /* src/components/semesters/EditSemester.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/semesters/EditSemester.svelte generated by Svelte v3.9.1 */
 
     function create_fragment$c(ctx) {
     	var current;
@@ -7380,9 +7509,9 @@ var app = (function () {
     	}
     }
 
-    /* src/components/semesters/SemesterListRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/semesters/SemesterListRow.svelte generated by Svelte v3.9.1 */
 
-    const file$a = "src/components/semesters/SemesterListRow.svelte";
+    const file$a = "admin/src/components/semesters/SemesterListRow.svelte";
 
     // (88:6) {#if showEdit}
     function create_if_block$7(ctx) {
@@ -7423,9 +7552,9 @@ var app = (function () {
     		},
 
     		p: function update(changed, ctx) {
-    			var editsemester_changes = changed.semester ? get_spread_update(editsemester_spread_levels, [
-    				ctx.semester
-    			]) : {};
+    			var editsemester_changes = (changed.semester) ? get_spread_update(editsemester_spread_levels, [
+    									ctx.semester
+    								]) : {};
     			if (!updating_open && changed.showEdit) {
     				editsemester_changes.open = ctx.showEdit;
     			}
@@ -7510,7 +7639,7 @@ var app = (function () {
     }
 
     function create_fragment$d(ctx) {
-    	var li, div2, div0, span0, t0_value = ctx.semester.name, t0, t1, span1, t2, t3, t4, t5, div1, i0, t6, i1, t7, div3, updating_open, t8, updating_open_1, current, dispose;
+    	var li, div2, div0, span0, t0_value = ctx.semester.name + "", t0, t1, span1, t2, t3, t4, t5, div1, i0, t6, i1, t7, div3, updating_open, t8, updating_open_1, current, dispose;
 
     	function deleteitem_open_binding(value) {
     		ctx.deleteitem_open_binding.call(null, value);
@@ -7624,7 +7753,7 @@ var app = (function () {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.semester) && t0_value !== (t0_value = ctx.semester.name)) {
+    			if ((!current || changed.semester) && t0_value !== (t0_value = ctx.semester.name + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -7753,9 +7882,9 @@ var app = (function () {
     	}
     }
 
-    /* src/components/semesters/SemesterList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/semesters/SemesterList.svelte generated by Svelte v3.9.1 */
 
-    const file$b = "src/components/semesters/SemesterList.svelte";
+    const file$b = "admin/src/components/semesters/SemesterList.svelte";
 
     function get_each_context$1(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -7765,7 +7894,7 @@ var app = (function () {
 
     // (16:0) {#if $semesters && $semesters.length}
     function create_if_block$8(ctx) {
-    	var div, p, t0, t1_value = ctx.$semesters.length, t1, t2, t3, each_blocks = [], each_1_lookup = new Map(), current;
+    	var div, p, t0, t1_value = ctx.$semesters.length + "", t1, t2, t3, each_blocks = [], each_1_lookup = new Map(), current;
 
     	var each_value = ctx.$semesters;
 
@@ -7807,7 +7936,7 @@ var app = (function () {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$semesters) && t1_value !== (t1_value = ctx.$semesters.length)) {
+    			if ((!current || changed.$semesters) && t1_value !== (t1_value = ctx.$semesters.length + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -7961,7 +8090,7 @@ var app = (function () {
     	let $semesters;
 
     	validate_store(semesters, 'semesters');
-    	subscribe($$self, semesters, $$value => { $semesters = $$value; $$invalidate('$semesters', $semesters); });
+    	component_subscribe($$self, semesters, $$value => { $semesters = $$value; $$invalidate('$semesters', $semesters); });
 
     	return { $semesters };
     }
@@ -7973,9 +8102,9 @@ var app = (function () {
     	}
     }
 
-    /* src/components/semesters/AddSemester.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/semesters/AddSemester.svelte generated by Svelte v3.9.1 */
 
-    const file$c = "src/components/semesters/AddSemester.svelte";
+    const file$c = "admin/src/components/semesters/AddSemester.svelte";
 
     // (35:0) <Modal bind:open>
     function create_default_slot$2(ctx) {
@@ -8156,9 +8285,9 @@ var app = (function () {
     	}
     }
 
-    /* src/components/Loading.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/Loading.svelte generated by Svelte v3.9.1 */
 
-    const file$d = "src/components/Loading.svelte";
+    const file$d = "admin/src/components/Loading.svelte";
 
     function create_fragment$g(ctx) {
     	var div, svg, path, t0, p, t1, t2, t3;
@@ -8252,10 +8381,10 @@ var app = (function () {
     	}
     }
 
-    /* src/components/semesters/Semesters.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/semesters/Semesters.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$4 } = globals;
 
-    const file$e = "src/components/semesters/Semesters.svelte";
+    const file$e = "admin/src/components/semesters/Semesters.svelte";
 
     // (32:18) 
     function create_if_block_1$1(ctx) {
@@ -8358,13 +8487,13 @@ var app = (function () {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$semesters) return 0;
     		if (!ctx.errors) return 1;
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -8404,7 +8533,7 @@ var app = (function () {
     			error.$set(error_changes);
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index !== previous_block_index) {
     				if (if_block) {
     					group_outros();
@@ -8468,7 +8597,7 @@ var app = (function () {
     	let $semesters;
 
     	validate_store(semesters, 'semesters');
-    	subscribe($$self, semesters, $$value => { $semesters = $$value; $$invalidate('$semesters', $semesters); });
+    	component_subscribe($$self, semesters, $$value => { $semesters = $$value; $$invalidate('$semesters', $semesters); });
 
     	
 
@@ -8726,9 +8855,9 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 }
 `;
 
-    /* src/components/GroupSelect.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/GroupSelect.svelte generated by Svelte v3.9.1 */
 
-    const file$f = "src/components/GroupSelect.svelte";
+    const file$f = "admin/src/components/GroupSelect.svelte";
 
     function get_each_context$2(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -8767,12 +8896,12 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     function create_if_block_1$2(ctx) {
     	var if_block_anchor;
 
-    	function select_block_type_1(ctx) {
+    	function select_block_type_1(changed, ctx) {
     		if (ctx.groups.length) return create_if_block_2$1;
     		return create_else_block$2;
     	}
 
-    	var current_block_type = select_block_type_1(ctx);
+    	var current_block_type = select_block_type_1(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	return {
@@ -8787,7 +8916,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type === (current_block_type = select_block_type_1(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type_1(changed, ctx)) && if_block) {
     				if_block.p(changed, ctx);
     			} else {
     				if_block.d(1);
@@ -8912,7 +9041,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (44:6) {#each groups as group}
     function create_each_block$2(ctx) {
-    	var option, t0_value = ctx.group.semester ? ctx.group.semester.name + ' ': "", t0, t1_value = ctx.group.name, t1, t2, option_value_value;
+    	var option, t0_value = ctx.group.semester ? ctx.group.semester.name + ' ': "" + "", t0, t1_value = ctx.group.name + "", t1, t2, option_value_value;
 
     	return {
     		c: function create() {
@@ -8933,11 +9062,11 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.groups) && t0_value !== (t0_value = ctx.group.semester ? ctx.group.semester.name + ' ': "")) {
+    			if ((changed.groups) && t0_value !== (t0_value = ctx.group.semester ? ctx.group.semester.name + ' ': "" + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((changed.groups) && t1_value !== (t1_value = ctx.group.name)) {
+    			if ((changed.groups) && t1_value !== (t1_value = ctx.group.name + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -8958,7 +9087,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (55:0) {#if errors}
     function create_if_block$a(ctx) {
-    	var p, t_value = JSON.stringify(ctx.errors), t;
+    	var p, t_value = JSON.stringify(ctx.errors) + "", t;
 
     	return {
     		c: function create() {
@@ -8974,7 +9103,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.errors) && t_value !== (t_value = JSON.stringify(ctx.errors))) {
+    			if ((changed.errors) && t_value !== (t_value = JSON.stringify(ctx.errors) + "")) {
     				set_data(t, t_value);
     			}
     		},
@@ -8990,12 +9119,12 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     function create_fragment$i(ctx) {
     	var div1, div0, select, t, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.groups) return create_if_block_1$2;
     		return create_else_block_1;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block0 = current_block_type(ctx);
 
     	var if_block1 = (ctx.errors) && create_if_block$a(ctx);
@@ -9041,7 +9170,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block0) {
+    			if (current_block_type === (current_block_type = select_block_type(changed, ctx)) && if_block0) {
     				if_block0.p(changed, ctx);
     			} else {
     				if_block0.d(1);
@@ -9183,10 +9312,10 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/students/StudentForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/students/StudentForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$5 } = globals;
 
-    const file$g = "src/components/students/StudentForm.svelte";
+    const file$g = "admin/src/components/students/StudentForm.svelte";
 
     // (49:30) {:else}
     function create_else_block$3(ctx) {
@@ -9330,12 +9459,12 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     function create_fragment$j(ctx) {
     	var h2, t0, t1, form_1, t2, updating_value, t3, updating_value_1, t4, updating_value_2, t5, updating_value_3, t6, div0, label0, input4, t7, t8, label1, input5, t9, t10, t11, div1, button, t13, input6, current, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.id) return create_if_block_2$2;
     		return create_else_block$3;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block0 = current_block_type(ctx);
 
     	var if_block1 = (ctx.errors) && create_if_block_1$3(ctx);
@@ -9530,7 +9659,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    			if (current_block_type !== (current_block_type = select_block_type(changed, ctx))) {
     				if_block0.d(1);
     				if_block0 = current_block_type(ctx);
     				if (if_block0) {
@@ -9886,7 +10015,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/students/EditStudent.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/students/EditStudent.svelte generated by Svelte v3.9.1 */
 
     function create_fragment$k(ctx) {
     	var current;
@@ -9923,12 +10052,12 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     		p: function update(changed, ctx) {
     			var studentform_changes = (changed.errors || changed.loading || changed.student) ? get_spread_update(studentform_spread_levels, [
-    				(changed.errors) && { errors: ctx.errors },
-    				(changed.loading) && { loading: ctx.loading },
-    				(changed.student) && ctx.student,
-    				(changed.student) && { birthdate: ctx.student.birthdate &&
+    									(changed.errors) && { errors: ctx.errors },
+    			(changed.loading) && { loading: ctx.loading },
+    			(changed.student) && ctx.student,
+    			(changed.student) && { birthdate: ctx.student.birthdate &&
       ctx.student.birthdate.slice(0,10) }
-    			]) : {};
+    								]) : {};
     			studentform.$set(studentform_changes);
     		},
 
@@ -10027,10 +10156,10 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/students/EditStudentGroups.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/students/EditStudentGroups.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$6 } = globals;
 
-    const file$h = "src/components/students/EditStudentGroups.svelte";
+    const file$h = "admin/src/components/students/EditStudentGroups.svelte";
 
     function get_each_context$3(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -10046,7 +10175,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (122:2) {:catch error}
     function create_catch_block(ctx) {
-    	var t_value = ctx.error, t;
+    	var t_value = ctx.error + "", t;
 
     	return {
     		c: function create() {
@@ -10058,7 +10187,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.semesters) && t_value !== (t_value = ctx.error)) {
+    			if ((changed.semesters) && t_value !== (t_value = ctx.error + "")) {
     				set_data(t, t_value);
     			}
     		},
@@ -10251,7 +10380,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (101:14) {#each result.currentSemester.groups as group}
     function create_each_block_1(ctx) {
-    	var option, t_value = ctx.group.name, t, option_value_value, option_selected_value;
+    	var option, t_value = ctx.group.name + "", t, option_value_value, option_selected_value;
 
     	return {
     		c: function create() {
@@ -10269,7 +10398,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.semesters) && t_value !== (t_value = ctx.group.name)) {
+    			if ((changed.semesters) && t_value !== (t_value = ctx.group.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -10294,7 +10423,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (109:2) {#if result && result.nextSemester}
     function create_if_block$c(ctx) {
-    	var label, t0_value = ctx.result.nextSemester.name, t0, t1, div1, div0, select, option, dispose;
+    	var label, t0_value = ctx.result.nextSemester.name + "", t0, t1, div1, div0, select, option, dispose;
 
     	var each_value = ctx.result.nextSemester.groups;
 
@@ -10361,7 +10490,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     		p: function update(changed, new_ctx) {
     			ctx = new_ctx;
-    			if ((changed.semesters) && t0_value !== (t0_value = ctx.result.nextSemester.name)) {
+    			if ((changed.semesters) && t0_value !== (t0_value = ctx.result.nextSemester.name + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -10410,7 +10539,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (115:8) {#each result.nextSemester.groups as group}
     function create_each_block$3(ctx) {
-    	var option, t_value = ctx.group.name, t, option_value_value, option_selected_value;
+    	var option, t_value = ctx.group.name + "", t, option_value_value, option_selected_value;
 
     	return {
     		c: function create() {
@@ -10428,7 +10557,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.semesters) && t_value !== (t_value = ctx.group.name)) {
+    			if ((changed.semesters) && t_value !== (t_value = ctx.group.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -10475,7 +10604,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     }
 
     function create_fragment$l(ctx) {
-    	var h2, t0, t1_value = ctx.student.englishName, t1, t2, t3, t4, div0, promise, t5, div1, button, current, dispose;
+    	var h2, t0, t1_value = ctx.student.englishName + "", t1, t2, t3, t4, div0, promise, t5, div1, button, current, dispose;
 
     	var error = new Error$1({
     		props: { errors: ctx.errors },
@@ -10551,7 +10680,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     		p: function update(changed, new_ctx) {
     			ctx = new_ctx;
-    			if ((!current || changed.student) && t1_value !== (t1_value = ctx.student.englishName)) {
+    			if ((!current || changed.student) && t1_value !== (t1_value = ctx.student.englishName + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -10776,15 +10905,15 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/DL.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/DL.svelte generated by Svelte v3.9.1 */
 
-    const file$i = "src/components/DL.svelte";
+    const file$i = "admin/src/components/DL.svelte";
 
     function create_fragment$m(ctx) {
     	var dl, current;
 
-    	const default_slot_1 = ctx.$$slots.default;
-    	const default_slot = create_slot(default_slot_1, ctx, null);
+    	const default_slot_template = ctx.$$slots.default;
+    	const default_slot = create_slot(default_slot_template, ctx, null);
 
     	return {
     		c: function create() {
@@ -10813,7 +10942,10 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     		p: function update(changed, ctx) {
     			if (default_slot && default_slot.p && changed.$$scope) {
-    				default_slot.p(get_slot_changes(default_slot_1, ctx, changed, null), get_slot_context(default_slot_1, ctx, null));
+    				default_slot.p(
+    					get_slot_changes(default_slot_template, ctx, changed, null),
+    					get_slot_context(default_slot_template, ctx, null)
+    				);
     			}
     		},
 
@@ -10855,9 +10987,9 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/students/StudentListItem.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/students/StudentListItem.svelte generated by Svelte v3.9.1 */
 
-    const file$j = "src/components/students/StudentListItem.svelte";
+    const file$j = "admin/src/components/students/StudentListItem.svelte";
 
     function get_each_context$4(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -10867,7 +10999,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (166:8) {#if student.birthdate}
     function create_if_block_3$1(ctx) {
-    	var p, t0_value = ctx.getAge(ctx.birthdate), t0, t1;
+    	var p, t0_value = ctx.getAge(ctx.birthdate) + "", t0, t1;
 
     	return {
     		c: function create() {
@@ -10884,7 +11016,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.birthdate) && t0_value !== (t0_value = ctx.getAge(ctx.birthdate))) {
+    			if ((changed.birthdate) && t0_value !== (t0_value = ctx.getAge(ctx.birthdate) + "")) {
     				set_data(t0, t0_value);
     			}
     		},
@@ -10990,7 +11122,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (178:14) {#each student.groups as group}
     function create_each_block$4(ctx) {
-    	var li, t0_value = ctx.group.name, t0, t1, t2_value = ctx.group.semester.name, t2;
+    	var li, t0_value = ctx.group.name + "", t0, t1, t2_value = ctx.group.semester.name + "", t2;
 
     	return {
     		c: function create() {
@@ -11010,11 +11142,11 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.student) && t0_value !== (t0_value = ctx.group.name)) {
+    			if ((changed.student) && t0_value !== (t0_value = ctx.group.name + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((changed.student) && t2_value !== (t2_value = ctx.group.semester.name)) {
+    			if ((changed.student) && t2_value !== (t2_value = ctx.group.semester.name + "")) {
     				set_data(t2, t2_value);
     			}
     		},
@@ -11029,7 +11161,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     // (174:6) <DL>
     function create_default_slot_2(ctx) {
-    	var dt0, t1, dd0, ul, t2, dt1, dd1, t4_value = ctx.student.pinyinName, t4, t5, dt2, dd2, t7, t8, dt3, dd3, t10_value = ctx.student.pointsTally, t10;
+    	var dt0, t1, dd0, ul, t2, dt1, dd1, t4_value = ctx.student.pinyinName + "", t4, t5, dt2, dd2, t7, t8, dt3, dd3, t10_value = ctx.student.pointsTally + "", t10;
 
     	var each_value = ctx.student.groups;
 
@@ -11146,7 +11278,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     				each_1_else.m(ul, null);
     			}
 
-    			if ((changed.student) && t4_value !== (t4_value = ctx.student.pinyinName)) {
+    			if ((changed.student) && t4_value !== (t4_value = ctx.student.pinyinName + "")) {
     				set_data(t4, t4_value);
     			}
 
@@ -11154,7 +11286,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     				set_data(t7, ctx.birthdate);
     			}
 
-    			if ((changed.student) && t10_value !== (t10_value = ctx.student.pointsTally)) {
+    			if ((changed.student) && t10_value !== (t10_value = ctx.student.pointsTally + "")) {
     				set_data(t10, t10_value);
     			}
     		},
@@ -11417,7 +11549,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     }
 
     function create_fragment$n(ctx) {
-    	var div4, div3, div2, div0, figure, img, img_src_value, img_class_value, t0, div1, p0, strong, t1_value = ctx.student.englishName, t1, t2, span, t3_value = ctx.student.chineseName, t3, t4, p1, t5, t6, t7, i, i_class_value, t8, t9, footer, button0, t11, button1, t13, button2, t15, updating_open, t16, updating_open_1, t17, updating_open_2, current, dispose;
+    	var div4, div3, div2, div0, figure, img, img_src_value, img_class_value, t0, div1, p0, strong, t1_value = ctx.student.englishName + "", t1, t2, span, t3_value = ctx.student.chineseName + "", t3, t4, p1, t5, t6, t7, i, i_class_value, t8, t9, footer, button0, t11, button1, t13, button2, t15, updating_open, t16, updating_open_1, t17, updating_open_2, current, dispose;
 
     	var if_block0 = (ctx.student.birthdate) && create_if_block_3$1(ctx);
 
@@ -11610,11 +11742,11 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     				attr(img, "class", img_class_value);
     			}
 
-    			if ((!current || changed.student) && t1_value !== (t1_value = ctx.student.englishName)) {
+    			if ((!current || changed.student) && t1_value !== (t1_value = ctx.student.englishName + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((!current || changed.student) && t3_value !== (t3_value = ctx.student.chineseName)) {
+    			if ((!current || changed.student) && t3_value !== (t3_value = ctx.student.chineseName + "")) {
     				set_data(t3, t3_value);
     			}
 
@@ -11871,9 +12003,9 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/students/FilterStudents.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/students/FilterStudents.svelte generated by Svelte v3.9.1 */
 
-    const file$k = "src/components/students/FilterStudents.svelte";
+    const file$k = "admin/src/components/students/FilterStudents.svelte";
 
     function create_fragment$o(ctx) {
     	var div0, input, t0, span, i0, t1, div2, div1, select, option0, option1, option2, option3, option4, t7, button, i1, i1_class_value, dispose;
@@ -11955,7 +12087,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     			insert(target, div0, anchor);
     			append(div0, input);
 
-    			input.value = ctx.searchString;
+    			set_input_value(input, ctx.searchString);
 
     			append(div0, t0);
     			append(div0, span);
@@ -11978,7 +12110,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if (changed.searchString && (input.value !== ctx.searchString)) input.value = ctx.searchString;
+    			if (changed.searchString && (input.value !== ctx.searchString)) set_input_value(input, ctx.searchString);
     			if (changed.sortParam) select_option(select, ctx.sortParam);
 
     			if ((changed.direction) && i1_class_value !== (i1_class_value = "fas fa-sort-" + (ctx.direction === -1 ? 'up' : 'down') + " svelte-49z4zm")) {
@@ -12048,9 +12180,9 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/students/AddStudent.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/students/AddStudent.svelte generated by Svelte v3.9.1 */
 
-    const file$l = "src/components/students/AddStudent.svelte";
+    const file$l = "admin/src/components/students/AddStudent.svelte";
 
     // (42:0) <Modal bind:open>
     function create_default_slot$4(ctx) {
@@ -12238,9 +12370,9 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/students/StudentList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/students/StudentList.svelte generated by Svelte v3.9.1 */
 
-    const file$m = "src/components/students/StudentList.svelte";
+    const file$m = "admin/src/components/students/StudentList.svelte";
 
     function get_each_context$5(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -12369,7 +12501,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     }
 
     function create_fragment$q(ctx) {
-    	var p, t0, t1_value = ctx.$students && ctx.$students.length, t1, t2, t3, div1, div0, t4, t5, current;
+    	var p, t0, t1_value = ctx.$students && ctx.$students.length + "", t1, t2, t3, div1, div0, t4, t5, current;
 
     	var addstudent = new AddStudent({ $$inline: true });
 
@@ -12420,7 +12552,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$students) && t1_value !== (t1_value = ctx.$students && ctx.$students.length)) {
+    			if ((!current || changed.$students) && t1_value !== (t1_value = ctx.$students && ctx.$students.length + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -12480,7 +12612,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	let $students;
 
     	validate_store(students, 'students');
-    	subscribe($$self, students, $$value => { $students = $$value; $$invalidate('$students', $students); });
+    	component_subscribe($$self, students, $$value => { $students = $$value; $$invalidate('$students', $students); });
 
     	
 
@@ -12500,10 +12632,10 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	}
     }
 
-    /* src/components/students/Students.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/students/Students.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$7 } = globals;
 
-    const file$n = "src/components/students/Students.svelte";
+    const file$n = "admin/src/components/students/Students.svelte";
 
     // (31:0) {:else}
     function create_else_block$5(ctx) {
@@ -12634,13 +12766,13 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$students) return 0;
     		if (!ctx.errors) return 1;
     		return 2;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -12671,7 +12803,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -12722,7 +12854,7 @@ mutation removeStudentFromGroup($groupId: ID!, $studentId: ID! ) {
     	let $students;
 
     	validate_store(students, 'students');
-    	subscribe($$self, students, $$value => { $students = $$value; $$invalidate('$students', $students); });
+    	component_subscribe($$self, students, $$value => { $students = $$value; $$invalidate('$students', $students); });
 
     	
 
@@ -12847,9 +12979,9 @@ mutation deleteGroup($id: ID!) {
 
     const groups = createGroupStore();
 
-    /* src/components/groups/SemesterSelect.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/groups/SemesterSelect.svelte generated by Svelte v3.9.1 */
 
-    const file$o = "src/components/groups/SemesterSelect.svelte";
+    const file$o = "admin/src/components/groups/SemesterSelect.svelte";
 
     function get_each_context$6(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -13026,7 +13158,7 @@ mutation deleteGroup($id: ID!) {
 
     // (40:10) {#each result as semester}
     function create_each_block$6(ctx) {
-    	var option, t_value = ctx.semester.name, t, option_value_value, option_selected_value;
+    	var option, t_value = ctx.semester.name + "", t, option_value_value, option_selected_value;
 
     	return {
     		c: function create() {
@@ -13044,7 +13176,7 @@ mutation deleteGroup($id: ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$semesters) && t_value !== (t_value = ctx.semester.name)) {
+    			if ((changed.$semesters) && t_value !== (t_value = ctx.semester.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -13262,7 +13394,7 @@ mutation deleteGroup($id: ID!) {
     	let $semesters;
 
     	validate_store(semesters, 'semesters');
-    	subscribe($$self, semesters, $$value => { $semesters = $$value; $$invalidate('$semesters', $semesters); });
+    	component_subscribe($$self, semesters, $$value => { $semesters = $$value; $$invalidate('$semesters', $semesters); });
 
     	
 
@@ -13338,10 +13470,10 @@ mutation deleteGroup($id: ID!) {
     	}
     }
 
-    /* src/components/groups/GroupForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/groups/GroupForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$8 } = globals;
 
-    const file$p = "src/components/groups/GroupForm.svelte";
+    const file$p = "admin/src/components/groups/GroupForm.svelte";
 
     // (39:30) {:else}
     function create_else_block$6(ctx) {
@@ -13431,12 +13563,12 @@ mutation deleteGroup($id: ID!) {
     function create_fragment$t(ctx) {
     	var h2, t0, t1, form_1, t2, updating_value, t3, updating_value_1, t4, div, button, t6, input1, current, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.id) return create_if_block_1$8;
     		return create_else_block$6;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block0 = current_block_type(ctx);
 
     	var if_block1 = (ctx.errors) && create_if_block$h(ctx);
@@ -13537,7 +13669,7 @@ mutation deleteGroup($id: ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    			if (current_block_type !== (current_block_type = select_block_type(changed, ctx))) {
     				if_block0.d(1);
     				if_block0 = current_block_type(ctx);
     				if (if_block0) {
@@ -13749,7 +13881,7 @@ mutation deleteGroup($id: ID!) {
     	}
     }
 
-    /* src/components/groups/EditGroup.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/groups/EditGroup.svelte generated by Svelte v3.9.1 */
 
     function create_fragment$u(ctx) {
     	var current;
@@ -13885,9 +14017,9 @@ mutation deleteGroup($id: ID!) {
     	}
     }
 
-    /* src/components/groups/GroupsListItem.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/groups/GroupsListItem.svelte generated by Svelte v3.9.1 */
 
-    const file$q = "src/components/groups/GroupsListItem.svelte";
+    const file$q = "admin/src/components/groups/GroupsListItem.svelte";
 
     function get_each_context$7(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -13897,7 +14029,7 @@ mutation deleteGroup($id: ID!) {
 
     // (53:4) {#if group.students && group.students.length}
     function create_if_block_1$9(ctx) {
-    	var p, strong, t0_value = ctx.group.students.length, t0, t1, t2, ul;
+    	var p, strong, t0_value = ctx.group.students.length + "", t0, t1, t2, ul;
 
     	var each_value = ctx.group.students;
 
@@ -13939,7 +14071,7 @@ mutation deleteGroup($id: ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.group) && t0_value !== (t0_value = ctx.group.students.length)) {
+    			if ((changed.group) && t0_value !== (t0_value = ctx.group.students.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -13979,7 +14111,7 @@ mutation deleteGroup($id: ID!) {
 
     // (56:8) {#each group.students as student}
     function create_each_block$7(ctx) {
-    	var li, t0_value = ctx.student.chineseName, t0, t1, t2_value = ctx.student.englishName, t2;
+    	var li, t0_value = ctx.student.chineseName + "", t0, t1, t2_value = ctx.student.englishName + "", t2;
 
     	return {
     		c: function create() {
@@ -13998,11 +14130,11 @@ mutation deleteGroup($id: ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.group) && t0_value !== (t0_value = ctx.student.chineseName)) {
+    			if ((changed.group) && t0_value !== (t0_value = ctx.student.chineseName + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((changed.group) && t2_value !== (t2_value = ctx.student.englishName)) {
+    			if ((changed.group) && t2_value !== (t2_value = ctx.student.englishName + "")) {
     				set_data(t2, t2_value);
     			}
     		},
@@ -14130,7 +14262,7 @@ mutation deleteGroup($id: ID!) {
     }
 
     function create_fragment$v(ctx) {
-    	var li, div, h3, t0_value = ctx.group.name, t0, t1, t2, h4, t3_value = ctx.group.semester.name, t3, t4, t5, footer, button0, t7, button1, li_intro, li_outro, t9, updating_open, t10, updating_open_1, current, dispose;
+    	var li, div, h3, t0_value = ctx.group.name + "", t0, t1, t2, h4, t3_value = ctx.group.semester.name + "", t3, t4, t5, footer, button0, t7, button1, li_intro, li_outro, t9, updating_open, t10, updating_open_1, current, dispose;
 
     	var if_block = (ctx.group.students && ctx.group.students.length) && create_if_block_1$9(ctx);
 
@@ -14242,11 +14374,11 @@ mutation deleteGroup($id: ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.group) && t0_value !== (t0_value = ctx.group.name)) {
+    			if ((!current || changed.group) && t0_value !== (t0_value = ctx.group.name + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((!current || changed.group) && t3_value !== (t3_value = ctx.group.semester.name)) {
+    			if ((!current || changed.group) && t3_value !== (t3_value = ctx.group.semester.name + "")) {
     				set_data(t3, t3_value);
     			}
 
@@ -14398,9 +14530,9 @@ mutation deleteGroup($id: ID!) {
     	}
     }
 
-    /* src/components/groups/AddGroup.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/groups/AddGroup.svelte generated by Svelte v3.9.1 */
 
-    const file$r = "src/components/groups/AddGroup.svelte";
+    const file$r = "admin/src/components/groups/AddGroup.svelte";
 
     // (36:0) <Modal bind:open>
     function create_default_slot$6(ctx) {
@@ -14588,9 +14720,9 @@ mutation deleteGroup($id: ID!) {
     	}
     }
 
-    /* src/components/groups/GroupsList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/groups/GroupsList.svelte generated by Svelte v3.9.1 */
 
-    const file$s = "src/components/groups/GroupsList.svelte";
+    const file$s = "admin/src/components/groups/GroupsList.svelte";
 
     function get_each_context$8(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -14715,7 +14847,7 @@ mutation deleteGroup($id: ID!) {
     }
 
     function create_fragment$x(ctx) {
-    	var p, t0, t1_value = ctx.$groups && ctx.$groups.length, t1, t2, t3, div, t4, if_block_anchor, current;
+    	var p, t0, t1_value = ctx.$groups && ctx.$groups.length + "", t1, t2, t3, div, t4, if_block_anchor, current;
 
     	var addgroup = new AddGroup({ $$inline: true });
 
@@ -14758,7 +14890,7 @@ mutation deleteGroup($id: ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$groups) && t1_value !== (t1_value = ctx.$groups && ctx.$groups.length)) {
+    			if ((!current || changed.$groups) && t1_value !== (t1_value = ctx.$groups && ctx.$groups.length + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -14821,7 +14953,7 @@ mutation deleteGroup($id: ID!) {
     	let $groups;
 
     	validate_store(groups, 'groups');
-    	subscribe($$self, groups, $$value => { $groups = $$value; $$invalidate('$groups', $groups); });
+    	component_subscribe($$self, groups, $$value => { $groups = $$value; $$invalidate('$groups', $groups); });
 
     	let sortedGroups;
 
@@ -14843,10 +14975,10 @@ mutation deleteGroup($id: ID!) {
     	}
     }
 
-    /* src/components/groups/Groups.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/groups/Groups.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$9 } = globals;
 
-    const file$t = "src/components/groups/Groups.svelte";
+    const file$t = "admin/src/components/groups/Groups.svelte";
 
     // (25:0) {:else}
     function create_else_block$7(ctx) {
@@ -14977,13 +15109,13 @@ mutation deleteGroup($id: ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$groups) return 0;
     		if (!ctx.errors) return 1;
     		return 2;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -15014,7 +15146,7 @@ mutation deleteGroup($id: ID!) {
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -15065,7 +15197,7 @@ mutation deleteGroup($id: ID!) {
     	let $groups;
 
     	validate_store(groups, 'groups');
-    	subscribe($$self, groups, $$value => { $groups = $$value; $$invalidate('$groups', $groups); });
+    	component_subscribe($$self, groups, $$value => { $groups = $$value; $$invalidate('$groups', $groups); });
 
     	
 
@@ -15647,10 +15779,10 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     const WS_TIMEOUT = 30000;
 
     function isString(value) {
-      return typeof value === "string";
+      return typeof value === 'string'
     }
     function isObject(value) {
-      return value !== null && typeof value === "object";
+      return value !== null && typeof value === 'object'
     }
 
     class SubscriptionClient {
@@ -15680,7 +15812,6 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
         this.closedByUser = false;
         this.backoff = new backo2({ jitter: 0.5 });
         this.eventEmitter = new eventemitter3();
-        this.middlewares = [];
         this.client = null;
         this.maxConnectTimeGenerator = this.createMaxConnectTimeGenerator();
         this.connectionParams = this.getConnectionParams(connectionParams);
@@ -15692,10 +15823,10 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
       get status() {
         if (this.client === null) {
-          return this.wsImpl.CLOSED;
+          return this.wsImpl.CLOSED
         }
 
-        return this.client.readyState;
+        return this.client.readyState
       }
 
       close(isForced = true, closedByUser = true) {
@@ -15708,12 +15839,12 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
             this.clearMaxConnectTimeout();
             this.clearTryReconnectTimeout();
             this.unsubscribeAll();
-            this.sendMessage(undefined, "connection_terminate", null);
+            this.sendMessage(undefined, 'connection_terminate', null);
           }
 
           this.client.close();
           this.client = null;
-          this.eventEmitter.emit("disconnected");
+          this.eventEmitter.emit('disconnected');
 
           if (!isForced) {
             this.tryReconnect();
@@ -15732,7 +15863,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
         return {
           [result]() {
-            return this;
+            return this
           },
           subscribe(observerOrNext, onError, onComplete) {
             const observer = getObserver(observerOrNext, onError, onComplete);
@@ -15759,34 +15890,40 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
                   opId = null;
                 }
               }
-            };
+            }
           }
-        };
+        }
       }
 
       on(eventName, callback, context) {
         const handler = this.eventEmitter.on(eventName, callback, context);
         return () => {
           handler.off(eventName, callback, context);
-        };
+        }
       }
+
       onConnected(callback, context) {
-        return this.on("connected", callback, context);
+        return this.on('connected', callback, context)
       }
+
       onConnecting(callback, context) {
-        return this.on("connecting", callback, context);
+        return this.on('connecting', callback, context)
       }
+
       onDisconnected(callback, context) {
-        return this.on("disconnected", callback, context);
+        return this.on('disconnected', callback, context)
       }
+
       onReconnected(callback, context) {
-        return this.on("reconnected", callback, context);
+        return this.on('reconnected', callback, context)
       }
+
       onReconnecting(callback, context) {
-        return this.on("reconnecting", callback, context);
+        return this.on('reconnecting', callback, context)
       }
+
       onError(callback, context) {
-        return this.on("error", callback, context);
+        return this.on('error', callback, context)
       }
 
       unsubscribeAll() {
@@ -15795,57 +15932,19 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
         });
       }
 
-      applyMiddlewares(options) {
-        return new Promise((resolve, reject) => {
-          const queue = (funcs, scope) => {
-            const next = error => {
-              if (error) {
-                reject(error);
-              } else {
-                if (funcs.length > 0) {
-                  const f = funcs.shift();
-                  if (f) {
-                    f.applyMiddleware.apply(scope, [options, next]);
-                  }
-                } else {
-                  resolve(options);
-                }
-              }
-            };
-            next();
-          };
-
-          queue([...this.middlewares], this);
-        });
-      }
-
-      use(middlewares) {
-        middlewares.map(middleware => {
-          if (typeof middleware.applyMiddleware === "function") {
-            this.middlewares.push(middleware);
-          } else {
-            throw new TypeError(
-              "Middleware must implement the applyMiddleware function."
-            );
-          }
-        });
-
-        return this;
-      }
-
       getConnectionParams(connectionParams) {
         return () =>
           new Promise((resolve, reject) => {
-            if (typeof connectionParams === "function") {
+            if (typeof connectionParams === 'function') {
               try {
-                return resolve(connectionParams.call(null));
+                return resolve(connectionParams(null))
               } catch (error) {
-                return reject(error);
+                return reject(error)
               }
             }
 
             resolve(connectionParams);
-          });
+          })
       }
 
       executeOperation(options, handler) {
@@ -15856,31 +15955,29 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
         const opId = this.generateOperationId();
         this.operations[opId] = { options: options, handler };
 
-        this.applyMiddlewares(options)
-          .then(processedOptions => {
-            this.checkOperationOptions(processedOptions, handler);
-            if (this.operations[opId]) {
-              this.operations[opId] = { options: processedOptions, handler };
-              this.sendMessage(opId, "start", processedOptions);
-            }
-          })
-          .catch(error => {
-            this.unsubscribe(opId);
-            handler(this.formatErrors(error));
-          });
+        try {
+          this.checkOperationOptions(options, handler);
+          if (this.operations[opId]) {
+            this.operations[opId] = { options, handler };
+            this.sendMessage(opId, 'start', options);
+          }
+        } catch (error) {
+          this.unsubscribe(opId);
+          handler(this.formatErrors(error));
+        }
 
-        return opId;
+        return opId
       }
 
       getObserver(observerOrNext, error, complete) {
-        if (typeof observerOrNext === "function") {
+        if (typeof observerOrNext === 'function') {
           return {
             next: v => observerOrNext(v),
             error: e => error && error(e),
             complete: () => complete && complete()
-          };
+          }
         }
-        return observerOrNext;
+        return observerOrNext
       }
 
       createMaxConnectTimeGenerator() {
@@ -15890,7 +15987,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
           min: minValue,
           max: maxValue,
           factor: 1.2
-        });
+        })
       }
 
       clearCheckConnectionInterval() {
@@ -15899,24 +15996,28 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
           this.checkConnectionIntervalId = null;
         }
       }
+
       clearMaxConnectTimeout() {
         if (this.maxConnectTimeoutId) {
           clearTimeout(this.maxConnectTimeoutId);
           this.maxConnectTimeoutId = null;
         }
       }
+
       clearTryReconnectTimeout() {
         if (this.tryReconnectTimeoutId) {
           clearTimeout(this.tryReconnectTimeoutId);
           this.tryReconnectTimeoutId = null;
         }
       }
+
       clearInactivityTimeout() {
         if (this.inactivityTimeoutId) {
           clearTimeout(this.inactivityTimeoutId);
           this.inactivityTimeoutId = null;
         }
       }
+
       setInactivityTimeout() {
         if (
           this.inactivityTimeout > 0 &&
@@ -15933,10 +16034,10 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
       checkOperationOptions(options, handler) {
         const { query, variables, operationName } = options;
         if (!query) {
-          throw new Error("Must provide a query.");
+          throw new Error('Must provide a query.')
         }
         if (!handler) {
-          throw new Error("Must provide an handler.");
+          throw new Error('Must provide an handler.')
         }
         if (
           !isString(query) ||
@@ -15944,9 +16045,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
           (variables && !isObject(variables))
         ) {
           throw new Error(
-            "Incorrect option types. query must be a string," +
-              "`operationName` must be a string, and `variables` must be an object."
-          );
+            'Incorrect option types. query must be a string,' +
+            '`operationName` must be a string, and `variables` must be an object.'
+          )
         }
       }
 
@@ -15954,33 +16055,33 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
         const payloadToReturn =
           payload && payload.query
             ? Object.assign({}, payload, {
-                query: payload.query
-              })
+              query: payload.query
+            })
             : payload;
         return {
           id,
           type,
           payload: payloadToReturn
-        };
+        }
       }
 
       formatErrors(errors) {
         if (Array.isArray(errors)) {
-          return errors;
+          return errors
         }
         if (errors && errors.errors) {
-          return this.formatErrors(errors.errors);
+          return this.formatErrors(errors.errors)
         }
         if (errors && errors.message) {
-          return [errors];
+          return [errors]
         }
         return [
           {
-            name: "FormatedError",
-            message: "Unknown error",
+            name: 'FormatedError',
+            message: 'Unknown error',
             originalError: errors
           }
-        ];
+        ]
       }
 
       sendMessage(id, type, payload) {
@@ -15991,28 +16092,28 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
       sendMessageRaw(message) {
         switch (this.status) {
           case this.wsImpl.OPEN:
-            let serializedMessage = JSON.stringify(message);
+            const serializedMessage = JSON.stringify(message);
             try {
               JSON.parse(serializedMessage);
             } catch (error) {
               this.eventEmitter.emit(
-                "error",
+                'error',
                 new Error(`Message must be JSON-serializable. Got: ${message}`)
               );
             }
             this.client.send(serializedMessage);
-            break;
+            break
           case this.wsImpl.CONNECTING:
             this.unsentMessagesQueue.push(message);
-            break;
+            break
           default:
             if (!this.reconnecting) {
               this.eventEmitter.emit(
-                "error",
+                'error',
                 new Error(
-                  "A message was not sent because socket is not connected, is closing or " +
-                    "is already closed. Message was: " +
-                    JSON.stringify(message)
+                  'A message was not sent because socket is not connected, is closing or ' +
+                  'is already closed. Message was: ' +
+                  JSON.stringify(message)
                 )
               );
             }
@@ -16020,17 +16121,18 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
       }
 
       generateOperationId() {
-        return String(++this.nextOperationId);
+        return String(++this.nextOperationId)
       }
+
       tryReconnect() {
         if (!this.reconnect || this.backoff.attempts >= this.reconnectionAttempts) {
-          return;
+          return
         }
 
         if (!this.reconnecting) {
           Object.keys(this.operations).forEach(key => {
             this.unsentMessagesQueue.push(
-              this.buildMessage(key, "start", this.operations[key].options)
+              this.buildMessage(key, 'start', this.operations[key].options)
             );
           });
           this.reconnecting = true;
@@ -16054,7 +16156,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
       checkConnection() {
         if (this.wasKeepAliveReceived) {
           this.wasKeepAliveReceived = false;
-          return;
+          return
         }
 
         if (!this.reconnecting) {
@@ -16075,26 +16177,26 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
       }
 
       connect() {
-        this.client = new WebSocket(this.url, "graphql-ws");
+        this.client = new WebSocket(this.url, 'graphql-ws');
 
         this.checkMaxConnectTimeout();
 
-        this.client.addEventListener("open", async () => {
+        this.client.addEventListener('open', async () => {
           if (this.status === this.wsImpl.OPEN) {
             this.clearMaxConnectTimeout();
             this.closedByUser = false;
             this.eventEmitter.emit(
-              this.reconnecting ? "reconnecting" : "connecting"
+              this.reconnecting ? 'reconnecting' : 'connecting'
             );
 
             try {
               const connectionParams = await this.connectionParams();
 
               // Send connection_init message, no need to wait for connection to success (reduce roundtrips)
-              this.sendMessage(undefined, "connection_init", connectionParams);
+              this.sendMessage(undefined, 'connection_init', connectionParams);
               this.flushUnsentMessagesQueue();
             } catch (error) {
-              this.sendMessage(undefined, "connection_error", error);
+              this.sendMessage(undefined, 'connection_error', error);
               this.flushUnsentMessagesQueue();
             }
           }
@@ -16106,13 +16208,13 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
           }
         };
 
-        this.client.addEventListener("error", error => {
+        this.client.addEventListener('error', error => {
           // Capture and ignore errors to prevent unhandled exceptions, wait for
           // onclose to fire before attempting a reconnect.
-          this.eventEmitter.emit("error", error);
+          this.eventEmitter.emit('error', error);
         });
 
-        this.client.addEventListener("message", ({ data }) => {
+        this.client.addEventListener('message', ({ data }) => {
           this.processReceivedData(data);
         });
       }
@@ -16125,27 +16227,27 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
           parsedMessage = JSON.parse(receivedData);
           opId = parsedMessage.id;
         } catch (error) {
-          throw new Error(`Message must be JSON-parseable. Got: ${receivedData}`);
+          throw new Error(`Message must be JSON-parseable. Got: ${receivedData}`)
         }
 
         if (
-          ["data", "complete", "error"].includes(parsedMessage.type) &&
+          ['data', 'complete', 'error'].includes(parsedMessage.type) &&
           !this.operations[opId]
         ) {
           this.unsubscribe(opId);
 
-          return;
+          return
         }
 
         switch (parsedMessage.type) {
-          case "connection_error":
+          case 'connection_error':
             if (this.connectionCallback) {
               this.connectionCallback(parsedMessage.payload);
             }
-            break;
+            break
 
-          case "connection_ack":
-            this.eventEmitter.emit(this.reconnecting ? "reconnected" : "connected");
+          case 'connection_ack':
+            this.eventEmitter.emit(this.reconnecting ? 'reconnected' : 'connected');
             this.reconnecting = false;
             this.backoff.reset();
             this.maxConnectTimeGenerator.reset();
@@ -16153,33 +16255,33 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
             if (this.connectionCallback) {
               this.connectionCallback();
             }
-            break;
+            break
 
-          case "complete":
+          case 'complete':
             this.operations[opId].handler(null, null);
             delete this.operations[opId];
-            break;
+            break
 
-          case "error":
+          case 'error':
             this.operations[opId].handler(
               this.formatErrors(parsedMessage.payload),
               null
             );
             delete this.operations[opId];
-            break;
+            break
 
-          case "data":
+          case 'data':
             const parsedPayload = !parsedMessage.payload.errors
               ? parsedMessage.payload
               : {
-                  ...parsedMessage.payload,
-                  errors: this.formatErrors(parsedMessage.payload.errors)
-                };
+                ...parsedMessage.payload,
+                errors: this.formatErrors(parsedMessage.payload.errors)
+              };
             this.operations[opId].handler(null, parsedPayload);
-            break;
+            break
 
-          case "ka":
-            const firstKA = typeof this.wasKeepAliveReceived === "undefined";
+          case 'ka':
+            const firstKA = typeof this.wasKeepAliveReceived === 'undefined';
             this.wasKeepAliveReceived = true;
 
             if (firstKA) {
@@ -16194,10 +16296,10 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
               this.checkConnection.bind(this),
               this.wsTimeout
             );
-            break;
+            break
 
           default:
-            throw new Error("Invalid message type!");
+            throw new Error('Invalid message type!')
         }
       }
 
@@ -16205,15 +16307,18 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
         if (this.operations[opId]) {
           delete this.operations[opId];
           this.setInactivityTimeout();
-          this.sendMessage(opId, "stop", undefined);
+          this.sendMessage(opId, 'stop', undefined);
         }
       }
     }
 
-    const host =  "ws://192.168.1.9:4000/subscriptions";
+    // const host = "development" === 'production'
+    //   ? process.env.PROD_SUBSCRIPTION_ENDPOINT
+    //   : process.env.DEV_SUBSCRIPTION_ENDPOINT
 
-    const ws = new SubscriptionClient(host, {
+    const ws = new SubscriptionClient("ws://192.168.1.9:4000/subscriptions", {
       reconnect: true,
+      lazy: true,
       connectionCallback: error => {
         error && console.error(error);
       }
@@ -19561,13 +19666,13 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
       return format(date, formatStr, options);
     }
 
-    /* src/components/sessions/DeleteSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/DeleteSession.svelte generated by Svelte v3.9.1 */
 
-    const file$u = "src/components/sessions/DeleteSession.svelte";
+    const file$u = "admin/src/components/sessions/DeleteSession.svelte";
 
     // (32:0) <ConfirmDelete name="session" on:delete={handleDelete} {errors} {loading} bind:open>
     function create_default_slot$7(ctx) {
-    	var span, t0, t1_value = ctx.dateString(ctx.session.startsAt), t1, t2, t3_value = ctx.session.group.name, t3, t4;
+    	var span, t0, t1_value = ctx.dateString(ctx.session.startsAt) + "", t1, t2, t3_value = ctx.session.group.name + "", t3, t4;
 
     	return {
     		c: function create() {
@@ -19590,11 +19695,11 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.session) && t1_value !== (t1_value = ctx.dateString(ctx.session.startsAt))) {
+    			if ((changed.session) && t1_value !== (t1_value = ctx.dateString(ctx.session.startsAt) + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((changed.session) && t3_value !== (t3_value = ctx.session.group.name)) {
+    			if ((changed.session) && t3_value !== (t3_value = ctx.session.group.name + "")) {
     				set_data(t3, t3_value);
     			}
     		},
@@ -19752,9 +19857,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/SemesterSelect.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/SemesterSelect.svelte generated by Svelte v3.9.1 */
 
-    const file$v = "src/components/sessions/SemesterSelect.svelte";
+    const file$v = "admin/src/components/sessions/SemesterSelect.svelte";
 
     function get_each_context$9(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -19834,7 +19939,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (35:4) {#each $semesters as {id, name}
     function create_each_block$9(key_1, ctx) {
-    	var option, t_value = ctx.name, t, option_value_value;
+    	var option, t_value = ctx.name + "", t, option_value_value;
 
     	return {
     		key: key_1,
@@ -19856,7 +19961,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$semesters) && t_value !== (t_value = ctx.name)) {
+    			if ((changed.$semesters) && t_value !== (t_value = ctx.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -19878,12 +19983,12 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     function create_fragment$A(ctx) {
     	var div, select, select_value_value, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$semesters) return create_if_block$l;
     		return create_else_block$8;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	return {
@@ -19919,7 +20024,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type(changed, ctx)) && if_block) {
     				if_block.p(changed, ctx);
     			} else {
     				if_block.d(1);
@@ -19961,9 +20066,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	let $semester, $semesters;
 
     	validate_store(semester, 'semester');
-    	subscribe($$self, semester, $$value => { $semester = $$value; $$invalidate('$semester', $semester); });
+    	component_subscribe($$self, semester, $$value => { $semester = $$value; $$invalidate('$semester', $semester); });
     	validate_store(semesters, 'semesters');
-    	subscribe($$self, semesters, $$value => { $semesters = $$value; $$invalidate('$semesters', $semesters); });
+    	component_subscribe($$self, semesters, $$value => { $semesters = $$value; $$invalidate('$semesters', $semesters); });
 
     	
 
@@ -20126,10 +20231,10 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     const lesson = createLessonStore();
 
-    /* src/components/FilterItems.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/FilterItems.svelte generated by Svelte v3.9.1 */
     const { console: console_1 } = globals;
 
-    const file$w = "src/components/FilterItems.svelte";
+    const file$w = "admin/src/components/FilterItems.svelte";
 
     function get_each_context$a(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -20224,7 +20329,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (70:12) {#each tags as tag (tag.id)}
     function create_each_block$a(key_1, ctx) {
-    	var option, t_value = ctx.tag.name, t, option_value_value;
+    	var option, t_value = ctx.tag.name + "", t, option_value_value;
 
     	return {
     		key: key_1,
@@ -20246,7 +20351,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.tags) && t_value !== (t_value = ctx.tag.name)) {
+    			if ((changed.tags) && t_value !== (t_value = ctx.tag.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -20313,7 +20418,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     			append(div1, div0);
     			append(div0, input);
 
-    			input.value = ctx.searchString;
+    			set_input_value(input, ctx.searchString);
 
     			append(div0, t0);
     			append(div0, span);
@@ -20323,7 +20428,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if (changed.searchString && (input.value !== ctx.searchString)) input.value = ctx.searchString;
+    			if (changed.searchString && (input.value !== ctx.searchString)) set_input_value(input, ctx.searchString);
 
     			if (changed.loading) {
     				toggle_class(div0, "is-loading", ctx.loading);
@@ -20363,7 +20468,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	let searchString = '';
       let loading = false;
       let tagFilter = '';
-      let { searchParams = 'name', store } = $$props; validate_store(store, 'store'); subscribe($$self, store, $$value => { $store = $$value; $$invalidate('$store', $store); });
+      let { searchParams = 'name', store } = $$props; validate_store(store, 'store'); component_subscribe($$self, store, $$value => { $store = $$value; $$invalidate('$store', $store); });
 
       const getItems = async () => {
         const where = {};
@@ -20463,9 +20568,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/LessonSelect.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/LessonSelect.svelte generated by Svelte v3.9.1 */
 
-    const file$x = "src/components/sessions/LessonSelect.svelte";
+    const file$x = "admin/src/components/sessions/LessonSelect.svelte";
 
     function get_each_context$b(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -20502,7 +20607,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (24:6) {#if $lessons}
     function create_if_block$n(ctx) {
-    	var option, t0_value = ctx.$lessons.length, t0, t1, each_blocks = [], each_1_lookup = new Map(), each_1_anchor;
+    	var option, t0_value = ctx.$lessons.length + "", t0, t1, each_blocks = [], each_1_lookup = new Map(), each_1_anchor;
 
     	var each_value = ctx.$lessons;
 
@@ -20539,7 +20644,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$lessons) && t0_value !== (t0_value = ctx.$lessons.length)) {
+    			if ((changed.$lessons) && t0_value !== (t0_value = ctx.$lessons.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -20563,7 +20668,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (26:6) {#each $lessons as lesson (lesson.id)}
     function create_each_block$b(key_1, ctx) {
-    	var option, t_value = ctx.lesson.name, t, option_value_value, option_selected_value;
+    	var option, t_value = ctx.lesson.name + "", t, option_value_value, option_selected_value;
 
     	return {
     		key: key_1,
@@ -20586,7 +20691,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$lessons) && t_value !== (t_value = ctx.lesson.name)) {
+    			if ((changed.$lessons) && t_value !== (t_value = ctx.lesson.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -20617,12 +20722,12 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		$$inline: true
     	});
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$lessons) return create_if_block$n;
     		return create_else_block$9;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	return {
@@ -20664,7 +20769,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     			if (changed.lessons) filteritems_changes.store = lessons;
     			filteritems.$set(filteritems_changes);
 
-    			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type(changed, ctx)) && if_block) {
     				if_block.p(changed, ctx);
     			} else {
     				if_block.d(1);
@@ -20707,7 +20812,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	let $lessons;
 
     	validate_store(lessons, 'lessons');
-    	subscribe($$self, lessons, $$value => { $lessons = $$value; $$invalidate('$lessons', $lessons); });
+    	component_subscribe($$self, lessons, $$value => { $lessons = $$value; $$invalidate('$lessons', $lessons); });
 
     	
 
@@ -20753,10 +20858,10 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/SessionForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/SessionForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$a } = globals;
 
-    const file$y = "src/components/sessions/SessionForm.svelte";
+    const file$y = "admin/src/components/sessions/SessionForm.svelte";
 
     // (49:30) {:else}
     function create_else_block$a(ctx) {
@@ -20858,12 +20963,12 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     function create_fragment$D(ctx) {
     	var h2, t0, t1, t2, form_1, updating_value, t3, updating_value_1, t4, label0, t6, t7, t8, label1, t10, updating_lessonId, t11, div, button, t13, input2, current, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.id) return create_if_block_1$b;
     		return create_else_block$a;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block0 = current_block_type(ctx);
 
     	var error = new Error$1({
@@ -21019,7 +21124,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    			if (current_block_type !== (current_block_type = select_block_type(changed, ctx))) {
     				if_block0.d(1);
     				if_block0 = current_block_type(ctx);
     				if (if_block0) {
@@ -21139,7 +21244,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	let $semester;
 
     	validate_store(semester, 'semester');
-    	subscribe($$self, semester, $$value => { $semester = $$value; $$invalidate('$semester', $semester); });
+    	component_subscribe($$self, semester, $$value => { $semester = $$value; $$invalidate('$semester', $semester); });
 
     	
 
@@ -21310,7 +21415,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/EditSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/EditSession.svelte generated by Svelte v3.9.1 */
 
     function create_fragment$E(ctx) {
     	var current;
@@ -21457,20 +21562,21 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/SessionListItem.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/SessionListItem.svelte generated by Svelte v3.9.1 */
 
-    const file$z = "src/components/sessions/SessionListItem.svelte";
+    const file$z = "admin/src/components/sessions/SessionListItem.svelte";
 
     // (68:0) {#if session}
     function create_if_block_2$5(ctx) {
-    	var li, t0, div, button0, i0, t1, button1, i1, dispose;
+    	var li, show_if, t0, div, button0, i0, t1, button1, i1, dispose;
 
-    	function select_block_type(ctx) {
-    		if (ctx.isCurrentOrPast(ctx.session.startsAt)) return create_if_block_3$2;
+    	function select_block_type(changed, ctx) {
+    		if ((show_if == null) || changed.session) show_if = !!(ctx.isCurrentOrPast(ctx.session.startsAt));
+    		if (show_if) return create_if_block_3$2;
     		return create_else_block$b;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	return {
@@ -21516,7 +21622,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type(changed, ctx)) && if_block) {
     				if_block.p(changed, ctx);
     			} else {
     				if_block.d(1);
@@ -21541,7 +21647,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (76:0) {:else}
     function create_else_block$b(ctx) {
-    	var span, t0_value = ctx.session.group.name, t0, t1, t2_value = ctx.relativeDate(ctx.session.startsAt), t2, t3, t4_value = ctx.maybeDate(ctx.session.startsAt) || ctx.formatTime(ctx.session.startsAt), t4, t5, t6_value = ctx.formatTime(ctx.session.endsAt), t6, dispose;
+    	var span, t0_value = ctx.session.group.name + "", t0, t1, t2_value = ctx.relativeDate(ctx.session.startsAt) + "", t2, t3, t4_value = ctx.maybeDate(ctx.session.startsAt) || ctx.formatTime(ctx.session.startsAt) + "", t4, t5, t6_value = ctx.formatTime(ctx.session.endsAt) + "", t6, dispose;
 
     	return {
     		c: function create() {
@@ -21569,19 +21675,19 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.session) && t0_value !== (t0_value = ctx.session.group.name)) {
+    			if ((changed.session) && t0_value !== (t0_value = ctx.session.group.name + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((changed.session) && t2_value !== (t2_value = ctx.relativeDate(ctx.session.startsAt))) {
+    			if ((changed.session) && t2_value !== (t2_value = ctx.relativeDate(ctx.session.startsAt) + "")) {
     				set_data(t2, t2_value);
     			}
 
-    			if ((changed.session) && t4_value !== (t4_value = ctx.maybeDate(ctx.session.startsAt) || ctx.formatTime(ctx.session.startsAt))) {
+    			if ((changed.session) && t4_value !== (t4_value = ctx.maybeDate(ctx.session.startsAt) || ctx.formatTime(ctx.session.startsAt) + "")) {
     				set_data(t4, t4_value);
     			}
 
-    			if ((changed.session) && t6_value !== (t6_value = ctx.formatTime(ctx.session.endsAt))) {
+    			if ((changed.session) && t6_value !== (t6_value = ctx.formatTime(ctx.session.endsAt) + "")) {
     				set_data(t6, t6_value);
     			}
     		},
@@ -21598,7 +21704,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (70:2) {#if isCurrentOrPast(session.startsAt)}
     function create_if_block_3$2(ctx) {
-    	var a, span, t0_value = ctx.session.group.name, t0, t1, t2_value = ctx.relativeDate(ctx.session.startsAt), t2, t3, t4_value = ctx.maybeDate(ctx.session.startsAt) || ctx.formatTime(ctx.session.startsAt), t4, t5, t6_value = ctx.formatTime(ctx.session.endsAt), t6, a_href_value, dispose;
+    	var a, span, t0_value = ctx.session.group.name + "", t0, t1, t2_value = ctx.relativeDate(ctx.session.startsAt) + "", t2, t3, t4_value = ctx.maybeDate(ctx.session.startsAt) || ctx.formatTime(ctx.session.startsAt) + "", t4, t5, t6_value = ctx.formatTime(ctx.session.endsAt) + "", t6, a_href_value, dispose;
 
     	return {
     		c: function create() {
@@ -21630,19 +21736,19 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.session) && t0_value !== (t0_value = ctx.session.group.name)) {
+    			if ((changed.session) && t0_value !== (t0_value = ctx.session.group.name + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((changed.session) && t2_value !== (t2_value = ctx.relativeDate(ctx.session.startsAt))) {
+    			if ((changed.session) && t2_value !== (t2_value = ctx.relativeDate(ctx.session.startsAt) + "")) {
     				set_data(t2, t2_value);
     			}
 
-    			if ((changed.session) && t4_value !== (t4_value = ctx.maybeDate(ctx.session.startsAt) || ctx.formatTime(ctx.session.startsAt))) {
+    			if ((changed.session) && t4_value !== (t4_value = ctx.maybeDate(ctx.session.startsAt) || ctx.formatTime(ctx.session.startsAt) + "")) {
     				set_data(t4, t4_value);
     			}
 
-    			if ((changed.session) && t6_value !== (t6_value = ctx.formatTime(ctx.session.endsAt))) {
+    			if ((changed.session) && t6_value !== (t6_value = ctx.formatTime(ctx.session.endsAt) + "")) {
     				set_data(t6, t6_value);
     			}
 
@@ -22139,9 +22245,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/UpcomingSessions.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/UpcomingSessions.svelte generated by Svelte v3.9.1 */
 
-    const file$A = "src/components/sessions/UpcomingSessions.svelte";
+    const file$A = "admin/src/components/sessions/UpcomingSessions.svelte";
 
     function get_each_context$c(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -22287,7 +22393,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (9:2) {#if $todaysSessions.soon}
     function create_if_block_2$6(ctx) {
-    	var h3, t0_value = ctx.$todaysSessions.soon.length, t0, t1, t2_value = ctx.$todaysSessions.soon.length-1 && 's' || '', t2, t3, t4, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
+    	var h3, t0_value = ctx.$todaysSessions.soon.length + "", t0, t1, t2_value = ctx.$todaysSessions.soon.length-1 && 's' || '' + "", t2, t3, t4, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
 
     	var each_value_1 = ctx.$todaysSessions.soon;
 
@@ -22330,11 +22436,11 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$todaysSessions) && t0_value !== (t0_value = ctx.$todaysSessions.soon.length)) {
+    			if ((!current || changed.$todaysSessions) && t0_value !== (t0_value = ctx.$todaysSessions.soon.length + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((!current || changed.$todaysSessions) && t2_value !== (t2_value = ctx.$todaysSessions.soon.length-1 && 's' || '')) {
+    			if ((!current || changed.$todaysSessions) && t2_value !== (t2_value = ctx.$todaysSessions.soon.length-1 && 's' || '' + "")) {
     				set_data(t2, t2_value);
     			}
 
@@ -22430,7 +22536,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (16:2) {#if $todaysSessions.later}
     function create_if_block_1$d(ctx) {
-    	var h3, t0_value = ctx.$todaysSessions.later.length, t0, t1, t2_value = ctx.$todaysSessions.later.length-1 && 's' || '', t2, t3, t4, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
+    	var h3, t0_value = ctx.$todaysSessions.later.length + "", t0, t1, t2_value = ctx.$todaysSessions.later.length-1 && 's' || '' + "", t2, t3, t4, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
 
     	var each_value = ctx.$todaysSessions.later;
 
@@ -22473,11 +22579,11 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$todaysSessions) && t0_value !== (t0_value = ctx.$todaysSessions.later.length)) {
+    			if ((!current || changed.$todaysSessions) && t0_value !== (t0_value = ctx.$todaysSessions.later.length + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((!current || changed.$todaysSessions) && t2_value !== (t2_value = ctx.$todaysSessions.later.length-1 && 's' || '')) {
+    			if ((!current || changed.$todaysSessions) && t2_value !== (t2_value = ctx.$todaysSessions.later.length-1 && 's' || '' + "")) {
     				set_data(t2, t2_value);
     			}
 
@@ -22581,12 +22687,12 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$todaysSessions) return 0;
     		return 1;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -22607,7 +22713,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -22652,9 +22758,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	let $todaysSessions, $time;
 
     	validate_store(todaysSessions, 'todaysSessions');
-    	subscribe($$self, todaysSessions, $$value => { $todaysSessions = $$value; $$invalidate('$todaysSessions', $todaysSessions); });
+    	component_subscribe($$self, todaysSessions, $$value => { $todaysSessions = $$value; $$invalidate('$todaysSessions', $todaysSessions); });
     	validate_store(time, 'time');
-    	subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
+    	component_subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
 
     	return { $todaysSessions, $time };
     }
@@ -22666,9 +22772,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/SessionsList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/SessionsList.svelte generated by Svelte v3.9.1 */
 
-    const file$B = "src/components/sessions/SessionsList.svelte";
+    const file$B = "admin/src/components/sessions/SessionsList.svelte";
 
     function get_each_context$d(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -22717,7 +22823,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     // (8:0) {#if $sessions}
     function create_if_block$r(ctx) {
-    	var h3, t0, t1_value = ctx.$sessions.length, t1, t2, t3, p, t5, ul, each_blocks = [], each_1_lookup = new Map(), current;
+    	var h3, t0, t1_value = ctx.$sessions.length + "", t1, t2, t3, p, t5, ul, each_blocks = [], each_1_lookup = new Map(), current;
 
     	var each_value = ctx.$sessions;
 
@@ -22764,7 +22870,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$sessions) && t1_value !== (t1_value = ctx.$sessions.length)) {
+    			if ((!current || changed.$sessions) && t1_value !== (t1_value = ctx.$sessions.length + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -22866,12 +22972,12 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$sessions) return 0;
     		return 1;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -22892,7 +22998,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -22937,7 +23043,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	let $sessions;
 
     	validate_store(sessions, 'sessions');
-    	subscribe($$self, sessions, $$value => { $sessions = $$value; $$invalidate('$sessions', $sessions); });
+    	component_subscribe($$self, sessions, $$value => { $sessions = $$value; $$invalidate('$sessions', $sessions); });
 
     	return { $sessions };
     }
@@ -22949,9 +23055,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/AddSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/AddSession.svelte generated by Svelte v3.9.1 */
 
-    const file$C = "src/components/sessions/AddSession.svelte";
+    const file$C = "admin/src/components/sessions/AddSession.svelte";
 
     // (46:0) <Modal bind:open>
     function create_default_slot$9(ctx) {
@@ -23030,7 +23136,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     			t1 = space();
     			modal.$$.fragment.c();
     			attr(i, "class", "fas fa-plus");
-    			add_location(i, file$C, 42, 74, 1245);
+    			add_location(i, file$C, 42, 79, 1250);
     			attr(button, "class", "button add-button is-primary svelte-1igl3a3");
     			add_location(button, file$C, 42, 0, 1171);
     			dispose = listen(button, "click", ctx.click_handler);
@@ -23114,11 +23220,7 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
         }
       };
 
-    	function click_handler() {
-    		const $$result = open = true;
-    		$$invalidate('open', open);
-    		return $$result;
-    	}
+    	function click_handler() { open = true; $$invalidate('open', open); }
 
     	function modal_open_binding(value) {
     		open = value;
@@ -23143,9 +23245,9 @@ mutation updateClassSession($id: ID!, $lessonId: ID, $groupId: ID, $input: Class
     	}
     }
 
-    /* src/components/sessions/Sessions.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/Sessions.svelte generated by Svelte v3.9.1 */
 
-    const file$D = "src/components/sessions/Sessions.svelte";
+    const file$D = "admin/src/components/sessions/Sessions.svelte";
 
     function create_fragment$J(ctx) {
     	var t0, h1, t2, t3, button0, i, t4, nav, button1, t6, button2, t8, button3, t10, button4, t12, switch_instance_anchor, current, dispose;
@@ -23792,13 +23894,13 @@ ${AllSessionFields}`;
       })
     };
 
-    /* src/components/session/AttendanceRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/AttendanceRow.svelte generated by Svelte v3.9.1 */
     const { console: console_1$1 } = globals;
 
-    const file$E = "src/components/session/AttendanceRow.svelte";
+    const file$E = "admin/src/components/session/AttendanceRow.svelte";
 
     function create_fragment$K(ctx) {
-    	var li, i, i_class_value, t0, span, t1_value = ctx.student.englishName || ctx.student.chineseName, t1, dispose;
+    	var li, i, i_class_value, t0, span, t1_value = ctx.student.englishName || ctx.student.chineseName + "", t1, dispose;
 
     	return {
     		c: function create() {
@@ -23834,7 +23936,7 @@ ${AllSessionFields}`;
     				attr(i, "class", i_class_value);
     			}
 
-    			if ((changed.student) && t1_value !== (t1_value = ctx.student.englishName || ctx.student.chineseName)) {
+    			if ((changed.student) && t1_value !== (t1_value = ctx.student.englishName || ctx.student.chineseName + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -23927,10 +24029,10 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/AttendanceForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/AttendanceForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$b } = globals;
 
-    const file$F = "src/components/session/AttendanceForm.svelte";
+    const file$F = "admin/src/components/session/AttendanceForm.svelte";
 
     function get_each_context$e(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -23988,12 +24090,12 @@ ${AllSessionFields}`;
 
     	var if_blocks = [];
 
-    	function select_block_type_1(ctx) {
+    	function select_block_type_1(changed, ctx) {
     		if (ctx.$sessionStudents.length) return 0;
     		return 1;
     	}
 
-    	current_block_type_index = select_block_type_1(ctx);
+    	current_block_type_index = select_block_type_1(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -24010,7 +24112,7 @@ ${AllSessionFields}`;
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type_1(ctx);
+    			current_block_type_index = select_block_type_1(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -24210,12 +24312,12 @@ ${AllSessionFields}`;
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$sessionStudents) return 0;
     		return 1;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -24259,7 +24361,7 @@ ${AllSessionFields}`;
     			error.$set(error_changes);
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -24310,9 +24412,9 @@ ${AllSessionFields}`;
     	let $session, $sessionStudents;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
     	validate_store(sessionStudents, 'sessionStudents');
-    	subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
+    	component_subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
 
     	
 
@@ -24341,10 +24443,10 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/ActiveSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/ActiveSession.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$c } = globals;
 
-    const file$G = "src/components/session/ActiveSession.svelte";
+    const file$G = "admin/src/components/session/ActiveSession.svelte";
 
     function create_fragment$M(ctx) {
     	var t0, p, t1, t2, t3, t4, t5, button, i, t6, current, dispose;
@@ -24459,9 +24561,9 @@ ${AllSessionFields}`;
     	let $session, $time;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
     	validate_store(time, 'time');
-    	subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
+    	component_subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
 
     	
 
@@ -24500,9 +24602,9 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/SessionActivator.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/SessionActivator.svelte generated by Svelte v3.9.1 */
 
-    const file$H = "src/components/session/SessionActivator.svelte";
+    const file$H = "admin/src/components/session/SessionActivator.svelte";
 
     function create_fragment$N(ctx) {
     	var p;
@@ -24570,13 +24672,13 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/ConfirmEndSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/ConfirmEndSession.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$d } = globals;
 
-    const file$I = "src/components/session/ConfirmEndSession.svelte";
+    const file$I = "admin/src/components/session/ConfirmEndSession.svelte";
 
     function create_fragment$O(ctx) {
-    	var h1, t0, t1_value = ctx.$session.group.name, t1, t2, t3_value = ctx.$session.number, t3, t4, t5, p0, t6, t7, t8, t9, t10, t11, p1, t12, t13_value = ctx.startDifference(), t13, t14, br, t15, p2, t17, div, button0, i, t18, t19, button1, current, dispose;
+    	var h1, t0, t1_value = ctx.$session.group.name + "", t1, t2, t3_value = ctx.$session.number + "", t3, t4, t5, p0, t6, t7, t8, t9, t10, t11, p1, t12, t13_value = ctx.startDifference() + "", t13, t14, br, t15, p2, t17, div, button0, i, t18, t19, button1, current, dispose;
 
     	var error = new Error$1({
     		props: { errors: ctx.errors },
@@ -24677,11 +24779,11 @@ ${AllSessionFields}`;
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$session) && t1_value !== (t1_value = ctx.$session.group.name)) {
+    			if ((!current || changed.$session) && t1_value !== (t1_value = ctx.$session.group.name + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((!current || changed.$session) && t3_value !== (t3_value = ctx.$session.number)) {
+    			if ((!current || changed.$session) && t3_value !== (t3_value = ctx.$session.number + "")) {
     				set_data(t3, t3_value);
     			}
 
@@ -24738,7 +24840,7 @@ ${AllSessionFields}`;
     	let $session;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	
 
@@ -24801,9 +24903,9 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/IconButton.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/IconButton.svelte generated by Svelte v3.9.1 */
 
-    const file$J = "src/components/IconButton.svelte";
+    const file$J = "admin/src/components/IconButton.svelte";
 
     function create_fragment$P(ctx) {
     	var button, i, i_class_value, dispose;
@@ -24909,12 +25011,12 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/PointsRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/PointsRow.svelte generated by Svelte v3.9.1 */
 
-    const file$K = "src/components/session/PointsRow.svelte";
+    const file$K = "admin/src/components/session/PointsRow.svelte";
 
     function create_fragment$Q(ctx) {
-    	var li, t0, span0, t1_value = ctx.student.englishName || ctx.student.chineseName, t1, t2, span1, t3, t4, current;
+    	var li, t0, span0, t1_value = ctx.student.englishName || ctx.student.chineseName + "", t1, t2, span1, t3, t4, current;
 
     	var iconbutton0 = new IconButton({
     		props: { name: "plus-square", color: "#55FF66" },
@@ -24945,11 +25047,11 @@ ${AllSessionFields}`;
     			t4 = space();
     			iconbutton1.$$.fragment.c();
     			attr(span0, "class", "name svelte-ht5lal");
-    			add_location(span0, file$K, 36, 4, 723);
+    			add_location(span0, file$K, 38, 2, 733);
     			attr(span1, "class", "points svelte-ht5lal");
-    			add_location(span1, file$K, 37, 4, 798);
+    			add_location(span1, file$K, 39, 2, 806);
     			attr(li, "class", "svelte-ht5lal");
-    			add_location(li, file$K, 34, 0, 633);
+    			add_location(li, file$K, 36, 0, 645);
     		},
 
     		l: function claim(nodes) {
@@ -24971,7 +25073,7 @@ ${AllSessionFields}`;
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.student) && t1_value !== (t1_value = ctx.student.englishName || ctx.student.chineseName)) {
+    			if ((!current || changed.student) && t1_value !== (t1_value = ctx.student.englishName || ctx.student.chineseName + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -25015,12 +25117,12 @@ ${AllSessionFields}`;
     	let $points;
 
     	validate_store(points, 'points');
-    	subscribe($$self, points, $$value => { $points = $$value; $$invalidate('$points', $points); });
+    	component_subscribe($$self, points, $$value => { $points = $$value; $$invalidate('$points', $points); });
 
     	
       let { student, sessionId } = $$props;
 
-      const addPoint = (value) => {
+      const addPoint = value => {
         points.add(value, student.id, sessionId);
       };
 
@@ -25045,10 +25147,12 @@ ${AllSessionFields}`;
     	let pointsTally;
 
     	$$self.$$.update = ($$dirty = { $points: 1, student: 1 }) => {
-    		if ($$dirty.$points || $$dirty.student) { $$invalidate('pointsTally', pointsTally = $points ? $points.reduce((sum, point) => {
-            if (point.student.id !== student.id) return sum
-            return sum + point.value
-          }, 0) : 0); }
+    		if ($$dirty.$points || $$dirty.student) { $$invalidate('pointsTally', pointsTally = $points
+            ? $points.reduce((sum, point) => {
+              if (point.student.id !== student.id) return sum
+              return sum + point.value
+            }, 0)
+            : 0); }
     	};
 
     	return {
@@ -25093,9 +25197,9 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/PointsPanel.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/PointsPanel.svelte generated by Svelte v3.9.1 */
 
-    const file$L = "src/components/session/PointsPanel.svelte";
+    const file$L = "admin/src/components/session/PointsPanel.svelte";
 
     function get_each_context$f(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -25299,7 +25403,7 @@ ${AllSessionFields}`;
     	let $sessionStudents;
 
     	validate_store(sessionStudents, 'sessionStudents');
-    	subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
+    	component_subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
 
     	
 
@@ -25338,9 +25442,9 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/StartedSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/StartedSession.svelte generated by Svelte v3.9.1 */
 
-    const file$M = "src/components/session/StartedSession.svelte";
+    const file$M = "admin/src/components/session/StartedSession.svelte";
 
     function get_each_context$g(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -25350,7 +25454,7 @@ ${AllSessionFields}`;
 
     // (42:0) {#if $pointsLog && $pointsLog.length}
     function create_if_block_3$3(ctx) {
-    	var button, i, t0, t1_value = ctx.$pointsLog[0].value, t1, t2, t3_value = ctx.$pointsLog[0].value - 1 && 's' || '', t3, t4, t5_value = ctx.$pointsLog[0].student.englishName || ctx.$pointsLog[0].student.chineseName, t5, dispose;
+    	var button, i, t0, t1_value = ctx.$pointsLog[0].value + "", t1, t2, t3_value = ctx.$pointsLog[0].value - 1 && 's' || '' + "", t3, t4, t5_value = ctx.$pointsLog[0].student.englishName || ctx.$pointsLog[0].student.chineseName + "", t5, dispose;
 
     	return {
     		c: function create() {
@@ -25381,15 +25485,15 @@ ${AllSessionFields}`;
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$pointsLog) && t1_value !== (t1_value = ctx.$pointsLog[0].value)) {
+    			if ((changed.$pointsLog) && t1_value !== (t1_value = ctx.$pointsLog[0].value + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((changed.$pointsLog) && t3_value !== (t3_value = ctx.$pointsLog[0].value - 1 && 's' || '')) {
+    			if ((changed.$pointsLog) && t3_value !== (t3_value = ctx.$pointsLog[0].value - 1 && 's' || '' + "")) {
     				set_data(t3, t3_value);
     			}
 
-    			if ((changed.$pointsLog) && t5_value !== (t5_value = ctx.$pointsLog[0].student.englishName || ctx.$pointsLog[0].student.chineseName)) {
+    			if ((changed.$pointsLog) && t5_value !== (t5_value = ctx.$pointsLog[0].student.englishName || ctx.$pointsLog[0].student.chineseName + "")) {
     				set_data(t5, t5_value);
     			}
     		},
@@ -25920,13 +26024,13 @@ ${AllSessionFields}`;
     	let $session, $sessionStudents, $time, $pointsLog;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
     	validate_store(sessionStudents, 'sessionStudents');
-    	subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
+    	component_subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
     	validate_store(time, 'time');
-    	subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
+    	component_subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
     	validate_store(pointsLog, 'pointsLog');
-    	subscribe($$self, pointsLog, $$value => { $pointsLog = $$value; $$invalidate('$pointsLog', $pointsLog); });
+    	component_subscribe($$self, pointsLog, $$value => { $pointsLog = $$value; $$invalidate('$pointsLog', $pointsLog); });
 
     	
 
@@ -25981,9 +26085,9 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/ResultsRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/ResultsRow.svelte generated by Svelte v3.9.1 */
 
-    const file$N = "src/components/session/ResultsRow.svelte";
+    const file$N = "admin/src/components/session/ResultsRow.svelte";
 
     // (15:2) {#if result.status !== "Absent"}
     function create_if_block_1$g(ctx) {
@@ -26020,7 +26124,7 @@ ${AllSessionFields}`;
 
     // (22:4) {#if result.status !== "Present"}
     function create_if_block$v(ctx) {
-    	var t_value = ctx.result.status, t;
+    	var t_value = ctx.result.status + "", t;
 
     	return {
     		c: function create() {
@@ -26032,7 +26136,7 @@ ${AllSessionFields}`;
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.result) && t_value !== (t_value = ctx.result.status)) {
+    			if ((changed.result) && t_value !== (t_value = ctx.result.status + "")) {
     				set_data(t, t_value);
     			}
     		},
@@ -26046,7 +26150,7 @@ ${AllSessionFields}`;
     }
 
     function create_fragment$T(ctx) {
-    	var li, t0, span0, t1_value = ctx.result.student.englishName || ctx.result.student.chineseName, t1, t2, span1;
+    	var li, t0, span0, t1_value = ctx.result.student.englishName || ctx.result.student.chineseName + "", t1, t2, span1;
 
     	var if_block0 = (ctx.result.status !== "Absent") && create_if_block_1$g(ctx);
 
@@ -26100,7 +26204,7 @@ ${AllSessionFields}`;
     				if_block0 = null;
     			}
 
-    			if ((changed.result) && t1_value !== (t1_value = ctx.result.student.englishName || ctx.result.student.chineseName)) {
+    			if ((changed.result) && t1_value !== (t1_value = ctx.result.student.englishName || ctx.result.student.chineseName + "")) {
     				set_data(t1, t1_value);
     			}
 
@@ -26168,10 +26272,10 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/EditTimesForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/EditTimesForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$e } = globals;
 
-    const file$O = "src/components/session/EditTimesForm.svelte";
+    const file$O = "admin/src/components/session/EditTimesForm.svelte";
 
     function create_fragment$U(ctx) {
     	var h2, t1, t2, form_1, updating_value, t3, updating_value_1, t4, updating_value_2, t5, updating_value_3, t6, div, button, t8, input4, current, dispose;
@@ -26556,9 +26660,9 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/EditTimes.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/EditTimes.svelte generated by Svelte v3.9.1 */
 
-    const file$P = "src/components/session/EditTimes.svelte";
+    const file$P = "admin/src/components/session/EditTimes.svelte";
 
     // (48:0) <Modal bind:open>
     function create_default_slot$b(ctx) {
@@ -26697,7 +26801,7 @@ ${AllSessionFields}`;
     	let $session;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	
 
@@ -26758,7 +26862,7 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/session/AddLessonToSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/AddLessonToSession.svelte generated by Svelte v3.9.1 */
 
     function create_fragment$W(ctx) {
     	var updating_lessonId, current;
@@ -26886,9 +26990,9 @@ ${AllSessionFields}`;
    }
  }`;
 
-    /* src/components/report/CreateReport.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/CreateReport.svelte generated by Svelte v3.9.1 */
 
-    const file$Q = "src/components/report/CreateReport.svelte";
+    const file$Q = "admin/src/components/report/CreateReport.svelte";
 
     function create_fragment$X(ctx) {
     	var button, dispose;
@@ -28663,11 +28767,11 @@ ${AllSessionFields}`;
     })();
     });
 
-    /* src/components/report/EditableTextarea.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/EditableTextarea.svelte generated by Svelte v3.9.1 */
 
-    const file$R = "src/components/report/EditableTextarea.svelte";
+    const file$R = "admin/src/components/report/EditableTextarea.svelte";
 
-    // (72:2) {:else}
+    // (74:2) {:else}
     function create_else_block_1$2(ctx) {
     	var button, i, t, dispose;
 
@@ -28677,9 +28781,9 @@ ${AllSessionFields}`;
     			i = element("i");
     			t = text("Edit");
     			attr(i, "class", "fas fa-edit");
-    			add_location(i, file$R, 72, 49, 1624);
+    			add_location(i, file$R, 75, 4, 1634);
     			attr(button, "class", "button");
-    			add_location(button, file$R, 72, 4, 1579);
+    			add_location(button, file$R, 74, 2, 1582);
     			dispose = listen(button, "click", ctx.toggleEdit);
     		},
 
@@ -28709,9 +28813,9 @@ ${AllSessionFields}`;
     			i = element("i");
     			t = text("Preview");
     			attr(i, "class", "fas fa-eye");
-    			add_location(i, file$R, 70, 49, 1521);
+    			add_location(i, file$R, 71, 4, 1524);
     			attr(button, "class", "button");
-    			add_location(button, file$R, 70, 4, 1476);
+    			add_location(button, file$R, 70, 2, 1472);
     			dispose = listen(button, "click", ctx.toggleEdit);
     		},
 
@@ -28731,7 +28835,7 @@ ${AllSessionFields}`;
     	};
     }
 
-    // (75:2) {#if text !== original}
+    // (78:8) {#if text !== original}
     function create_if_block_1$h(ctx) {
     	var button0, i0, t0, t1, button1, i1, t2, dispose;
 
@@ -28745,14 +28849,14 @@ ${AllSessionFields}`;
     			i1 = element("i");
     			t2 = text("Save changes");
     			attr(i0, "class", "fas fa-history");
-    			add_location(i0, file$R, 75, 63, 1762);
+    			add_location(i0, file$R, 79, 4, 1778);
     			attr(button0, "class", "button is-danger");
-    			add_location(button0, file$R, 75, 4, 1703);
+    			add_location(button0, file$R, 78, 2, 1712);
     			attr(i1, "class", "fas fa-save");
-    			add_location(i1, file$R, 76, 81, 1898);
+    			add_location(i1, file$R, 86, 4, 1939);
     			attr(button1, "class", "button is-primary");
     			toggle_class(button1, "is-loading", ctx.loading);
-    			add_location(button1, file$R, 76, 4, 1821);
+    			add_location(button1, file$R, 81, 2, 1838);
 
     			dispose = [
     				listen(button0, "click", ctx.discardChanges),
@@ -28788,40 +28892,34 @@ ${AllSessionFields}`;
     	};
     }
 
-    // (83:0) {:else}
+    // (99:0) {:else}
     function create_else_block$f(ctx) {
-    	var raw_value = marked(ctx.text, { breaks: true }), raw_before, raw_after;
+    	var html_tag, raw_value = marked(ctx.text, { breaks: true }) + "";
 
     	return {
     		c: function create() {
-    			raw_before = element('noscript');
-    			raw_after = element('noscript');
+    			html_tag = new HtmlTag(raw_value, null);
     		},
 
     		m: function mount(target, anchor) {
-    			insert(target, raw_before, anchor);
-    			raw_before.insertAdjacentHTML("afterend", raw_value);
-    			insert(target, raw_after, anchor);
+    			html_tag.m(target, anchor);
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.text) && raw_value !== (raw_value = marked(ctx.text, { breaks: true }))) {
-    				detach_between(raw_before, raw_after);
-    				raw_before.insertAdjacentHTML("afterend", raw_value);
+    			if ((changed.text) && raw_value !== (raw_value = marked(ctx.text, { breaks: true }) + "")) {
+    				html_tag.p(raw_value);
     			}
     		},
 
     		d: function destroy(detaching) {
     			if (detaching) {
-    				detach_between(raw_before, raw_after);
-    				detach(raw_before);
-    				detach(raw_after);
+    				html_tag.d();
     			}
     		}
     	};
     }
 
-    // (81:0) {#if edit}
+    // (92:0) {#if edit}
     function create_if_block$w(ctx) {
     	var textarea, dispose;
 
@@ -28829,7 +28927,7 @@ ${AllSessionFields}`;
     		c: function create() {
     			textarea = element("textarea");
     			attr(textarea, "class", "textarea svelte-18mnnh3");
-    			add_location(textarea, file$R, 81, 2, 1976);
+    			add_location(textarea, file$R, 92, 0, 2018);
 
     			dispose = [
     				listen(textarea, "input", ctx.textarea_input_handler),
@@ -28840,13 +28938,13 @@ ${AllSessionFields}`;
     		m: function mount(target, anchor) {
     			insert(target, textarea, anchor);
 
-    			textarea.value = ctx.text;
+    			set_input_value(textarea, ctx.text);
 
     			ctx.textarea_binding(textarea);
     		},
 
     		p: function update(changed, ctx) {
-    			if (changed.text) textarea.value = ctx.text;
+    			if (changed.text) set_input_value(textarea, ctx.text);
     		},
 
     		d: function destroy(detaching) {
@@ -28863,22 +28961,22 @@ ${AllSessionFields}`;
     function create_fragment$Y(ctx) {
     	var div, t0, t1, if_block2_anchor;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.edit) return create_if_block_2$8;
     		return create_else_block_1$2;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block0 = current_block_type(ctx);
 
     	var if_block1 = (ctx.text !== ctx.original) && create_if_block_1$h(ctx);
 
-    	function select_block_type_1(ctx) {
+    	function select_block_type_1(changed, ctx) {
     		if (ctx.edit) return create_if_block$w;
     		return create_else_block$f;
     	}
 
-    	var current_block_type_1 = select_block_type_1(ctx);
+    	var current_block_type_1 = select_block_type_1(null, ctx);
     	var if_block2 = current_block_type_1(ctx);
 
     	return {
@@ -28891,7 +28989,7 @@ ${AllSessionFields}`;
     			if_block2.c();
     			if_block2_anchor = empty();
     			attr(div, "class", "buttons");
-    			add_location(div, file$R, 68, 0, 1437);
+    			add_location(div, file$R, 68, 0, 1435);
     		},
 
     		l: function claim(nodes) {
@@ -28909,7 +29007,7 @@ ${AllSessionFields}`;
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    			if (current_block_type !== (current_block_type = select_block_type(changed, ctx))) {
     				if_block0.d(1);
     				if_block0 = current_block_type(ctx);
     				if (if_block0) {
@@ -28931,7 +29029,7 @@ ${AllSessionFields}`;
     				if_block1 = null;
     			}
 
-    			if (current_block_type_1 === (current_block_type_1 = select_block_type_1(ctx)) && if_block2) {
+    			if (current_block_type_1 === (current_block_type_1 = select_block_type_1(changed, ctx)) && if_block2) {
     				if_block2.p(changed, ctx);
     			} else {
     				if_block2.d(1);
@@ -28971,21 +29069,20 @@ ${AllSessionFields}`;
     	let $session;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	
 
-      let { text = '' } = $$props;
-      let original = text && text.slice(0);
-      let { key = '' } = $$props;
+      let { text = '', key = '' } = $$props;
 
+      let original = text && text.slice(0);
       let input;
       let edit = true;
       let alreadySet = false;
       let loading = false;
       let errors = '';
 
-      const inputHandler = (event) => {
+      const inputHandler = event => {
         input.style.height = 'auto'; $$invalidate('input', input);
         input.style.height = input.scrollHeight + 'px'; $$invalidate('input', input);
       };
@@ -29045,8 +29142,8 @@ ${AllSessionFields}`;
 
     	return {
     		text,
-    		original,
     		key,
+    		original,
     		input,
     		edit,
     		loading,
@@ -29082,10 +29179,10 @@ ${AllSessionFields}`;
     	}
     }
 
-    /* src/components/report/RemoveWordButton.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/RemoveWordButton.svelte generated by Svelte v3.9.1 */
     const { console: console_1$2 } = globals;
 
-    const file$S = "src/components/report/RemoveWordButton.svelte";
+    const file$S = "admin/src/components/report/RemoveWordButton.svelte";
 
     function create_fragment$Z(ctx) {
     	var button, dispose;
@@ -29292,13 +29389,13 @@ mutation DeleteWord ($id: ID!){
 
     const word = createWordStore();
 
-    /* src/components/report/AddWordRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/AddWordRow.svelte generated by Svelte v3.9.1 */
     const { console: console_1$3 } = globals;
 
-    const file$T = "src/components/report/AddWordRow.svelte";
+    const file$T = "admin/src/components/report/AddWordRow.svelte";
 
     function create_fragment$_(ctx) {
-    	var li, label, i, i_class_value, t0, t1_value = ctx.word.english, t1, t2, t3_value = ctx.word.chinese, t3, t4, dispose;
+    	var li, label, i, i_class_value, t0, t1_value = ctx.word.english + "", t1, t2, t3_value = ctx.word.chinese + "", t3, t4, dispose;
 
     	return {
     		c: function create() {
@@ -29339,11 +29436,11 @@ mutation DeleteWord ($id: ID!){
     				attr(i, "class", i_class_value);
     			}
 
-    			if ((changed.word) && t1_value !== (t1_value = ctx.word.english)) {
+    			if ((changed.word) && t1_value !== (t1_value = ctx.word.english + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((changed.word) && t3_value !== (t3_value = ctx.word.chinese)) {
+    			if ((changed.word) && t3_value !== (t3_value = ctx.word.chinese + "")) {
     				set_data(t3, t3_value);
     			}
     		},
@@ -29365,7 +29462,7 @@ mutation DeleteWord ($id: ID!){
     	let $session;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	
 
@@ -29427,10 +29524,10 @@ mutation DeleteWord ($id: ID!){
     	}
     }
 
-    /* src/components/report/AddWordToReport.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/AddWordToReport.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$f } = globals;
 
-    const file$U = "src/components/report/AddWordToReport.svelte";
+    const file$U = "admin/src/components/report/AddWordToReport.svelte";
 
     function get_each_context$h(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -29440,7 +29537,7 @@ mutation DeleteWord ($id: ID!){
 
     // (42:4) {#if $words }
     function create_if_block$x(ctx) {
-    	var p, t0_value = ctx.$words.length, t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
+    	var p, t0_value = ctx.$words.length + "", t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
 
     	var each_value = ctx.$words;
 
@@ -29478,7 +29575,7 @@ mutation DeleteWord ($id: ID!){
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$words) && t0_value !== (t0_value = ctx.$words.length)) {
+    			if ((!current || changed.$words) && t0_value !== (t0_value = ctx.$words.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -29792,7 +29889,7 @@ mutation DeleteWord ($id: ID!){
     	let $words;
 
     	validate_store(words, 'words');
-    	subscribe($$self, words, $$value => { $words = $$value; $$invalidate('$words', $words); });
+    	component_subscribe($$self, words, $$value => { $words = $$value; $$invalidate('$words', $words); });
 
     	
 
@@ -29833,10 +29930,10 @@ mutation DeleteWord ($id: ID!){
     	}
     }
 
-    /* src/components/report/RemoveMaterialButton.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/RemoveMaterialButton.svelte generated by Svelte v3.9.1 */
     const { console: console_1$4 } = globals;
 
-    const file$V = "src/components/report/RemoveMaterialButton.svelte";
+    const file$V = "admin/src/components/report/RemoveMaterialButton.svelte";
 
     function create_fragment$10(ctx) {
     	var button, dispose;
@@ -30038,13 +30135,13 @@ mutation DeleteMaterial($id:ID!) {
 
     const material = createMaterialStore();
 
-    /* src/components/report/AddMaterialRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/AddMaterialRow.svelte generated by Svelte v3.9.1 */
     const { console: console_1$5 } = globals;
 
-    const file$W = "src/components/report/AddMaterialRow.svelte";
+    const file$W = "admin/src/components/report/AddMaterialRow.svelte";
 
     function create_fragment$11(ctx) {
-    	var li, label, i, i_class_value, t0, t1_value = ctx.material.title, t1, t2, t3_value = ctx.material.type, t3, dispose;
+    	var li, label, i, i_class_value, t0, t1_value = ctx.material.title + "", t1, t2, t3_value = ctx.material.type + "", t3, dispose;
 
     	return {
     		c: function create() {
@@ -30083,11 +30180,11 @@ mutation DeleteMaterial($id:ID!) {
     				attr(i, "class", i_class_value);
     			}
 
-    			if ((changed.material) && t1_value !== (t1_value = ctx.material.title)) {
+    			if ((changed.material) && t1_value !== (t1_value = ctx.material.title + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((changed.material) && t3_value !== (t3_value = ctx.material.type)) {
+    			if ((changed.material) && t3_value !== (t3_value = ctx.material.type + "")) {
     				set_data(t3, t3_value);
     			}
     		},
@@ -30109,7 +30206,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $session;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	
 
@@ -30171,10 +30268,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/report/AddMaterialToReport.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/AddMaterialToReport.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$g } = globals;
 
-    const file$X = "src/components/report/AddMaterialToReport.svelte";
+    const file$X = "admin/src/components/report/AddMaterialToReport.svelte";
 
     function get_each_context$i(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -30184,7 +30281,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (41:4) {#if $materials }
     function create_if_block$y(ctx) {
-    	var p, t0_value = ctx.$materials.length, t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
+    	var p, t0_value = ctx.$materials.length + "", t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
 
     	var each_value = ctx.$materials;
 
@@ -30222,7 +30319,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$materials) && t0_value !== (t0_value = ctx.$materials.length)) {
+    			if ((!current || changed.$materials) && t0_value !== (t0_value = ctx.$materials.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -30536,7 +30633,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $materials;
 
     	validate_store(materials, 'materials');
-    	subscribe($$self, materials, $$value => { $materials = $$value; $$invalidate('$materials', $materials); });
+    	component_subscribe($$self, materials, $$value => { $materials = $$value; $$invalidate('$materials', $materials); });
 
     	
 
@@ -30577,9 +30674,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/report/ReportDetails.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/ReportDetails.svelte generated by Svelte v3.9.1 */
 
-    const file$Y = "src/components/report/ReportDetails.svelte";
+    const file$Y = "admin/src/components/report/ReportDetails.svelte";
 
     function get_each_context$j(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -30657,7 +30754,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (54:6) {#each report.words as word (word.id)}
     function create_each_block_1$2(key_1, ctx) {
-    	var li, a, t0_value = ctx.word.english, t0, t1, t2_value = ctx.word.chinese, t2, t3, a_href_value, t4, t5, current;
+    	var li, a, t0_value = ctx.word.english + "", t0, t1, t2_value = ctx.word.chinese + "", t2, t3, a_href_value, t4, t5, current;
 
     	var removewordbutton = new RemoveWordButton({
     		props: {
@@ -30702,11 +30799,11 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.report) && t0_value !== (t0_value = ctx.word.english)) {
+    			if ((!current || changed.report) && t0_value !== (t0_value = ctx.word.english + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((!current || changed.report) && t2_value !== (t2_value = ctx.word.chinese)) {
+    			if ((!current || changed.report) && t2_value !== (t2_value = ctx.word.chinese + "")) {
     				set_data(t2, t2_value);
     			}
 
@@ -30806,7 +30903,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (69:4) {#each report.materials as material (material.id)}
     function create_each_block$j(key_1, ctx) {
-    	var li, a, t0_value = ctx.material.title, t0, a_href_value, t1, t2_value = ctx.material.type, t2, t3, t4, current;
+    	var li, a, t0_value = ctx.material.title + "", t0, a_href_value, t1, t2_value = ctx.material.type + "", t2, t3, t4, current;
 
     	var removematerialbutton = new RemoveMaterialButton({
     		props: {
@@ -30849,7 +30946,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.report) && t0_value !== (t0_value = ctx.material.title)) {
+    			if ((!current || changed.report) && t0_value !== (t0_value = ctx.material.title + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -30857,7 +30954,7 @@ mutation DeleteMaterial($id:ID!) {
     				attr(a, "href", a_href_value);
     			}
 
-    			if ((!current || changed.report) && t2_value !== (t2_value = ctx.material.type)) {
+    			if ((!current || changed.report) && t2_value !== (t2_value = ctx.material.type + "")) {
     				set_data(t2, t2_value);
     			}
 
@@ -31248,10 +31345,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/report/PublishReportButton.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/PublishReportButton.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$h } = globals;
 
-    const file$Z = "src/components/report/PublishReportButton.svelte";
+    const file$Z = "admin/src/components/report/PublishReportButton.svelte";
 
     // (36:39) 
     function create_if_block_1$j(ctx) {
@@ -31339,12 +31436,12 @@ mutation DeleteMaterial($id:ID!) {
     		$$inline: true
     	});
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$session && ctx.$session.report.published) return create_if_block$A;
     		if (!ctx.$session.report.published) return create_if_block_1$j;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type && current_block_type(ctx);
 
     	return {
@@ -31372,7 +31469,7 @@ mutation DeleteMaterial($id:ID!) {
     			if (changed.errors) error_changes.errors = ctx.errors;
     			error.$set(error_changes);
 
-    			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type(changed, ctx)) && if_block) {
     				if_block.p(changed, ctx);
     			} else {
     				if (if_block) if_block.d(1);
@@ -31416,7 +31513,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $session;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	
 
@@ -31489,9 +31586,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/report/Report.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/report/Report.svelte generated by Svelte v3.9.1 */
 
-    const file$_ = "src/components/report/Report.svelte";
+    const file$_ = "admin/src/components/report/Report.svelte";
 
     // (21:4) {:else}
     function create_else_block$g(ctx) {
@@ -31654,13 +31751,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (!ctx.$session.lesson) return 0;
     		if (ctx.$session && !ctx.$session.report) return 1;
     		return 2;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -31690,7 +31787,7 @@ mutation DeleteMaterial($id:ID!) {
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -31735,7 +31832,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $session;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	return { $session };
     }
@@ -31747,10 +31844,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/session/EndedSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/EndedSession.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$i } = globals;
 
-    const file$$ = "src/components/session/EndedSession.svelte";
+    const file$$ = "admin/src/components/session/EndedSession.svelte";
 
     function get_each_context$k(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -31760,7 +31857,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (39:0) <DL>
     function create_default_slot$e(ctx) {
-    	var dt0, t1, dd0, t2_value = ctx.formatTime(ctx.$session.startsAt), t2, t3, dt1, t5, dd1, t6_value = ctx.formatTime(ctx.$session.startedAt), t6, t7, dt2, t9, dd2, t10_value = ctx.formatTime(ctx.$session.endsAt), t10, t11, dt3, t13, dd3, t14_value = ctx.formatTime(ctx.$session.endedAt), t14;
+    	var dt0, t1, dd0, t2_value = ctx.formatTime(ctx.$session.startsAt) + "", t2, t3, dt1, t5, dd1, t6_value = ctx.formatTime(ctx.$session.startedAt) + "", t6, t7, dt2, t9, dd2, t10_value = ctx.formatTime(ctx.$session.endsAt) + "", t10, t11, dt3, t13, dd3, t14_value = ctx.formatTime(ctx.$session.endedAt) + "", t14;
 
     	return {
     		c: function create() {
@@ -31820,19 +31917,19 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$session) && t2_value !== (t2_value = ctx.formatTime(ctx.$session.startsAt))) {
+    			if ((changed.$session) && t2_value !== (t2_value = ctx.formatTime(ctx.$session.startsAt) + "")) {
     				set_data(t2, t2_value);
     			}
 
-    			if ((changed.$session) && t6_value !== (t6_value = ctx.formatTime(ctx.$session.startedAt))) {
+    			if ((changed.$session) && t6_value !== (t6_value = ctx.formatTime(ctx.$session.startedAt) + "")) {
     				set_data(t6, t6_value);
     			}
 
-    			if ((changed.$session) && t10_value !== (t10_value = ctx.formatTime(ctx.$session.endsAt))) {
+    			if ((changed.$session) && t10_value !== (t10_value = ctx.formatTime(ctx.$session.endsAt) + "")) {
     				set_data(t10, t10_value);
     			}
 
-    			if ((changed.$session) && t14_value !== (t14_value = ctx.formatTime(ctx.$session.endedAt))) {
+    			if ((changed.$session) && t14_value !== (t14_value = ctx.formatTime(ctx.$session.endedAt) + "")) {
     				set_data(t14, t14_value);
     			}
     		},
@@ -32069,7 +32166,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (75:4) {:else}
     function create_else_block$h(ctx) {
-    	var p, t_value = ctx.$session.lesson.name, t;
+    	var p, t_value = ctx.$session.lesson.name + "", t;
 
     	return {
     		c: function create() {
@@ -32084,7 +32181,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$session) && t_value !== (t_value = ctx.$session.lesson.name)) {
+    			if ((changed.$session) && t_value !== (t_value = ctx.$session.lesson.name + "")) {
     				set_data(t, t_value);
     			}
     		},
@@ -32188,12 +32285,12 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (!ctx.$session.lesson) return 0;
     		return 1;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	var report = new Report({ $$inline: true });
@@ -32275,7 +32372,7 @@ mutation DeleteMaterial($id:ID!) {
     			}
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -32366,9 +32463,9 @@ mutation DeleteMaterial($id:ID!) {
     	let $session, $time;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
     	validate_store(time, 'time');
-    	subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
+    	component_subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
 
     	
 
@@ -32422,9 +32519,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/session/Session.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/session/Session.svelte generated by Svelte v3.9.1 */
 
-    const file$10 = "src/components/session/Session.svelte";
+    const file$10 = "admin/src/components/session/Session.svelte";
 
     // (35:0) {:else}
     function create_else_block$i(ctx) {
@@ -32503,7 +32600,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (20:0) {#if $session}
     function create_if_block$D(ctx) {
-    	var h2, t0_value = ctx.$session.group.name, t0, t1, t2_value = ctx.$session.number, t2, t3, current_block_type_index, if_block, if_block_anchor, current;
+    	var h2, t0_value = ctx.$session.group.name + "", t0, t1, t2_value = ctx.$session.number + "", t2, t3, current_block_type_index, if_block, if_block_anchor, current;
 
     	var if_block_creators = [
     		create_if_block_1$l,
@@ -32514,7 +32611,7 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type_1(ctx) {
+    	function select_block_type_1(changed, ctx) {
     		if (ctx.$session.stage === 'Inactive') return 0;
     		if (ctx.$session.stage === 'Active') return 1;
     		if (ctx.$session.stage === 'Started') return 2;
@@ -32522,7 +32619,7 @@ mutation DeleteMaterial($id:ID!) {
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type_1(ctx))) {
+    	if (~(current_block_type_index = select_block_type_1(null, ctx))) {
     		if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -32551,16 +32648,16 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$session) && t0_value !== (t0_value = ctx.$session.group.name)) {
+    			if ((!current || changed.$session) && t0_value !== (t0_value = ctx.$session.group.name + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((!current || changed.$session) && t2_value !== (t2_value = ctx.$session.number)) {
+    			if ((!current || changed.$session) && t2_value !== (t2_value = ctx.$session.number + "")) {
     				set_data(t2, t2_value);
     			}
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type_1(ctx);
+    			current_block_type_index = select_block_type_1(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if (~current_block_type_index) if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -32781,13 +32878,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$session) return 0;
     		if (ctx.$session && ctx.$session.classSession === null) return 1;
     		return 2;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -32808,7 +32905,7 @@ mutation DeleteMaterial($id:ID!) {
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -32853,7 +32950,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $session;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	
 
@@ -32892,9 +32989,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/LessonList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/LessonList.svelte generated by Svelte v3.9.1 */
 
-    const file$11 = "src/components/lessons/LessonList.svelte";
+    const file$11 = "admin/src/components/lessons/LessonList.svelte";
 
     function get_each_context_1$3(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -32910,7 +33007,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (22:2) {#if $lessons}
     function create_if_block$E(ctx) {
-    	var p, t0_value = ctx.$lessons.length, t0, t1, t2, if_block_anchor;
+    	var p, t0_value = ctx.$lessons.length + "", t0, t1, t2, if_block_anchor;
 
     	var if_block = (ctx.$lessons.length > 0) && create_if_block_1$m(ctx);
 
@@ -32935,7 +33032,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$lessons) && t0_value !== (t0_value = ctx.$lessons.length)) {
+    			if ((changed.$lessons) && t0_value !== (t0_value = ctx.$lessons.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -33056,7 +33153,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (29:12) {#each lesson.tags as tag (tag.id)}
     function create_each_block_1$3(key_1, ctx) {
-    	var span, t_value = ctx.tag.name, t;
+    	var span, t_value = ctx.tag.name + "", t;
 
     	return {
     		key: key_1,
@@ -33077,7 +33174,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$lessons) && t_value !== (t_value = ctx.tag.name)) {
+    			if ((changed.$lessons) && t_value !== (t_value = ctx.tag.name + "")) {
     				set_data(t, t_value);
     			}
     		},
@@ -33092,7 +33189,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (25:6) {#each $lessons as lesson (lesson.id)}
     function create_each_block$l(key_1, ctx) {
-    	var li, a, t0_value = ctx.lesson.name, t0, a_href_value, t1, t2;
+    	var li, a, t0_value = ctx.lesson.name + "", t0, a_href_value, t1, t2;
 
     	var if_block = (ctx.lesson.tags.length > 0) && create_if_block_2$a(ctx);
 
@@ -33125,7 +33222,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$lessons) && t0_value !== (t0_value = ctx.lesson.name)) {
+    			if ((changed.$lessons) && t0_value !== (t0_value = ctx.lesson.name + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -33211,7 +33308,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $lessons;
 
     	validate_store(lessons, 'lessons');
-    	subscribe($$self, lessons, $$value => { $lessons = $$value; $$invalidate('$lessons', $lessons); });
+    	component_subscribe($$self, lessons, $$value => { $lessons = $$value; $$invalidate('$lessons', $lessons); });
 
     	return { $lessons };
     }
@@ -33223,10 +33320,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/Lessons.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/Lessons.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$j } = globals;
 
-    const file$12 = "src/components/lessons/Lessons.svelte";
+    const file$12 = "admin/src/components/lessons/Lessons.svelte";
 
     // (41:18) 
     function create_if_block_1$n(ctx) {
@@ -33319,13 +33416,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$lessons) return 0;
     		if (!ctx.errors) return 1;
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -33386,7 +33483,7 @@ mutation DeleteMaterial($id:ID!) {
     			filteritems.$set(filteritems_changes);
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index !== previous_block_index) {
     				if (if_block) {
     					group_outros();
@@ -33461,7 +33558,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $lessons;
 
     	validate_store(lessons, 'lessons');
-    	subscribe($$self, lessons, $$value => { $lessons = $$value; $$invalidate('$lessons', $lessons); });
+    	component_subscribe($$self, lessons, $$value => { $lessons = $$value; $$invalidate('$lessons', $lessons); });
 
     	
 
@@ -33587,10 +33684,10 @@ mutation DeleteMaterial($id:ID!) {
 
     const tag = createTagStore();
 
-    /* src/components/tags/AddTagToItem.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/tags/AddTagToItem.svelte generated by Svelte v3.9.1 */
     const { console: console_1$6 } = globals;
 
-    const file$13 = "src/components/tags/AddTagToItem.svelte";
+    const file$13 = "admin/src/components/tags/AddTagToItem.svelte";
 
     function get_each_context$m(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -33665,7 +33762,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (64:6) {#each otherTags as tag (tag.id)}
     function create_each_block$m(key_1, ctx) {
-    	var option, t_value = ctx.tag.name, t, option_value_value;
+    	var option, t_value = ctx.tag.name + "", t, option_value_value;
 
     	return {
     		key: key_1,
@@ -33687,7 +33784,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.otherTags) && t_value !== (t_value = ctx.tag.name)) {
+    			if ((changed.otherTags) && t_value !== (t_value = ctx.tag.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -33757,7 +33854,7 @@ mutation DeleteMaterial($id:ID!) {
     			append(div1, div0);
     			append(div0, input);
 
-    			input.value = ctx.newTag;
+    			set_input_value(input, ctx.newTag);
 
     			append(div0, t1);
     			append(div0, span);
@@ -33780,7 +33877,7 @@ mutation DeleteMaterial($id:ID!) {
     				if_block = null;
     			}
 
-    			if (changed.newTag && (input.value !== ctx.newTag)) input.value = ctx.newTag;
+    			if (changed.newTag && (input.value !== ctx.newTag)) set_input_value(input, ctx.newTag);
     		},
 
     		i: noop,
@@ -33803,7 +33900,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $tags;
 
     	validate_store(tags, 'tags');
-    	subscribe($$self, tags, $$value => { $tags = $$value; $$invalidate('$tags', $tags); });
+    	component_subscribe($$self, tags, $$value => { $tags = $$value; $$invalidate('$tags', $tags); });
 
     	
 
@@ -33929,13 +34026,13 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/tags/TagOnItem.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/tags/TagOnItem.svelte generated by Svelte v3.9.1 */
     const { console: console_1$7 } = globals;
 
-    const file$14 = "src/components/tags/TagOnItem.svelte";
+    const file$14 = "admin/src/components/tags/TagOnItem.svelte";
 
     function create_fragment$1b(ctx) {
-    	var span, t0_value = ctx.tag.name, t0, t1, button, dispose;
+    	var span, t0_value = ctx.tag.name + "", t0, t1, button, dispose;
 
     	return {
     		c: function create() {
@@ -33962,7 +34059,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.tag) && t0_value !== (t0_value = ctx.tag.name)) {
+    			if ((changed.tag) && t0_value !== (t0_value = ctx.tag.name + "")) {
     				set_data(t0, t0_value);
     			}
     		},
@@ -34068,9 +34165,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/tags/ItemTagList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/tags/ItemTagList.svelte generated by Svelte v3.9.1 */
 
-    const file$15 = "src/components/tags/ItemTagList.svelte";
+    const file$15 = "admin/src/components/tags/ItemTagList.svelte";
 
     function get_each_context$n(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -34354,13 +34451,13 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/AddMaterialRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/AddMaterialRow.svelte generated by Svelte v3.9.1 */
     const { console: console_1$8 } = globals;
 
-    const file$16 = "src/components/lessons/AddMaterialRow.svelte";
+    const file$16 = "admin/src/components/lessons/AddMaterialRow.svelte";
 
     function create_fragment$1d(ctx) {
-    	var li, label, i, i_class_value, t0, t1_value = ctx.material.title, t1, t2, t3_value = ctx.material.type, t3, dispose;
+    	var li, label, i, i_class_value, t0, t1_value = ctx.material.title + "", t1, t2, t3_value = ctx.material.type + "", t3, dispose;
 
     	return {
     		c: function create() {
@@ -34399,11 +34496,11 @@ mutation DeleteMaterial($id:ID!) {
     				attr(i, "class", i_class_value);
     			}
 
-    			if ((changed.material) && t1_value !== (t1_value = ctx.material.title)) {
+    			if ((changed.material) && t1_value !== (t1_value = ctx.material.title + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((changed.material) && t3_value !== (t3_value = ctx.material.type)) {
+    			if ((changed.material) && t3_value !== (t3_value = ctx.material.type + "")) {
     				set_data(t3, t3_value);
     			}
     		},
@@ -34425,7 +34522,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $lesson;
 
     	validate_store(lesson, 'lesson');
-    	subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
+    	component_subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
 
     	
 
@@ -34487,10 +34584,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/AddMaterialToLesson.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/AddMaterialToLesson.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$k } = globals;
 
-    const file$17 = "src/components/lessons/AddMaterialToLesson.svelte";
+    const file$17 = "admin/src/components/lessons/AddMaterialToLesson.svelte";
 
     function get_each_context$o(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -34500,7 +34597,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (38:4) {#if $materials }
     function create_if_block$I(ctx) {
-    	var p, t0_value = ctx.$materials.length, t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
+    	var p, t0_value = ctx.$materials.length + "", t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
 
     	var each_value = ctx.$materials;
 
@@ -34538,7 +34635,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$materials) && t0_value !== (t0_value = ctx.$materials.length)) {
+    			if ((!current || changed.$materials) && t0_value !== (t0_value = ctx.$materials.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -34847,7 +34944,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $materials;
 
     	validate_store(materials, 'materials');
-    	subscribe($$self, materials, $$value => { $materials = $$value; $$invalidate('$materials', $materials); });
+    	component_subscribe($$self, materials, $$value => { $materials = $$value; $$invalidate('$materials', $materials); });
 
     	
 
@@ -34913,13 +35010,13 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/AddWordRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/AddWordRow.svelte generated by Svelte v3.9.1 */
     const { console: console_1$9 } = globals;
 
-    const file$18 = "src/components/lessons/AddWordRow.svelte";
+    const file$18 = "admin/src/components/lessons/AddWordRow.svelte";
 
     function create_fragment$1f(ctx) {
-    	var li, label, i, i_class_value, t0, t1_value = ctx.word.english, t1, t2, t3_value = ctx.word.chinese, t3, t4, dispose;
+    	var li, label, i, i_class_value, t0, t1_value = ctx.word.english + "", t1, t2, t3_value = ctx.word.chinese + "", t3, t4, dispose;
 
     	return {
     		c: function create() {
@@ -34960,11 +35057,11 @@ mutation DeleteMaterial($id:ID!) {
     				attr(i, "class", i_class_value);
     			}
 
-    			if ((changed.word) && t1_value !== (t1_value = ctx.word.english)) {
+    			if ((changed.word) && t1_value !== (t1_value = ctx.word.english + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((changed.word) && t3_value !== (t3_value = ctx.word.chinese)) {
+    			if ((changed.word) && t3_value !== (t3_value = ctx.word.chinese + "")) {
     				set_data(t3, t3_value);
     			}
     		},
@@ -34986,7 +35083,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $lesson;
 
     	validate_store(lesson, 'lesson');
-    	subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
+    	component_subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
 
     	
 
@@ -35048,10 +35145,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/AddWordToLesson.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/AddWordToLesson.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$l } = globals;
 
-    const file$19 = "src/components/lessons/AddWordToLesson.svelte";
+    const file$19 = "admin/src/components/lessons/AddWordToLesson.svelte";
 
     function get_each_context$p(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -35061,7 +35158,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (42:4) {#if $words }
     function create_if_block$J(ctx) {
-    	var p, t0_value = ctx.$words.length, t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
+    	var p, t0_value = ctx.$words.length + "", t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor, current;
 
     	var each_value = ctx.$words;
 
@@ -35099,7 +35196,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$words) && t0_value !== (t0_value = ctx.$words.length)) {
+    			if ((!current || changed.$words) && t0_value !== (t0_value = ctx.$words.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -35408,7 +35505,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $words;
 
     	validate_store(words, 'words');
-    	subscribe($$self, words, $$value => { $words = $$value; $$invalidate('$words', $words); });
+    	component_subscribe($$self, words, $$value => { $words = $$value; $$invalidate('$words', $words); });
 
     	
 
@@ -35449,10 +35546,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/RemoveMaterialButton.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/RemoveMaterialButton.svelte generated by Svelte v3.9.1 */
     const { console: console_1$a } = globals;
 
-    const file$1a = "src/components/lessons/RemoveMaterialButton.svelte";
+    const file$1a = "admin/src/components/lessons/RemoveMaterialButton.svelte";
 
     function create_fragment$1h(ctx) {
     	var button, dispose;
@@ -35491,7 +35588,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $lesson;
 
     	validate_store(lesson, 'lesson');
-    	subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
+    	component_subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
 
     	
 
@@ -35540,10 +35637,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/RemoveWordButton.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/RemoveWordButton.svelte generated by Svelte v3.9.1 */
     const { console: console_1$b } = globals;
 
-    const file$1b = "src/components/lessons/RemoveWordButton.svelte";
+    const file$1b = "admin/src/components/lessons/RemoveWordButton.svelte";
 
     function create_fragment$1i(ctx) {
     	var button, dispose;
@@ -35582,7 +35679,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $lesson;
 
     	validate_store(lesson, 'lesson');
-    	subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
+    	component_subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
 
     	
 
@@ -35631,10 +35728,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/Lesson.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/Lesson.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$m } = globals;
 
-    const file$1c = "src/components/lessons/Lesson.svelte";
+    const file$1c = "admin/src/components/lessons/Lesson.svelte";
 
     function get_each_context$q(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -35732,7 +35829,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (58:0) {#if $lesson && $lesson.id === params.id}
     function create_if_block$K(ctx) {
-    	var h1, t0_value = ctx.$lesson.name, t0, t1, t2, section0, h20, t4, h30, t6, raw0_value = marked(ctx.$lesson.summaryEN, { breaks: true }), raw0_before, raw0_after, t7, h21, t9, h31, t11, raw1_value = marked(ctx.$lesson.homeworkEN, { breaks: true }), raw1_before, raw1_after, t12, h22, t14, h32, t16, raw2_value = marked(ctx.$lesson.summaryZH, { breaks: true }), raw2_before, raw2_after, t17, h23, t19, h33, t21, raw3_value = marked(ctx.$lesson.homeworkZH, { breaks: true }), raw3_before, t22, section1, h24, t24, t25, t26, section2, h25, t28, t29, t30, section3, h26, t32, div, a, i0, t33, a_href_value, t34, button, i1, t35, t36, updating_open, current, dispose;
+    	var h1, t0_value = ctx.$lesson.name + "", t0, t1, t2, section0, h20, t4, h30, t6, html_tag, raw0_value = marked(ctx.$lesson.summaryEN, { breaks: true }) + "", t7, h21, t9, h31, t11, html_tag_1, raw1_value = marked(ctx.$lesson.homeworkEN, { breaks: true }) + "", t12, h22, t14, h32, t16, html_tag_2, raw2_value = marked(ctx.$lesson.summaryZH, { breaks: true }) + "", t17, h23, t19, h33, t21, html_tag_3, raw3_value = marked(ctx.$lesson.homeworkZH, { breaks: true }) + "", t22, section1, h24, t24, t25, t26, section2, h25, t28, t29, t30, section3, h26, t32, div, a, i0, t33, a_href_value, t34, button, i1, t35, t36, updating_open, current, dispose;
 
     	var itemtaglist = new ItemTagList({
     		props: {
@@ -35787,8 +35884,6 @@ mutation DeleteMaterial($id:ID!) {
     			h30 = element("h3");
     			h30.textContent = "English";
     			t6 = space();
-    			raw0_before = element('noscript');
-    			raw0_after = element('noscript');
     			t7 = space();
     			h21 = element("h2");
     			h21.textContent = "Homework";
@@ -35796,8 +35891,6 @@ mutation DeleteMaterial($id:ID!) {
     			h31 = element("h3");
     			h31.textContent = "English";
     			t11 = space();
-    			raw1_before = element('noscript');
-    			raw1_after = element('noscript');
     			t12 = space();
     			h22 = element("h2");
     			h22.textContent = "Lesson Summary";
@@ -35805,8 +35898,6 @@ mutation DeleteMaterial($id:ID!) {
     			h32 = element("h3");
     			h32.textContent = "Chinese";
     			t16 = space();
-    			raw2_before = element('noscript');
-    			raw2_after = element('noscript');
     			t17 = space();
     			h23 = element("h2");
     			h23.textContent = "Homework";
@@ -35814,7 +35905,6 @@ mutation DeleteMaterial($id:ID!) {
     			h33 = element("h3");
     			h33.textContent = "Chinese";
     			t21 = space();
-    			raw3_before = element('noscript');
     			t22 = space();
     			section1 = element("section");
     			h24 = element("h2");
@@ -35852,18 +35942,22 @@ mutation DeleteMaterial($id:ID!) {
     			add_location(h20, file$1c, 63, 4, 1469);
     			attr(h30, "class", "subtitle");
     			add_location(h30, file$1c, 64, 4, 1516);
+    			html_tag = new HtmlTag(raw0_value, t7);
     			attr(h21, "class", "title is-4 svelte-1cb6t0j");
     			add_location(h21, file$1c, 67, 4, 1613);
     			attr(h31, "class", "subtitle");
     			add_location(h31, file$1c, 68, 4, 1654);
+    			html_tag_1 = new HtmlTag(raw1_value, t12);
     			attr(h22, "class", "title is-4 svelte-1cb6t0j");
     			add_location(h22, file$1c, 71, 4, 1750);
     			attr(h32, "class", "subtitle");
     			add_location(h32, file$1c, 72, 4, 1797);
+    			html_tag_2 = new HtmlTag(raw2_value, t17);
     			attr(h23, "class", "title is-4 svelte-1cb6t0j");
     			add_location(h23, file$1c, 75, 4, 1894);
     			attr(h33, "class", "subtitle");
     			add_location(h33, file$1c, 76, 4, 1935);
+    			html_tag_3 = new HtmlTag(raw3_value, null);
     			attr(section0, "class", "summaries svelte-1cb6t0j");
     			add_location(section0, file$1c, 62, 2, 1437);
     			attr(h24, "class", "title is-4 svelte-1cb6t0j");
@@ -35903,32 +35997,25 @@ mutation DeleteMaterial($id:ID!) {
     			append(section0, t4);
     			append(section0, h30);
     			append(section0, t6);
-    			append(section0, raw0_before);
-    			raw0_before.insertAdjacentHTML("afterend", raw0_value);
-    			append(section0, raw0_after);
+    			html_tag.m(section0);
     			append(section0, t7);
     			append(section0, h21);
     			append(section0, t9);
     			append(section0, h31);
     			append(section0, t11);
-    			append(section0, raw1_before);
-    			raw1_before.insertAdjacentHTML("afterend", raw1_value);
-    			append(section0, raw1_after);
+    			html_tag_1.m(section0);
     			append(section0, t12);
     			append(section0, h22);
     			append(section0, t14);
     			append(section0, h32);
     			append(section0, t16);
-    			append(section0, raw2_before);
-    			raw2_before.insertAdjacentHTML("afterend", raw2_value);
-    			append(section0, raw2_after);
+    			html_tag_2.m(section0);
     			append(section0, t17);
     			append(section0, h23);
     			append(section0, t19);
     			append(section0, h33);
     			append(section0, t21);
-    			append(section0, raw3_before);
-    			raw3_before.insertAdjacentHTML("afterend", raw3_value);
+    			html_tag_3.m(section0);
     			insert(target, t22, anchor);
     			insert(target, section1, anchor);
     			append(section1, h24);
@@ -35961,7 +36048,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$lesson) && t0_value !== (t0_value = ctx.$lesson.name)) {
+    			if ((!current || changed.$lesson) && t0_value !== (t0_value = ctx.$lesson.name + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -35970,24 +36057,20 @@ mutation DeleteMaterial($id:ID!) {
     			if (changed.lesson) itemtaglist_changes.store = lesson;
     			itemtaglist.$set(itemtaglist_changes);
 
-    			if ((!current || changed.$lesson) && raw0_value !== (raw0_value = marked(ctx.$lesson.summaryEN, { breaks: true }))) {
-    				detach_between(raw0_before, raw0_after);
-    				raw0_before.insertAdjacentHTML("afterend", raw0_value);
+    			if ((!current || changed.$lesson) && raw0_value !== (raw0_value = marked(ctx.$lesson.summaryEN, { breaks: true }) + "")) {
+    				html_tag.p(raw0_value);
     			}
 
-    			if ((!current || changed.$lesson) && raw1_value !== (raw1_value = marked(ctx.$lesson.homeworkEN, { breaks: true }))) {
-    				detach_between(raw1_before, raw1_after);
-    				raw1_before.insertAdjacentHTML("afterend", raw1_value);
+    			if ((!current || changed.$lesson) && raw1_value !== (raw1_value = marked(ctx.$lesson.homeworkEN, { breaks: true }) + "")) {
+    				html_tag_1.p(raw1_value);
     			}
 
-    			if ((!current || changed.$lesson) && raw2_value !== (raw2_value = marked(ctx.$lesson.summaryZH, { breaks: true }))) {
-    				detach_between(raw2_before, raw2_after);
-    				raw2_before.insertAdjacentHTML("afterend", raw2_value);
+    			if ((!current || changed.$lesson) && raw2_value !== (raw2_value = marked(ctx.$lesson.summaryZH, { breaks: true }) + "")) {
+    				html_tag_2.p(raw2_value);
     			}
 
-    			if ((!current || changed.$lesson) && raw3_value !== (raw3_value = marked(ctx.$lesson.homeworkZH, { breaks: true }))) {
-    				detach_after(raw3_before);
-    				raw3_before.insertAdjacentHTML("afterend", raw3_value);
+    			if ((!current || changed.$lesson) && raw3_value !== (raw3_value = marked(ctx.$lesson.homeworkZH, { breaks: true }) + "")) {
+    				html_tag_3.p(raw3_value);
     			}
 
     			if (ctx.$lesson.materials && ctx.$lesson.materials.length > 0) {
@@ -36175,7 +36258,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (85:6) {#each $lesson.materials as material (material.id)}
     function create_each_block_1$4(key_1, ctx) {
-    	var li, a, t0_value = ctx.material.title, t0, a_href_value, t1, t2_value = ctx.material.type, t2, t3, t4, current;
+    	var li, a, t0_value = ctx.material.title + "", t0, a_href_value, t1, t2_value = ctx.material.type + "", t2, t3, t4, current;
 
     	var removematerialbutton = new RemoveMaterialButton$1({
     		props: { materialId: ctx.material.id },
@@ -36215,7 +36298,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$lesson) && t0_value !== (t0_value = ctx.material.title)) {
+    			if ((!current || changed.$lesson) && t0_value !== (t0_value = ctx.material.title + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -36223,7 +36306,7 @@ mutation DeleteMaterial($id:ID!) {
     				attr(a, "href", a_href_value);
     			}
 
-    			if ((!current || changed.$lesson) && t2_value !== (t2_value = ctx.material.type)) {
+    			if ((!current || changed.$lesson) && t2_value !== (t2_value = ctx.material.type + "")) {
     				set_data(t2, t2_value);
     			}
 
@@ -36318,7 +36401,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (101:6) {#each $lesson.words as word (word.id)}
     function create_each_block$q(key_1, ctx) {
-    	var li, a, t0_value = ctx.word.english, t0, t1, t2_value = ctx.word.chinese, t2, t3, a_href_value, t4, t5, current;
+    	var li, a, t0_value = ctx.word.english + "", t0, t1, t2_value = ctx.word.chinese + "", t2, t3, a_href_value, t4, t5, current;
 
     	var removewordbutton = new RemoveWordButton$1({
     		props: { wordId: ctx.word.id },
@@ -36360,11 +36443,11 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$lesson) && t0_value !== (t0_value = ctx.word.english)) {
+    			if ((!current || changed.$lesson) && t0_value !== (t0_value = ctx.word.english + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((!current || changed.$lesson) && t2_value !== (t2_value = ctx.word.chinese)) {
+    			if ((!current || changed.$lesson) && t2_value !== (t2_value = ctx.word.chinese + "")) {
     				set_data(t2, t2_value);
     			}
 
@@ -36411,13 +36494,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$lesson && ctx.$lesson.id === ctx.params.id) return 0;
     		if (!ctx.errors) return 1;
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -36464,7 +36547,7 @@ mutation DeleteMaterial($id:ID!) {
     			}
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if (~current_block_type_index) if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -36527,7 +36610,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $lesson;
 
     	validate_store(lesson, 'lesson');
-    	subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
+    	component_subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
 
     	
 
@@ -36587,10 +36670,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/LessonForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/LessonForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$n } = globals;
 
-    const file$1d = "src/components/lessons/LessonForm.svelte";
+    const file$1d = "admin/src/components/lessons/LessonForm.svelte";
 
     function create_fragment$1k(ctx) {
     	var form_1, t0, div0, updating_value, t1, div1, label0, t3, textarea0, t4, div2, label1, t6, textarea1, t7, div3, label2, t9, textarea2, t10, div4, label3, t12, textarea3, t13, div5, button, t15, input1, current, dispose;
@@ -36720,7 +36803,7 @@ mutation DeleteMaterial($id:ID!) {
     			append(div1, t3);
     			append(div1, textarea0);
 
-    			textarea0.value = ctx.summaryEN;
+    			set_input_value(textarea0, ctx.summaryEN);
 
     			append(form_1, t4);
     			append(form_1, div2);
@@ -36728,7 +36811,7 @@ mutation DeleteMaterial($id:ID!) {
     			append(div2, t6);
     			append(div2, textarea1);
 
-    			textarea1.value = ctx.homeworkEN;
+    			set_input_value(textarea1, ctx.homeworkEN);
 
     			append(form_1, t7);
     			append(form_1, div3);
@@ -36736,7 +36819,7 @@ mutation DeleteMaterial($id:ID!) {
     			append(div3, t9);
     			append(div3, textarea2);
 
-    			textarea2.value = ctx.summaryZH;
+    			set_input_value(textarea2, ctx.summaryZH);
 
     			append(form_1, t10);
     			append(form_1, div4);
@@ -36744,7 +36827,7 @@ mutation DeleteMaterial($id:ID!) {
     			append(div4, t12);
     			append(div4, textarea3);
 
-    			textarea3.value = ctx.homeworkZH;
+    			set_input_value(textarea3, ctx.homeworkZH);
 
     			append(form_1, t13);
     			append(form_1, div5);
@@ -36767,10 +36850,10 @@ mutation DeleteMaterial($id:ID!) {
     			}
     			input0.$set(input0_changes);
 
-    			if (changed.summaryEN) textarea0.value = ctx.summaryEN;
-    			if (changed.homeworkEN) textarea1.value = ctx.homeworkEN;
-    			if (changed.summaryZH) textarea2.value = ctx.summaryZH;
-    			if (changed.homeworkZH) textarea3.value = ctx.homeworkZH;
+    			if (changed.summaryEN) set_input_value(textarea0, ctx.summaryEN);
+    			if (changed.homeworkEN) set_input_value(textarea1, ctx.homeworkEN);
+    			if (changed.summaryZH) set_input_value(textarea2, ctx.summaryZH);
+    			if (changed.homeworkZH) set_input_value(textarea3, ctx.homeworkZH);
 
     			if (changed.loading) {
     				toggle_class(button, "is-loading", ctx.loading);
@@ -37004,10 +37087,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/EditLesson.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/EditLesson.svelte generated by Svelte v3.9.1 */
     const { console: console_1$c } = globals;
 
-    const file$1e = "src/components/lessons/EditLesson.svelte";
+    const file$1e = "admin/src/components/lessons/EditLesson.svelte";
 
     // (56:0) {:else}
     function create_else_block$j(ctx) {
@@ -37079,11 +37162,11 @@ mutation DeleteMaterial($id:ID!) {
 
     		p: function update(changed, ctx) {
     			var lessonform_changes = (changed.errors || changed.loading || changed.$lesson || changed.params) ? get_spread_update(lessonform_spread_levels, [
-    				(changed.errors) && { errors: ctx.errors },
-    				(changed.loading) && { loading: ctx.loading },
-    				(changed.$lesson) && ctx.$lesson,
-    				(changed.params) && { id: ctx.params.id }
-    			]) : {};
+    									(changed.errors) && { errors: ctx.errors },
+    			(changed.loading) && { loading: ctx.loading },
+    			(changed.$lesson) && ctx.$lesson,
+    			(changed.params) && { id: ctx.params.id }
+    								]) : {};
     			lessonform.$set(lessonform_changes);
     		},
 
@@ -37115,7 +37198,7 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (lesson) return 0;
     		return 1;
     	}
@@ -37202,7 +37285,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $lesson;
 
     	validate_store(lesson, 'lesson');
-    	subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
+    	component_subscribe($$self, lesson, $$value => { $lesson = $$value; $$invalidate('$lesson', $lesson); });
 
     	
 
@@ -37278,9 +37361,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/lessons/CreateLesson.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/lessons/CreateLesson.svelte generated by Svelte v3.9.1 */
 
-    const file$1f = "src/components/lessons/CreateLesson.svelte";
+    const file$1f = "admin/src/components/lessons/CreateLesson.svelte";
 
     function create_fragment$1m(ctx) {
     	var t0, h1, t2, current;
@@ -37388,9 +37471,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/materials/MaterialsList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/materials/MaterialsList.svelte generated by Svelte v3.9.1 */
 
-    const file$1g = "src/components/materials/MaterialsList.svelte";
+    const file$1g = "admin/src/components/materials/MaterialsList.svelte";
 
     function get_each_context_1$5(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -37406,7 +37489,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (22:2) {#if materials}
     function create_if_block$M(ctx) {
-    	var p, t0_value = ctx.materials.length, t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor;
+    	var p, t0_value = ctx.materials.length + "", t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor;
 
     	var each_value = ctx.materials;
 
@@ -37443,7 +37526,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.materials) && t0_value !== (t0_value = ctx.materials.length)) {
+    			if ((changed.materials) && t0_value !== (t0_value = ctx.materials.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -37512,7 +37595,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (29:10) {#each material.tags as tag (tag.id)}
     function create_each_block_1$5(key_1, ctx) {
-    	var span, t_value = ctx.tag.name, t;
+    	var span, t_value = ctx.tag.name + "", t;
 
     	return {
     		key: key_1,
@@ -37533,7 +37616,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.materials) && t_value !== (t_value = ctx.tag.name)) {
+    			if ((changed.materials) && t_value !== (t_value = ctx.tag.name + "")) {
     				set_data(t, t_value);
     			}
     		},
@@ -37548,7 +37631,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (24:4) {#each materials as material (material.id)}
     function create_each_block$r(key_1, ctx) {
-    	var li, a, t0_value = ctx.material.title, t0, a_href_value, t1, span, t2_value = ctx.material.type, t2, t3, t4;
+    	var li, a, t0_value = ctx.material.title + "", t0, a_href_value, t1, span, t2_value = ctx.material.type + "", t2, t3, t4;
 
     	var if_block = (ctx.material.tags && ctx.material.tags.length > 0) && create_if_block_1$p(ctx);
 
@@ -37589,7 +37672,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.materials) && t0_value !== (t0_value = ctx.material.title)) {
+    			if ((changed.materials) && t0_value !== (t0_value = ctx.material.title + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -37597,7 +37680,7 @@ mutation DeleteMaterial($id:ID!) {
     				attr(a, "href", a_href_value);
     			}
 
-    			if ((changed.materials) && t2_value !== (t2_value = ctx.material.type)) {
+    			if ((changed.materials) && t2_value !== (t2_value = ctx.material.type + "")) {
     				set_data(t2, t2_value);
     			}
 
@@ -37711,10 +37794,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/materials/MaterialForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/materials/MaterialForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$o } = globals;
 
-    const file$1h = "src/components/materials/MaterialForm.svelte";
+    const file$1h = "admin/src/components/materials/MaterialForm.svelte";
 
     // (45:30) {:else}
     function create_else_block$k(ctx) {
@@ -37761,12 +37844,12 @@ mutation DeleteMaterial($id:ID!) {
     function create_fragment$1o(ctx) {
     	var h1, t0, t1, form_1, t2, updating_value, t3, updating_value_1, t4, updating_value_2, t5, textarea, t6, div, button, t8, input3, current, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.id) return create_if_block$N;
     		return create_else_block$k;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	var error = new Error$1({
@@ -37891,7 +37974,7 @@ mutation DeleteMaterial($id:ID!) {
     			append(form_1, t5);
     			append(form_1, textarea);
 
-    			textarea.value = ctx.notes;
+    			set_input_value(textarea, ctx.notes);
 
     			append(form_1, t6);
     			append(form_1, div);
@@ -37904,7 +37987,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    			if (current_block_type !== (current_block_type = select_block_type(changed, ctx))) {
     				if_block.d(1);
     				if_block = current_block_type(ctx);
     				if (if_block) {
@@ -37935,7 +38018,7 @@ mutation DeleteMaterial($id:ID!) {
     			}
     			input2.$set(input2_changes);
 
-    			if (changed.notes) textarea.value = ctx.notes;
+    			if (changed.notes) set_input_value(textarea, ctx.notes);
 
     			if (changed.loading) {
     				toggle_class(button, "is-loading", ctx.loading);
@@ -38162,9 +38245,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/materials/CreateMaterial.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/materials/CreateMaterial.svelte generated by Svelte v3.9.1 */
 
-    const file$1i = "src/components/materials/CreateMaterial.svelte";
+    const file$1i = "admin/src/components/materials/CreateMaterial.svelte";
 
     // (35:0) <Modal bind:open>
     function create_default_slot$h(ctx) {
@@ -38350,10 +38433,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/materials/Materials.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/materials/Materials.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$p } = globals;
 
-    const file$1j = "src/components/materials/Materials.svelte";
+    const file$1j = "admin/src/components/materials/Materials.svelte";
 
     // (36:18) 
     function create_if_block_1$q(ctx) {
@@ -38462,13 +38545,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$materials) return 0;
     		if (!ctx.errors) return 1;
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -38520,7 +38603,7 @@ mutation DeleteMaterial($id:ID!) {
     			filteritems.$set(filteritems_changes);
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if (~current_block_type_index) if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -38604,7 +38687,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $materials;
 
     	validate_store(materials, 'materials');
-    	subscribe($$self, materials, $$value => { $materials = $$value; $$invalidate('$materials', $materials); });
+    	component_subscribe($$self, materials, $$value => { $materials = $$value; $$invalidate('$materials', $materials); });
 
     	
 
@@ -38629,9 +38712,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/materials/EditMaterial.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/materials/EditMaterial.svelte generated by Svelte v3.9.1 */
 
-    const file$1k = "src/components/materials/EditMaterial.svelte";
+    const file$1k = "admin/src/components/materials/EditMaterial.svelte";
 
     // (40:2) {#if open}
     function create_if_block$P(ctx) {
@@ -38911,10 +38994,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/materials/Material.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/materials/Material.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$q } = globals;
 
-    const file$1l = "src/components/materials/Material.svelte";
+    const file$1l = "admin/src/components/materials/Material.svelte";
 
     // (54:0) {#if errors}
     function create_if_block_2$c(ctx) {
@@ -39000,7 +39083,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (58:0) {#if $material && $material.id === params.id}
     function create_if_block$Q(ctx) {
-    	var h1, t0_value = ctx.$material.title, t0, t1, t2, section0, h2, t4, p, t5, a, t6_value = ctx.truncate(ctx.$material.url), t6, a_href_value, t7, section1, t8, button, i, t9, t10, updating_open, current, dispose;
+    	var h1, t0_value = ctx.$material.title + "", t0, t1, t2, section0, h2, t4, p, t5, a, t6_value = ctx.truncate(ctx.$material.url) + "", t6, a_href_value, t7, section1, t8, button, i, t9, t10, updating_open, current, dispose;
 
     	var itemtaglist = new ItemTagList({
     		props: {
@@ -39103,7 +39186,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$material) && t0_value !== (t0_value = ctx.$material.title)) {
+    			if ((!current || changed.$material) && t0_value !== (t0_value = ctx.$material.title + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -39112,7 +39195,7 @@ mutation DeleteMaterial($id:ID!) {
     			if (changed.material) itemtaglist_changes.store = material;
     			itemtaglist.$set(itemtaglist_changes);
 
-    			if ((!current || changed.$material) && t6_value !== (t6_value = ctx.truncate(ctx.$material.url))) {
+    			if ((!current || changed.$material) && t6_value !== (t6_value = ctx.truncate(ctx.$material.url) + "")) {
     				set_data(t6, t6_value);
     			}
 
@@ -39188,13 +39271,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$material && ctx.$material.id === ctx.params.id) return 0;
     		if (!ctx.errors) return 1;
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -39241,7 +39324,7 @@ mutation DeleteMaterial($id:ID!) {
     			}
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if (~current_block_type_index) if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -39304,7 +39387,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $material;
 
     	validate_store(material, 'material');
-    	subscribe($$self, material, $$value => { $material = $$value; $$invalidate('$material', $material); });
+    	component_subscribe($$self, material, $$value => { $material = $$value; $$invalidate('$material', $material); });
 
     	
 
@@ -39372,9 +39455,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/words/WordList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/words/WordList.svelte generated by Svelte v3.9.1 */
 
-    const file$1m = "src/components/words/WordList.svelte";
+    const file$1m = "admin/src/components/words/WordList.svelte";
 
     function get_each_context_1$6(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -39390,7 +39473,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (22:2) {#if words.length > 0}
     function create_if_block$R(ctx) {
-    	var p, t0_value = ctx.words.length, t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor;
+    	var p, t0_value = ctx.words.length + "", t0, t1, t2, each_blocks = [], each_1_lookup = new Map(), each_1_anchor;
 
     	var each_value = ctx.words;
 
@@ -39427,7 +39510,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.words) && t0_value !== (t0_value = ctx.words.length)) {
+    			if ((changed.words) && t0_value !== (t0_value = ctx.words.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -39496,7 +39579,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (28:10) {#each word.tags as tag (tag.id)}
     function create_each_block_1$6(key_1, ctx) {
-    	var span, t_value = ctx.tag.name, t;
+    	var span, t_value = ctx.tag.name + "", t;
 
     	return {
     		key: key_1,
@@ -39517,7 +39600,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.words) && t_value !== (t_value = ctx.tag.name)) {
+    			if ((changed.words) && t_value !== (t_value = ctx.tag.name + "")) {
     				set_data(t, t_value);
     			}
     		},
@@ -39532,7 +39615,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (24:4) {#each words as word (word.id)}
     function create_each_block$s(key_1, ctx) {
-    	var li, a, t0_value = ctx.word.english, t0, t1, t2_value = ctx.word.chinese, t2, t3, a_href_value, t4, t5;
+    	var li, a, t0_value = ctx.word.english + "", t0, t1, t2_value = ctx.word.chinese + "", t2, t3, a_href_value, t4, t5;
 
     	var if_block = (ctx.word.tags && ctx.word.tags.length > 0) && create_if_block_1$s(ctx);
 
@@ -39571,11 +39654,11 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.words) && t0_value !== (t0_value = ctx.word.english)) {
+    			if ((changed.words) && t0_value !== (t0_value = ctx.word.english + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((changed.words) && t2_value !== (t2_value = ctx.word.chinese)) {
+    			if ((changed.words) && t2_value !== (t2_value = ctx.word.chinese + "")) {
     				set_data(t2, t2_value);
     			}
 
@@ -39687,10 +39770,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/words/WordForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/words/WordForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$r } = globals;
 
-    const file$1n = "src/components/words/WordForm.svelte";
+    const file$1n = "admin/src/components/words/WordForm.svelte";
 
     // (43:30) {:else}
     function create_else_block$l(ctx) {
@@ -39737,12 +39820,12 @@ mutation DeleteMaterial($id:ID!) {
     function create_fragment$1u(ctx) {
     	var h1, t0, t1, form_1, t2, updating_value, t3, updating_value_1, t4, updating_value_2, t5, div, button, t7, input3, current, dispose;
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.id) return create_if_block$S;
     		return create_else_block$l;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	var error = new Error$1({
@@ -39869,7 +39952,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    			if (current_block_type !== (current_block_type = select_block_type(changed, ctx))) {
     				if_block.d(1);
     				if_block = current_block_type(ctx);
     				if (if_block) {
@@ -40106,9 +40189,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/words/CreateWord.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/words/CreateWord.svelte generated by Svelte v3.9.1 */
 
-    const file$1o = "src/components/words/CreateWord.svelte";
+    const file$1o = "admin/src/components/words/CreateWord.svelte";
 
     // (35:0) <Modal bind:open>
     function create_default_slot$j(ctx) {
@@ -40294,10 +40377,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/words/Words.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/words/Words.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$s } = globals;
 
-    const file$1p = "src/components/words/Words.svelte";
+    const file$1p = "admin/src/components/words/Words.svelte";
 
     // (36:20) 
     function create_if_block_1$t(ctx) {
@@ -40403,13 +40486,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$words) return 0;
     		if (!ctx.errors) return 1;
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -40461,7 +40544,7 @@ mutation DeleteMaterial($id:ID!) {
     			filteritems.$set(filteritems_changes);
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if (~current_block_type_index) if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -40545,7 +40628,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $words;
 
     	validate_store(words, 'words');
-    	subscribe($$self, words, $$value => { $words = $$value; $$invalidate('$words', $words); });
+    	component_subscribe($$self, words, $$value => { $words = $$value; $$invalidate('$words', $words); });
 
     	
 
@@ -40570,9 +40653,9 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/words/EditWord.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/words/EditWord.svelte generated by Svelte v3.9.1 */
 
-    const file$1q = "src/components/words/EditWord.svelte";
+    const file$1q = "admin/src/components/words/EditWord.svelte";
 
     // (40:2) {#if open}
     function create_if_block$U(ctx) {
@@ -40848,10 +40931,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/words/Word.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/words/Word.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$t } = globals;
 
-    const file$1r = "src/components/words/Word.svelte";
+    const file$1r = "admin/src/components/words/Word.svelte";
 
     function get_each_context$t(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -40940,7 +41023,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (43:2) {#if $word && $word.id === params.id}
     function create_if_block$V(ctx) {
-    	var h1, t0_value = ctx.$word.english, t0, t1, t2, section0, h20, t4, p0, strong0, t6, t7_value = ctx.$word.chinese, t7, t8, p1, strong1, t10, t11_value = ctx.$word.audio || 'none', t11, t12, h21, t13, t14_value = ctx.$word.lessons.length, t14, t15, t16, t17, section1, t18, button, i, t19, t20, updating_open, current, dispose;
+    	var h1, t0_value = ctx.$word.english + "", t0, t1, t2, section0, h20, t4, p0, strong0, t6, t7_value = ctx.$word.chinese + "", t7, t8, p1, strong1, t10, t11_value = ctx.$word.audio || 'none' + "", t11, t12, h21, t13, t14_value = ctx.$word.lessons.length + "", t14, t15, t16, t17, section1, t18, button, i, t19, t20, updating_open, current, dispose;
 
     	var itemtaglist = new ItemTagList({
     		props: {
@@ -41074,7 +41157,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$word) && t0_value !== (t0_value = ctx.$word.english)) {
+    			if ((!current || changed.$word) && t0_value !== (t0_value = ctx.$word.english + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -41083,15 +41166,15 @@ mutation DeleteMaterial($id:ID!) {
     			if (changed.words) itemtaglist_changes.store = words;
     			itemtaglist.$set(itemtaglist_changes);
 
-    			if ((!current || changed.$word) && t7_value !== (t7_value = ctx.$word.chinese)) {
+    			if ((!current || changed.$word) && t7_value !== (t7_value = ctx.$word.chinese + "")) {
     				set_data(t7, t7_value);
     			}
 
-    			if ((!current || changed.$word) && t11_value !== (t11_value = ctx.$word.audio || 'none')) {
+    			if ((!current || changed.$word) && t11_value !== (t11_value = ctx.$word.audio || 'none' + "")) {
     				set_data(t11, t11_value);
     			}
 
-    			if ((!current || changed.$word) && t14_value !== (t14_value = ctx.$word.lessons.length)) {
+    			if ((!current || changed.$word) && t14_value !== (t14_value = ctx.$word.lessons.length + "")) {
     				set_data(t14, t14_value);
     			}
 
@@ -41213,7 +41296,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (54:8) {#each $word.lessons as lesson (lesson.id)}
     function create_each_block$t(key_1, ctx) {
-    	var li, a, t_value = ctx.lesson.name, t, a_href_value;
+    	var li, a, t_value = ctx.lesson.name + "", t, a_href_value;
 
     	return {
     		key: key_1,
@@ -41237,7 +41320,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$word) && t_value !== (t_value = ctx.lesson.name)) {
+    			if ((changed.$word) && t_value !== (t_value = ctx.lesson.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -41266,13 +41349,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$word && ctx.$word.id === ctx.params.id) return 0;
     		if (!ctx.errors) return 1;
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -41319,7 +41402,7 @@ mutation DeleteMaterial($id:ID!) {
     			}
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if (~current_block_type_index) if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -41382,7 +41465,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $word;
 
     	validate_store(word, 'word');
-    	subscribe($$self, word, $$value => { $word = $$value; $$invalidate('$word', $word); });
+    	component_subscribe($$self, word, $$value => { $word = $$value; $$invalidate('$word', $word); });
 
     	
 
@@ -41443,10 +41526,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/tags/TagForm.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/tags/TagForm.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$u } = globals;
 
-    const file$1s = "src/components/tags/TagForm.svelte";
+    const file$1s = "admin/src/components/tags/TagForm.svelte";
 
     // (39:2) {#if errors}
     function create_if_block$W(ctx) {
@@ -41747,7 +41830,7 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/tags/CreateTag.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/tags/CreateTag.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$v } = globals;
 
     function create_fragment$1A(ctx) {
@@ -41818,7 +41901,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $tags;
 
     	validate_store(tags, 'tags');
-    	subscribe($$self, tags, $$value => { $tags = $$value; $$invalidate('$tags', $tags); });
+    	component_subscribe($$self, tags, $$value => { $tags = $$value; $$invalidate('$tags', $tags); });
 
     	
 
@@ -41875,10 +41958,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/tags/TagConnectionsList.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/tags/TagConnectionsList.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$w } = globals;
 
-    const file$1t = "src/components/tags/TagConnectionsList.svelte";
+    const file$1t = "admin/src/components/tags/TagConnectionsList.svelte";
 
     function get_each_context$u(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -42085,7 +42168,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (39:4) {#each $tag.materials as material (material.id)}
     function create_each_block_2(key_1, ctx) {
-    	var a, t_value = ctx.material.title, t, a_href_value;
+    	var a, t_value = ctx.material.title + "", t, a_href_value;
 
     	return {
     		key: key_1,
@@ -42106,7 +42189,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$tag) && t_value !== (t_value = ctx.material.title)) {
+    			if ((changed.$tag) && t_value !== (t_value = ctx.material.title + "")) {
     				set_data(t, t_value);
     			}
 
@@ -42176,7 +42259,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (48:4) {#each $tag.lessons as lesson (lesson.id)}
     function create_each_block_1$7(key_1, ctx) {
-    	var a, t_value = ctx.lesson.name, t, a_href_value;
+    	var a, t_value = ctx.lesson.name + "", t, a_href_value;
 
     	return {
     		key: key_1,
@@ -42197,7 +42280,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$tag) && t_value !== (t_value = ctx.lesson.name)) {
+    			if ((changed.$tag) && t_value !== (t_value = ctx.lesson.name + "")) {
     				set_data(t, t_value);
     			}
 
@@ -42267,7 +42350,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (57:4) {#each $tag.words as word (word.id)}
     function create_each_block$u(key_1, ctx) {
-    	var a, t_value = ctx.word.english, t, a_href_value;
+    	var a, t_value = ctx.word.english + "", t, a_href_value;
 
     	return {
     		key: key_1,
@@ -42288,7 +42371,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$tag) && t_value !== (t_value = ctx.word.english)) {
+    			if ((changed.$tag) && t_value !== (t_value = ctx.word.english + "")) {
     				set_data(t, t_value);
     			}
 
@@ -42320,13 +42403,13 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$tag && ctx.$tag.id === ctx.id) return 0;
     		if (!ctx.errors) return 1;
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -42360,7 +42443,7 @@ mutation DeleteMaterial($id:ID!) {
     			error.$set(error_changes);
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if (~current_block_type_index) if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -42424,7 +42507,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $tag;
 
     	validate_store(tag, 'tag');
-    	subscribe($$self, tag, $$value => { $tag = $$value; $$invalidate('$tag', $tag); });
+    	component_subscribe($$self, tag, $$value => { $tag = $$value; $$invalidate('$tag', $tag); });
 
     	
 
@@ -42475,10 +42558,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/tags/EditTag.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/tags/EditTag.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$x } = globals;
 
-    const file$1u = "src/components/tags/EditTag.svelte";
+    const file$1u = "admin/src/components/tags/EditTag.svelte";
 
     // (42:0) {#if openTag.connections}
     function create_if_block$Y(ctx) {
@@ -42571,10 +42654,10 @@ mutation DeleteMaterial($id:ID!) {
 
     		p: function update(changed, ctx) {
     			var tagform_changes = (changed.errors || changed.loading || changed.openTag) ? get_spread_update(tagform_spread_levels, [
-    				(changed.errors) && { errors: ctx.errors },
-    				(changed.loading) && { loading: ctx.loading },
-    				(changed.openTag) && ctx.openTag
-    			]) : {};
+    									(changed.errors) && { errors: ctx.errors },
+    			(changed.loading) && { loading: ctx.loading },
+    			(changed.openTag) && ctx.openTag
+    								]) : {};
     			tagform.$set(tagform_changes);
 
     			if (ctx.openTag.connections) {
@@ -42635,7 +42718,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $tags;
 
     	validate_store(tags, 'tags');
-    	subscribe($$self, tags, $$value => { $tags = $$value; $$invalidate('$tags', $tags); });
+    	component_subscribe($$self, tags, $$value => { $tags = $$value; $$invalidate('$tags', $tags); });
 
     	
 
@@ -42708,10 +42791,10 @@ mutation DeleteMaterial($id:ID!) {
     	}
     }
 
-    /* src/components/tags/Tags.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/tags/Tags.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$y } = globals;
 
-    const file$1v = "src/components/tags/Tags.svelte";
+    const file$1v = "admin/src/components/tags/Tags.svelte";
 
     function get_each_context$v(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -42721,7 +42804,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (46:2) {#if $tags && $tags.length > 0}
     function create_if_block_2$f(ctx) {
-    	var h2, t0_value = ctx.$tags.length, t0, t1, t2, div, each_blocks = [], each_1_lookup = new Map();
+    	var h2, t0_value = ctx.$tags.length + "", t0, t1, t2, div, each_blocks = [], each_1_lookup = new Map();
 
     	var each_value = ctx.$tags;
 
@@ -42759,7 +42842,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$tags) && t0_value !== (t0_value = ctx.$tags.length)) {
+    			if ((changed.$tags) && t0_value !== (t0_value = ctx.$tags.length + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -42781,7 +42864,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (55:10) {:else}
     function create_else_block$m(ctx) {
-    	var span, t_value = ctx.tag.connections, t;
+    	var span, t_value = ctx.tag.connections + "", t;
 
     	return {
     		c: function create() {
@@ -42797,7 +42880,7 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$tags) && t_value !== (t_value = ctx.tag.connections)) {
+    			if ((changed.$tags) && t_value !== (t_value = ctx.tag.connections + "")) {
     				set_data(t, t_value);
     			}
     		},
@@ -42846,18 +42929,18 @@ mutation DeleteMaterial($id:ID!) {
 
     // (49:4) {#each $tags as tag (tag.id)}
     function create_each_block$v(key_1, ctx) {
-    	var div1, div0, span, t0_value = ctx.tag.name, t0, t1, t2, dispose;
+    	var div1, div0, span, t0_value = ctx.tag.name + "", t0, t1, t2, dispose;
 
     	function click_handler() {
     		return ctx.click_handler(ctx);
     	}
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.tag.connections === 0) return create_if_block_3$8;
     		return create_else_block$m;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	return {
@@ -42895,11 +42978,11 @@ mutation DeleteMaterial($id:ID!) {
 
     		p: function update(changed, new_ctx) {
     			ctx = new_ctx;
-    			if ((changed.$tags) && t0_value !== (t0_value = ctx.tag.name)) {
+    			if ((changed.$tags) && t0_value !== (t0_value = ctx.tag.name + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if (current_block_type === (current_block_type = select_block_type(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type(changed, ctx)) && if_block) {
     				if_block.p(changed, ctx);
     			} else {
     				if_block.d(1);
@@ -43284,7 +43367,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $tags;
 
     	validate_store(tags, 'tags');
-    	subscribe($$self, tags, $$value => { $tags = $$value; $$invalidate('$tags', $tags); });
+    	component_subscribe($$self, tags, $$value => { $tags = $$value; $$invalidate('$tags', $tags); });
 
     	
 
@@ -43363,9 +43446,9 @@ mutation DeleteMaterial($id:ID!) {
 
     const me = createProfileStore();
 
-    /* src/components/profile/Profile.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/profile/Profile.svelte generated by Svelte v3.9.1 */
 
-    const file$1w = "src/components/profile/Profile.svelte";
+    const file$1w = "admin/src/components/profile/Profile.svelte";
 
     // (22:2) {:else}
     function create_else_block$n(ctx) {
@@ -43451,7 +43534,7 @@ mutation DeleteMaterial($id:ID!) {
 
     // (15:0) <DL>
     function create_default_slot$m(ctx) {
-    	var dt0, t1, dd0, t2_value = ctx.$me.username, t2, t3, dt1, t5, dd1, t6_value = ctx.$me.id, t6;
+    	var dt0, t1, dd0, t2_value = ctx.$me.username + "", t2, t3, dt1, t5, dd1, t6_value = ctx.$me.id + "", t6;
 
     	return {
     		c: function create() {
@@ -43485,11 +43568,11 @@ mutation DeleteMaterial($id:ID!) {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$me) && t2_value !== (t2_value = ctx.$me.username)) {
+    			if ((changed.$me) && t2_value !== (t2_value = ctx.$me.username + "")) {
     				set_data(t2, t2_value);
     			}
 
-    			if ((changed.$me) && t6_value !== (t6_value = ctx.$me.id)) {
+    			if ((changed.$me) && t6_value !== (t6_value = ctx.$me.id + "")) {
     				set_data(t6, t6_value);
     			}
     		},
@@ -43518,12 +43601,12 @@ mutation DeleteMaterial($id:ID!) {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$me) return 0;
     		return 1;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -43551,7 +43634,7 @@ mutation DeleteMaterial($id:ID!) {
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -43601,7 +43684,7 @@ mutation DeleteMaterial($id:ID!) {
     	let $me;
 
     	validate_store(me, 'me');
-    	subscribe($$self, me, $$value => { $me = $$value; $$invalidate('$me', $me); });
+    	component_subscribe($$self, me, $$value => { $me = $$value; $$invalidate('$me', $me); });
 
     	
 
@@ -43651,9 +43734,9 @@ subscription {
 }
 `;
 
-    /* src/components/TextStretcher.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/TextStretcher.svelte generated by Svelte v3.9.1 */
 
-    const file$1x = "src/components/TextStretcher.svelte";
+    const file$1x = "admin/src/components/TextStretcher.svelte";
 
     function create_fragment$1F(ctx) {
     	var div, p, t;
@@ -43790,9 +43873,9 @@ subscription {
     	}
     }
 
-    /* src/components/viewer/PreclassBoard.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/viewer/PreclassBoard.svelte generated by Svelte v3.9.1 */
 
-    const file$1y = "src/components/viewer/PreclassBoard.svelte";
+    const file$1y = "admin/src/components/viewer/PreclassBoard.svelte";
 
     // (40:2) {#if absentStudents}
     function create_if_block$$(ctx) {
@@ -43959,11 +44042,11 @@ subscription {
     	let $sessionStudents, $session, $time;
 
     	validate_store(sessionStudents, 'sessionStudents');
-    	subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
+    	component_subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
     	validate_store(time, 'time');
-    	subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
+    	component_subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
 
     	
 
@@ -44017,9 +44100,9 @@ subscription {
 
     const points$1 = createPointsStore$1();
 
-    /* src/components/viewer/Star.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/viewer/Star.svelte generated by Svelte v3.9.1 */
 
-    const file$1z = "src/components/viewer/Star.svelte";
+    const file$1z = "admin/src/components/viewer/Star.svelte";
 
     // (44:2) {#if number}
     function create_if_block$10(ctx) {
@@ -44102,7 +44185,7 @@ subscription {
     				if_block = null;
     			}
 
-    			if (changed.hue || changed.index) {
+    			if (changed.index) {
     				set_style(svg, "--hue", ctx.hue(ctx.index));
     			}
 
@@ -44187,9 +44270,9 @@ subscription {
     	}
     }
 
-    /* src/components/viewer/ScoreboardRow.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/viewer/ScoreboardRow.svelte generated by Svelte v3.9.1 */
 
-    const file$1A = "src/components/viewer/ScoreboardRow.svelte";
+    const file$1A = "admin/src/components/viewer/ScoreboardRow.svelte";
 
     function get_each_context$w(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -44343,7 +44426,7 @@ subscription {
     }
 
     function create_fragment$1I(ctx) {
-    	var li, div0, span, t0_value = ctx.student.englishName || ctx.student.chineseName, t0, t1, t2, div1, current;
+    	var li, div0, span, t0_value = ctx.student.englishName || ctx.student.chineseName + "", t0, t1, t2, div1, current;
 
     	var if_block = (ctx.student.attendance && ctx.student.attendance.status !== "Absent") && create_if_block$11(ctx);
 
@@ -44387,7 +44470,7 @@ subscription {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.student) && t0_value !== (t0_value = ctx.student.englishName || ctx.student.chineseName)) {
+    			if ((!current || changed.student) && t0_value !== (t0_value = ctx.student.englishName || ctx.student.chineseName + "")) {
     				set_data(t0, t0_value);
     			}
 
@@ -44447,7 +44530,7 @@ subscription {
     	let $points;
 
     	validate_store(points$1, 'points');
-    	subscribe($$self, points$1, $$value => { $points = $$value; $$invalidate('$points', $points); });
+    	component_subscribe($$self, points$1, $$value => { $points = $$value; $$invalidate('$points', $points); });
 
     	
       let { student, sessionId, glow = false } = $$props;
@@ -44515,9 +44598,9 @@ subscription {
     	}
     }
 
-    /* src/components/viewer/Scoreboard.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/viewer/Scoreboard.svelte generated by Svelte v3.9.1 */
 
-    const file$1B = "src/components/viewer/Scoreboard.svelte";
+    const file$1B = "admin/src/components/viewer/Scoreboard.svelte";
 
     function get_each_context$x(ctx, list, i) {
     	const child_ctx = Object.create(ctx);
@@ -44652,7 +44735,7 @@ subscription {
     }
 
     function create_fragment$1J(ctx) {
-    	var audio0, source0, t0, audio1, source1, t1, audio2, source2, t2, h2, t3_value = ctx.$session.group.name, t3, t4, t5_value = ctx.$session.number, t5, t6, if_block_anchor, current;
+    	var audio0, source0, t0, audio1, source1, t1, audio2, source2, t2, h2, t3_value = ctx.$session.group.name + "", t3, t4, t5_value = ctx.$session.number + "", t5, t6, if_block_anchor, current;
 
     	var if_block = (ctx.$sessionStudents) && create_if_block$12(ctx);
 
@@ -44718,11 +44801,11 @@ subscription {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$session) && t3_value !== (t3_value = ctx.$session.group.name)) {
+    			if ((!current || changed.$session) && t3_value !== (t3_value = ctx.$session.group.name + "")) {
     				set_data(t3, t3_value);
     			}
 
-    			if ((!current || changed.$session) && t5_value !== (t5_value = ctx.$session.number)) {
+    			if ((!current || changed.$session) && t5_value !== (t5_value = ctx.$session.number + "")) {
     				set_data(t5, t5_value);
     			}
 
@@ -44781,11 +44864,11 @@ subscription {
     	let $session, $sessionStudents, $sessionId;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
     	validate_store(sessionStudents, 'sessionStudents');
-    	subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
+    	component_subscribe($$self, sessionStudents, $$value => { $sessionStudents = $$value; $$invalidate('$sessionStudents', $sessionStudents); });
     	validate_store(sessionId, 'sessionId');
-    	subscribe($$self, sessionId, $$value => { $sessionId = $$value; $$invalidate('$sessionId', $sessionId); });
+    	component_subscribe($$self, sessionId, $$value => { $sessionId = $$value; $$invalidate('$sessionId', $sessionId); });
 
     	
 
@@ -44845,10 +44928,10 @@ subscription {
     	}
     }
 
-    /* src/components/viewer/ResultsBoard.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/viewer/ResultsBoard.svelte generated by Svelte v3.9.1 */
     const { Object: Object_1$2 } = globals;
 
-    const file$1C = "src/components/viewer/ResultsBoard.svelte";
+    const file$1C = "admin/src/components/viewer/ResultsBoard.svelte";
 
     function get_each_context$y(ctx, list, i) {
     	const child_ctx = Object_1$2.create(ctx);
@@ -44943,7 +45026,7 @@ subscription {
 
     // (114:6) {:else}
     function create_else_block$o(ctx) {
-    	var p, t0_value = ctx.group.total, t0, t1, t2_value = ctx.listNames(ctx.group.students), t2;
+    	var p, t0_value = ctx.group.total + "", t0, t1, t2_value = ctx.listNames(ctx.group.students) + "", t2;
 
     	return {
     		c: function create() {
@@ -44963,11 +45046,11 @@ subscription {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.groupedResults) && t0_value !== (t0_value = ctx.group.total)) {
+    			if ((changed.groupedResults) && t0_value !== (t0_value = ctx.group.total + "")) {
     				set_data(t0, t0_value);
     			}
 
-    			if ((changed.groupedResults) && t2_value !== (t2_value = ctx.listNames(ctx.group.students))) {
+    			if ((changed.groupedResults) && t2_value !== (t2_value = ctx.listNames(ctx.group.students) + "")) {
     				set_data(t2, t2_value);
     			}
     		},
@@ -44982,7 +45065,7 @@ subscription {
 
     // (110:6) {#if i === 0}
     function create_if_block_1$x(ctx) {
-    	var div, p, i, t0, t1_value = ctx.group.total, t1, t2, t3_value = ctx.listNames(ctx.group.students), t3, t4;
+    	var div, p, i, t0, t1_value = ctx.group.total + "", t1, t2, t3_value = ctx.listNames(ctx.group.students) + "", t3, t4;
 
     	return {
     		c: function create() {
@@ -45014,11 +45097,11 @@ subscription {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.groupedResults) && t1_value !== (t1_value = ctx.group.total)) {
+    			if ((changed.groupedResults) && t1_value !== (t1_value = ctx.group.total + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((changed.groupedResults) && t3_value !== (t3_value = ctx.listNames(ctx.group.students))) {
+    			if ((changed.groupedResults) && t3_value !== (t3_value = ctx.listNames(ctx.group.students) + "")) {
     				set_data(t3, t3_value);
     			}
     		},
@@ -45035,12 +45118,12 @@ subscription {
     function create_each_block$y(key_1, ctx) {
     	var first, if_block_anchor;
 
-    	function select_block_type_1(ctx) {
+    	function select_block_type_1(changed, ctx) {
     		if (ctx.i === 0) return create_if_block_1$x;
     		return create_else_block$o;
     	}
 
-    	var current_block_type = select_block_type_1(ctx);
+    	var current_block_type = select_block_type_1(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	return {
@@ -45062,7 +45145,7 @@ subscription {
     		},
 
     		p: function update(changed, ctx) {
-    			if (current_block_type === (current_block_type = select_block_type_1(ctx)) && if_block) {
+    			if (current_block_type === (current_block_type = select_block_type_1(changed, ctx)) && if_block) {
     				if_block.p(changed, ctx);
     			} else {
     				if_block.d(1);
@@ -45089,7 +45172,7 @@ subscription {
     }
 
     function create_fragment$1K(ctx) {
-    	var audio, source, t0, h2, t1_value = ctx.$session.group.name, t1, t2, t3_value = ctx.$session.number, t3, t4, t5, t6, section, current_block_type_index, if_block, t7, span, current;
+    	var audio, source, t0, h2, t1_value = ctx.$session.group.name + "", t1, t2, t3_value = ctx.$session.number + "", t3, t4, t5, t6, section, current_block_type_index, if_block, t7, span, current;
 
     	var if_block_creators = [
     		create_if_block$13,
@@ -45098,12 +45181,12 @@ subscription {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.results) return 0;
     		return 1;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	return {
@@ -45159,11 +45242,11 @@ subscription {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((!current || changed.$session) && t1_value !== (t1_value = ctx.$session.group.name)) {
+    			if ((!current || changed.$session) && t1_value !== (t1_value = ctx.$session.group.name + "")) {
     				set_data(t1, t1_value);
     			}
 
-    			if ((!current || changed.$session) && t3_value !== (t3_value = ctx.$session.number)) {
+    			if ((!current || changed.$session) && t3_value !== (t3_value = ctx.$session.number + "")) {
     				set_data(t3, t3_value);
     			}
 
@@ -45172,7 +45255,7 @@ subscription {
     			}
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -45226,9 +45309,9 @@ subscription {
     	let $session, $time;
 
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
     	validate_store(time, 'time');
-    	subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
+    	component_subscribe($$self, time, $$value => { $time = $$value; $$invalidate('$time', $time); });
 
     	
 
@@ -45279,9 +45362,9 @@ subscription {
     	}
     }
 
-    /* src/components/viewer/Viewer.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/viewer/Viewer.svelte generated by Svelte v3.9.1 */
 
-    const file$1D = "src/components/viewer/Viewer.svelte";
+    const file$1D = "admin/src/components/viewer/Viewer.svelte";
 
     // (59:39) 
     function create_if_block_4$4(ctx) {
@@ -45462,7 +45545,7 @@ subscription {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (!ctx.$sessionId) return 0;
     		if (!ctx.$session) return 1;
     		if (ctx.$session.stage === 'Active') return 2;
@@ -45471,7 +45554,7 @@ subscription {
     		return -1;
     	}
 
-    	if (~(current_block_type_index = select_block_type(ctx))) {
+    	if (~(current_block_type_index = select_block_type(null, ctx))) {
     		if_block = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
     	}
 
@@ -45507,7 +45590,7 @@ subscription {
 
     		p: function update(changed, ctx) {
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index !== previous_block_index) {
     				if (if_block) {
     					group_outros();
@@ -45560,9 +45643,9 @@ subscription {
     	let $sessionId, $session;
 
     	validate_store(sessionId, 'sessionId');
-    	subscribe($$self, sessionId, $$value => { $sessionId = $$value; $$invalidate('$sessionId', $sessionId); });
+    	component_subscribe($$self, sessionId, $$value => { $sessionId = $$value; $$invalidate('$sessionId', $sessionId); });
     	validate_store(session, 'session');
-    	subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
+    	component_subscribe($$self, session, $$value => { $session = $$value; $$invalidate('$session', $session); });
 
     	
 
@@ -45618,10 +45701,10 @@ subscription {
       '*': NotFound
     };
 
-    /* src/components/Login.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/Login.svelte generated by Svelte v3.9.1 */
     const { Error: Error_1$z } = globals;
 
-    const file$1E = "src/components/Login.svelte";
+    const file$1E = "admin/src/components/Login.svelte";
 
     // (83:12) {:else}
     function create_else_block$p(ctx) {
@@ -45697,12 +45780,12 @@ subscription {
 
     	binding_callbacks.push(() => bind(input0, 'value', input0_value_binding));
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.show) return create_if_block$15;
     		return create_else_block$p;
     	}
 
-    	var current_block_type = select_block_type(ctx);
+    	var current_block_type = select_block_type(null, ctx);
     	var if_block = current_block_type(ctx);
 
     	return {
@@ -45808,7 +45891,7 @@ subscription {
     			append(div2, div0);
     			append(div0, input1);
 
-    			input1.value = ctx.password;
+    			set_input_value(input1, ctx.password);
 
     			ctx.input1_binding(input1);
     			append(div0, t9);
@@ -45838,9 +45921,9 @@ subscription {
     			}
     			input0.$set(input0_changes);
 
-    			if (changed.password && (input1.value !== ctx.password)) input1.value = ctx.password;
+    			if (changed.password && (input1.value !== ctx.password)) set_input_value(input1, ctx.password);
 
-    			if (current_block_type !== (current_block_type = select_block_type(ctx))) {
+    			if (current_block_type !== (current_block_type = select_block_type(changed, ctx))) {
     				if_block.d(1);
     				if_block = current_block_type(ctx);
     				if (if_block) {
@@ -45981,9 +46064,9 @@ subscription {
     	}
     }
 
-    /* src/components/NavbarLink.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/NavbarLink.svelte generated by Svelte v3.9.1 */
 
-    const file$1F = "src/components/NavbarLink.svelte";
+    const file$1F = "admin/src/components/NavbarLink.svelte";
 
     // (25:2) {#if icon}
     function create_if_block$16(ctx) {
@@ -46086,7 +46169,7 @@ subscription {
     	let $location;
 
     	validate_store(location$1, 'location');
-    	subscribe($$self, location$1, $$value => { $location = $$value; $$invalidate('$location', $location); });
+    	component_subscribe($$self, location$1, $$value => { $location = $$value; $$invalidate('$location', $location); });
 
     	let { url = '', text = '', icon = null } = $$props;
 
@@ -46135,9 +46218,9 @@ subscription {
     	}
     }
 
-    /* src/components/Navbar.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/Navbar.svelte generated by Svelte v3.9.1 */
 
-    const file$1G = "src/components/Navbar.svelte";
+    const file$1G = "admin/src/components/Navbar.svelte";
 
     // (63:4) {#if $auth.username}
     function create_if_block_2$h(ctx) {
@@ -46161,7 +46244,7 @@ subscription {
     			attr(div, "class", "navbar-burger burger svelte-3cc10n");
     			attr(div, "aria-label", "menu");
     			attr(div, "aria-expanded", "false");
-    			div.dataset.target = "navmenu";
+    			attr(div, "data-target", "navmenu");
     			toggle_class(div, "is-active", ctx.showMenu);
     			add_location(div, file$1G, 63, 6, 1254);
     			dispose = listen(div, "click", ctx.click_handler);
@@ -46638,7 +46721,7 @@ subscription {
     	let $auth;
 
     	validate_store(auth, 'auth');
-    	subscribe($$self, auth, $$value => { $auth = $$value; $$invalidate('$auth', $auth); });
+    	component_subscribe($$self, auth, $$value => { $auth = $$value; $$invalidate('$auth', $auth); });
 
     	
 
@@ -46669,15 +46752,15 @@ subscription {
     	}
     }
 
-    /* src/components/Warning.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/Warning.svelte generated by Svelte v3.9.1 */
 
-    const file$1H = "src/components/Warning.svelte";
+    const file$1H = "admin/src/components/Warning.svelte";
 
     function create_fragment$1P(ctx) {
     	var div, p, i, t0, t1, t2, section, current;
 
-    	const default_slot_1 = ctx.$$slots.default;
-    	const default_slot = create_slot(default_slot_1, ctx, null);
+    	const default_slot_template = ctx.$$slots.default;
+    	const default_slot = create_slot(default_slot_template, ctx, null);
 
     	return {
     		c: function create() {
@@ -46728,7 +46811,10 @@ subscription {
     			}
 
     			if (default_slot && default_slot.p && changed.$$scope) {
-    				default_slot.p(get_slot_changes(default_slot_1, ctx, changed, null), get_slot_context(default_slot_1, ctx, null));
+    				default_slot.p(
+    					get_slot_changes(default_slot_template, ctx, changed, null),
+    					get_slot_context(default_slot_template, ctx, null)
+    				);
     			}
     		},
 
@@ -46786,9 +46872,9 @@ subscription {
     	}
     }
 
-    /* src/components/sessions/CurrentSession.svelte generated by Svelte v3.6.10 */
+    /* admin/src/components/sessions/CurrentSession.svelte generated by Svelte v3.9.1 */
 
-    const file$1I = "src/components/sessions/CurrentSession.svelte";
+    const file$1I = "admin/src/components/sessions/CurrentSession.svelte";
 
     // (27:0) {#if $todaysSessions && $todaysSessions.now && $todaysSessions.now.stage !== 'Ended'}
     function create_if_block$18(ctx) {
@@ -46899,7 +46985,7 @@ subscription {
 
     // (31:6) <DL>
     function create_default_slot_1$3(ctx) {
-    	var dt0, t1, dd0, t2_value = ctx.dateString(ctx.$todaysSessions.now.startsAt), t2, t3, dt1, t5, dd1, t6_value = ctx.dateString(ctx.$todaysSessions.now.endsAt), t6, t7, dt2, t9, dd2, t10_value = ctx.$todaysSessions.now.stage, t10;
+    	var dt0, t1, dd0, t2_value = ctx.dateString(ctx.$todaysSessions.now.startsAt) + "", t2, t3, dt1, t5, dd1, t6_value = ctx.dateString(ctx.$todaysSessions.now.endsAt) + "", t6, t7, dt2, t9, dd2, t10_value = ctx.$todaysSessions.now.stage + "", t10;
 
     	return {
     		c: function create() {
@@ -46946,15 +47032,15 @@ subscription {
     		},
 
     		p: function update(changed, ctx) {
-    			if ((changed.$todaysSessions) && t2_value !== (t2_value = ctx.dateString(ctx.$todaysSessions.now.startsAt))) {
+    			if ((changed.$todaysSessions) && t2_value !== (t2_value = ctx.dateString(ctx.$todaysSessions.now.startsAt) + "")) {
     				set_data(t2, t2_value);
     			}
 
-    			if ((changed.$todaysSessions) && t6_value !== (t6_value = ctx.dateString(ctx.$todaysSessions.now.endsAt))) {
+    			if ((changed.$todaysSessions) && t6_value !== (t6_value = ctx.dateString(ctx.$todaysSessions.now.endsAt) + "")) {
     				set_data(t6, t6_value);
     			}
 
-    			if ((changed.$todaysSessions) && t10_value !== (t10_value = ctx.$todaysSessions.now.stage)) {
+    			if ((changed.$todaysSessions) && t10_value !== (t10_value = ctx.$todaysSessions.now.stage + "")) {
     				set_data(t10, t10_value);
     			}
     		},
@@ -47114,7 +47200,7 @@ subscription {
     	let $todaysSessions;
 
     	validate_store(todaysSessions, 'todaysSessions');
-    	subscribe($$self, todaysSessions, $$value => { $todaysSessions = $$value; $$invalidate('$todaysSessions', $todaysSessions); });
+    	component_subscribe($$self, todaysSessions, $$value => { $todaysSessions = $$value; $$invalidate('$todaysSessions', $todaysSessions); });
 
     	
 
@@ -47161,9 +47247,9 @@ subscription {
     	}
     }
 
-    /* src/App.svelte generated by Svelte v3.6.10 */
+    /* admin/src/App.svelte generated by Svelte v3.9.1 */
 
-    const file$1J = "src/App.svelte";
+    const file$1J = "admin/src/App.svelte";
 
     // (19:0) {#if $location !== '/viewer'}
     function create_if_block_3$a(ctx) {
@@ -47390,12 +47476,12 @@ subscription {
 
     	var if_blocks = [];
 
-    	function select_block_type(ctx) {
+    	function select_block_type(changed, ctx) {
     		if (ctx.$auth.username) return 0;
     		return 1;
     	}
 
-    	current_block_type_index = select_block_type(ctx);
+    	current_block_type_index = select_block_type(null, ctx);
     	if_block1 = if_blocks[current_block_type_index] = if_block_creators[current_block_type_index](ctx);
 
     	var if_block2 = (location$1 !== '/viewer') && create_if_block$19();
@@ -47447,7 +47533,7 @@ subscription {
     			}
 
     			var previous_block_index = current_block_type_index;
-    			current_block_type_index = select_block_type(ctx);
+    			current_block_type_index = select_block_type(changed, ctx);
     			if (current_block_type_index === previous_block_index) {
     				if_blocks[current_block_type_index].p(changed, ctx);
     			} else {
@@ -47526,9 +47612,9 @@ subscription {
     	let $location, $auth;
 
     	validate_store(location$1, 'location');
-    	subscribe($$self, location$1, $$value => { $location = $$value; $$invalidate('$location', $location); });
+    	component_subscribe($$self, location$1, $$value => { $location = $$value; $$invalidate('$location', $location); });
     	validate_store(auth, 'auth');
-    	subscribe($$self, auth, $$value => { $auth = $$value; $$invalidate('$auth', $auth); });
+    	component_subscribe($$self, auth, $$value => { $auth = $$value; $$invalidate('$auth', $auth); });
 
     	return { $location, $auth };
     }

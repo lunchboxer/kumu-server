@@ -1,14 +1,12 @@
 const fetch = window.fetch
 
-const endpoint = 'https://oe.openode.io/api'
-
 export const request = async (query, variables) => {
   const coldAuth = window.localStorage.getItem('parentAuth')
   const token = coldAuth ? JSON.parse(coldAuth).token : null
   const body = typeof query === 'function'
     ? query(variables)
     : JSON.stringify({ query, variables })
-  const response = await fetch(endpoint, {
+  const response = await fetch(process.env.API_ENDPOINT, {
     method: 'post',
     headers: {
       'Content-Type': 'application/json',

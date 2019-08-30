@@ -80,7 +80,7 @@ var models = [
 exports.Prisma = prisma_lib_1.makePrismaClientClass({
   typeDefs,
   models,
-  endpoint: `https://us1.prisma.sh/james-6ee4db/kumu-server/dev`,
-  secret: `${process.env["SERVICE_SECRET"]}`
+  endpoint: `http://localhost:4466`,
+  secret: `${process.env["PRISMA_SECRET"]}`
 });
 exports.prisma = new exports.Prisma();

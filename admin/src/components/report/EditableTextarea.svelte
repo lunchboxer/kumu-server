@@ -5,16 +5,16 @@
   import marked from 'marked'
 
   export let text = ''
-  let original = text && text.slice(0)
   export let key = ''
 
+  let original = text && text.slice(0)
   let input
   let edit = true
   let alreadySet = false
   let loading = false
   let errors = ''
 
-  const inputHandler = (event) => {
+  const inputHandler = event => {
     input.style.height = 'auto'
     input.style.height = input.scrollHeight + 'px'
   }
@@ -68,18 +68,32 @@
 
 <div class="buttons">
   {#if edit}
-    <button class="button" on:click={toggleEdit}><i class="fas fa-eye" ></i>Preview</button>
+  <button class="button" on:click="{toggleEdit}">
+    <i class="fas fa-eye"></i>Preview
+  </button>
   {:else}
-    <button class="button" on:click={toggleEdit}><i class="fas fa-edit"></i>Edit</button>
-  {/if}
-  {#if text !== original}
-    <button class="button is-danger" on:click={discardChanges}><i class="fas fa-history"></i>Discard changes</button>
-    <button class="button is-primary" on:click={save} class:is-loading={loading}><i class="fas fa-save"></i>Save changes</button>
+  <button class="button" on:click="{toggleEdit}">
+    <i class="fas fa-edit"></i>Edit
+  </button>
+  {/if} {#if text !== original}
+  <button class="button is-danger" on:click="{discardChanges}">
+    <i class="fas fa-history"></i>Discard changes
+  </button>
+  <button
+    class="button is-primary"
+    on:click="{save}"
+    class:is-loading="{loading}"
+  >
+    <i class="fas fa-save"></i>Save changes
+  </button>
   {/if}
 </div>
 
 {#if edit}
-  <textarea bind:this={input} class='textarea' bind:value={text} on:input={inputHandler}></textarea>
-{:else}
-  {@html marked(text, { breaks: true })}
-{/if}
+<textarea
+  bind:this="{input}"
+  class="textarea"
+  bind:value="{text}"
+  on:input="{inputHandler}"
+></textarea>
+{:else} {@html marked(text, { breaks: true })} {/if}

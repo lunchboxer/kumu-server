@@ -1,23 +1,23 @@
-const svelte = require('rollup-plugin-svelte')
-const resolve = require('rollup-plugin-node-resolve')
-const commonjs = require('rollup-plugin-commonjs')
-const replace = require('rollup-plugin-replace')
-const { terser } = require('rollup-plugin-terser')
-const postcss = require('rollup-plugin-postcss')
-const sass = require('rollup-plugin-sass')
-const livereload = require('rollup-plugin-livereload')
-const notify = require('rollup-plugin-notify')
+import svelte from 'rollup-plugin-svelte'
+import resolve from 'rollup-plugin-node-resolve'
+import commonjs from 'rollup-plugin-commonjs'
+import replace from 'rollup-plugin-replace'
+import livereload from 'rollup-plugin-livereload'
+import { terser } from 'rollup-plugin-terser'
+import postcss from 'rollup-plugin-postcss'
+import notify from 'rollup-plugin-notify'
+import sass from 'rollup-plugin-sass'
 require('dotenv').config()
 
 const production = !process.env.ROLLUP_WATCH
 
 module.exports = [{
-  input: './src/index.js',
+  input: 'admin/src/index.js',
   output: {
     name: 'app',
     format: 'iife',
     sourcemap: true,
-    file: 'public/bundle.js'
+    file: 'admin/public/bundle.js'
   },
   plugins: [
     svelte({
@@ -26,15 +26,13 @@ module.exports = [{
       // we'll extract any component CSS out into
       // a separate file — better for performance
       css: css => {
-        css.write('public/bundle.css')
+        css.write('admin/public/bundle.css')
       }
     }),
     replace({
       'process.env.NODE_ENV': JSON.stringify(production ? 'production' : 'development'),
-      'process.env.DEV_API_ENDPOINT': JSON.stringify(process.env.DEV_API_ENDPOINT),
-      'process.env.DEV_SUBSCRIPTION_ENDPOINT': JSON.stringify(process.env.DEV_SUBSCRIPTION_ENDPOINT),
-      'process.env.PROD_API_ENDPOINT': JSON.stringify(process.env.PROD_API_ENDPOINT),
-      'process.env.PROD_SUBSCRIPTION_ENDPOINT': JSON.stringify(process.env.PROD_SUBSCRIPTION_ENDPOINT)
+      'process.env.API_ENDPOINT': JSON.stringify(process.env.API_ENDPOINT),
+      'process.env.SUBSCRIPTION_ENDPOINT': JSON.stringify(process.env.SUBSCRIPTION_ENDPOINT)
     }),
     postcss({
       extensions: ['.css']
@@ -46,7 +44,7 @@ module.exports = [{
     }),
     commonjs(),
     !production && livereload({
-      watch: 'public'
+      watch: 'admin/public'
     }),
     notify(),
 
@@ -60,14 +58,14 @@ module.exports = [{
   }
 },
 {
-  input: 'src/main.scss',
+  input: 'admin/src/main.scss',
   output: {
     name: 'main',
     format: 'iife',
-    dir: 'public'
+    dir: 'admin/public'
   },
   plugins: sass({
-    output: 'public/main.css'
+    output: 'admin/public/main.css'
   })
 }
 ]
