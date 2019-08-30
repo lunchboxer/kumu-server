@@ -1,34 +1,16 @@
 <script>
-  import { onMount } from 'svelte'
-  import { auth } from '../data/auth'
   import { student } from '../data/stores'
   import ClassSessionList from './ClassSessionList.svelte'
   import { title } from './Header.svelte'
 
-  let errors = ''
-
-  onMount(async () => {
-    try {
-      await student.get($auth.id)
-      // then
-    } catch (error) {
-      errors = error
-    }
-  })
-
   title.set('果园英语')
 </script>
 
-<h2>{$auth.englishName}'s lessons</h2>
-
-{#if errors}
-  <p class="errors">{errors}</p>
-{/if}
-
-{#if $student}
+{#if $student && $student.attendances}
+  <h2>{$student.englishName}'s lessons</h2>
   {#if $student.attendances}
     <ClassSessionList attendances={$student.attendances} />
   {/if}
-{:else if !errors}
+{:else}
   <p>Loading student data...</p>
 {/if}

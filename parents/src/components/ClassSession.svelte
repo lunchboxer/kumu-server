@@ -3,8 +3,6 @@
   import marked from 'marked'
   import { formatRelative } from 'date-fns'
   import { title } from './Header.svelte'
-  import { SESSION } from '../data/queries'
-  import { request } from '../data/fetch-client'
   import MaterialList from './MaterialList.svelte'
   import WordList from './WordList.svelte'
 
@@ -15,8 +13,8 @@
 
   onMount(async () => {
     try {
-      const response = await request(SESSION, { id: params.id })
-      session = response.classSession
+      const response = await fetch(`data/session-${params.id}.json`)
+      session = response && await response.json()
       title.set(`${session.group.name}班第${session.number}课`)
       errors = ''
     } catch (error) {

@@ -46,8 +46,6 @@ type Mutation {
   deleteUser(id: ID!): User
   login(username: String!, password: String!): AuthPayload!
   changePassword(id: ID!, newPassword: String!): User
-  createStudentPassword(studentId: ID!, password: String!): StudentAuthPayload
-  studentLogin(studentId: ID!, password: String!): StudentAuthPayload
 
   ## Student
   createStudent(input: StudentInput!, groupId: ID): Student
@@ -121,8 +119,6 @@ type Mutation {
   createWord(input: WordCreateInput!): Word
   updateWord(input: WordUpdateInput!, id: ID!): Word
   deleteWord(id: ID!): Word
-
-  ## Report
 }
 
 type Subscription {
@@ -138,11 +134,6 @@ type Subscription {
 type AuthPayload {
   token: String!
   user: User!
-}
-
-type StudentAuthPayload {
-  token: String!
-  student: Student!
 }
 
 type User {
@@ -161,7 +152,6 @@ type Student {
   groups: [Group!]!
   points: [Point!]!
   pointsTally: Int
-  lastLogin: DateTime
 }
 
 type Group {
