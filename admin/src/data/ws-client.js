@@ -1,11 +1,12 @@
 import { SubscriptionClient } from 'graphql-subscriptions-client'
 
-const host = process.env.NODE_ENV === 'production'
-  ? process.env.PROD_SUBSCRIPTION_ENDPOINT
-  : process.env.DEV_SUBSCRIPTION_ENDPOINT
+// const host = process.env.NODE_ENV === 'production'
+//   ? process.env.PROD_SUBSCRIPTION_ENDPOINT
+//   : process.env.DEV_SUBSCRIPTION_ENDPOINT
 
-export const ws = new SubscriptionClient(host, {
+export const ws = new SubscriptionClient(process.env.SUBSCRIPTION_ENDPOINT, {
   reconnect: true,
+  lazy: true,
   connectionCallback: error => {
     error && console.error(error)
   }

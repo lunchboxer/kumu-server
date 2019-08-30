@@ -1,12 +1,12 @@
 exports.Group = {
-  students (root, args, context) {
+  students (root, _, context) {
     return context.prisma
       .group({
         id: root.id
       })
       .students()
   },
-  semester (root, args, context) {
+  semester (root, _, context) {
     return context.prisma.group({ id: root.id }).semester()
   }
 }

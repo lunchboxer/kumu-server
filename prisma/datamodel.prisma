@@ -105,7 +105,7 @@ type Attendance {
   updatedAt: DateTime! @updatedAt
   arrivedAt: DateTime
   student: Student! @relation(link: INLINE)
-  status: AttendanceStatus! @relation(link: INLINE)
+  status: AttendanceStatus!
   classSession: ClassSession!
 }
 

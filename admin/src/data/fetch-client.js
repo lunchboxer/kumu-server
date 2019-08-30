@@ -1,8 +1,8 @@
 const fetch = window.fetch
 
-const endpoint = process.env.NODE_ENV === 'production'
-  ? process.env.PROD_API_ENDPOINT
-  : process.env.DEV_API_ENDPOINT
+// const endpoint = process.env.NODE_ENV === 'production'
+//   ? process.env.PROD_API_ENDPOINT
+//   : process.env.DEV_API_ENDPOINT
 
 export const request = async (query, variables) => {
   const coldAuth = window.localStorage.getItem('auth')
@@ -10,7 +10,7 @@ export const request = async (query, variables) => {
   const body = typeof query === 'function'
     ? query(variables)
     : JSON.stringify({ query, variables })
-  const response = await fetch(endpoint, {
+  const response = await fetch(process.env.API_ENDPOINT, {
     method: 'post',
     headers: {
       'Content-Type': 'application/json',

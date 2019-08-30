@@ -6,16 +6,17 @@ const { terser } = require('rollup-plugin-terser')
 const postcss = require('rollup-plugin-postcss')
 const livereload = require('rollup-plugin-livereload')
 const notify = require('rollup-plugin-notify')
+require('dotenv').config()
 
 const production = !process.env.ROLLUP_WATCH
 
 export default {
-  input: './src/main.js',
+  input: 'parents/src/main.js',
   output: {
     name: 'app',
     format: 'iife',
     sourcemap: true,
-    file: 'public/bundle.js'
+    file: 'parents/public/bundle.js'
   },
   plugins: [
     svelte({
@@ -24,8 +25,12 @@ export default {
       // we'll extract any component CSS out into
       // a separate file — better for performance
       css: css => {
-        css.write('public/bundle.css')
+        css.write('parents/public/bundle.css')
       }
+    }),
+    replace({
+      'process.env.NODE_ENV': JSON.stringify(production ? 'production' : 'development'),
+      'process.env.API_ENDPOINT': JSON.stringify(process.env.API_ENDPOINT)
     }),
     postcss({
       extensions: ['.css']
@@ -36,11 +41,8 @@ export default {
         importee === 'svelte' || importee.startsWith('svelte/')
     }),
     commonjs(),
-    replace({
-      'process.env.NODE_ENV': JSON.stringify('development')
-    }),
     !production && livereload({
-      watch: 'public'
+      watch: 'parents/public'
     }),
     notify(),
 
