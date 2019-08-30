@@ -1,11 +1,12 @@
-const svelte = require('rollup-plugin-svelte')
-const resolve = require('rollup-plugin-node-resolve')
-const commonjs = require('rollup-plugin-commonjs')
-const replace = require('rollup-plugin-replace')
-const { terser } = require('rollup-plugin-terser')
-const postcss = require('rollup-plugin-postcss')
-const livereload = require('rollup-plugin-livereload')
-const notify = require('rollup-plugin-notify')
+import svelte from 'rollup-plugin-svelte'
+import resolve from 'rollup-plugin-node-resolve'
+import commonjs from 'rollup-plugin-commonjs'
+import replace from 'rollup-plugin-replace'
+import livereload from 'rollup-plugin-livereload'
+import { terser } from 'rollup-plugin-terser'
+import postcss from 'rollup-plugin-postcss'
+import notify from 'rollup-plugin-notify'
+import json from 'rollup-plugin-json'
 require('dotenv').config()
 
 const production = !process.env.ROLLUP_WATCH
@@ -34,6 +35,10 @@ export default {
     }),
     postcss({
       extensions: ['.css']
+    }),
+    json({
+      preferConst: true,
+      compact: true
     }),
     resolve({
       browser: true,
