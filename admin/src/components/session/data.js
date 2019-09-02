@@ -57,6 +57,9 @@ const createSessionStudentStore = () => {
         student.attendance = attendance
       }
       return student
+    }).sort((a, b) => {
+      if (a.englishName < b.englishName) return -1
+      if (a.englishName > b.englishName) return 1
     })
   }
   const { subscribe, update } = writable(null, set => {

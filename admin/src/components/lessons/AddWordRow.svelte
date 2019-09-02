@@ -37,6 +37,7 @@
 <li on:click={toggle}>
   <label class="checkbox">
     <i class="fas fa-{isAdded ? 'check-' : ''}square status"></i>
-    {word.english} ({word.chinese})
+    {word.english}
+    {#if word.chinese}({word.chinese}){/if}
   </label>
 </li>

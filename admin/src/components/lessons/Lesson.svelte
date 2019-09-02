@@ -61,20 +61,16 @@
   <ItemTagList item={$lesson} type="lessons" store={lesson} />
 
   <section class="summaries">
-    <h2 class="title is-4">Lesson Summary</h2>
-    <h3 class="subtitle">English</h3>
+    <h2 class="title is-4">Summary (English)</h2>
     {@html marked($lesson.summaryEN, { breaks: true })}
   
-    <h2 class="title is-4">Homework</h2>
-    <h3 class="subtitle">English</h3>
+    <h2 class="title is-4">Homework (English)</h2>
     {@html marked($lesson.homeworkEN, { breaks: true })}
 
-    <h2 class="title is-4">Lesson Summary</h2>
-    <h3 class="subtitle">Chinese</h3>
+    <h2 class="title is-4">Summary (Chinese)</h2>
     {@html marked($lesson.summaryZH, { breaks: true })}
   
-    <h2 class="title is-4">Homework</h2>
-    <h3 class="subtitle">Chinese</h3>
+    <h2 class="title is-4">Homework (Chinese)</h2>
     {@html marked($lesson.homeworkZH, { breaks: true })}
   </section>
   
@@ -100,7 +96,10 @@
     <ul class="words-list">
       {#each $lesson.words as word (word.id)}
       <li>
-        <a href="#/word/{word.id}">{word.english} ({word.chinese})</a>
+        <a href="#/word/{word.id}">
+          {word.english} 
+          {#if word.chinese}({word.chinese}){/if}
+        </a>
         <RemoveWordButton wordId={word.id} />
       </li> 
       {/each}

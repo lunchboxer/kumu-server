@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import marked from 'marked'
   import { push } from 'svelte-spa-router'
   import { notifications } from '../notifications'
   import { material, materials } from './data'
@@ -63,6 +64,9 @@
   <section class="details">
     <h2 class="title is-4">Material Details</h2>
     <p>URL: <a href={$material.url}>{truncate($material.url)}</a></p>
+    {#if $material.notes}
+      {@html marked($material.notes, { breaks: true })}
+    {/if}
   </section>
 
   <section class="buttons">
