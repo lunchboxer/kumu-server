@@ -1,0 +1,16 @@
+[
+  {
+    "get": "/index.html",
+    "push": [
+      {
+        "url": "/bundle.js",
+        "priority": 1
+      },
+      "/bundle.css",
+      "/global.css",
+      "/manifest.json",
+      "/favicon.ico",
+      "/tree-lg.png"
+    ]
+  }
+]
