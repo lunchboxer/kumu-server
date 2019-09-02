@@ -61,6 +61,7 @@ exports.SESSION = /* GraphQL */ `
           title
           url
           notes
+          imageUrl
         }
         words {
           id

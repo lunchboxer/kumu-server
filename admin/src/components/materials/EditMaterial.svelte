@@ -44,6 +44,7 @@
       id={material.id}
       type={material.type}
       notes={material.notes}
+      imageUrl={material.imageUrl}
       {errors} 
       {loading} 
       on:submit={save} 

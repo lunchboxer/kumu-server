@@ -49,7 +49,7 @@ exports.exportData = async () => {
     const response = await request(STUDENT, { id: student.id, semesterId })
       .catch(error => console.error(error))
     student = { ...student, ...response.student, attendances: response.attendances }
-    fs.writeFile(`./parents/public/data/student-${student.id}.json`, JSON.stringify(student), 'utf8', error => {
+    await fs.writeFile(`./parents/public/data/student-${student.id}.json`, JSON.stringify(student), 'utf8', error => {
       if (error) throw error
       exportResult.push(`${student.englishName}'s student data exported`)
     })
@@ -71,5 +71,5 @@ exports.exportData = async () => {
         }
       })
   })
-  return exportResult.join('\n')
+  return exportResult
 }
