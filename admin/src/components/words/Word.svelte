@@ -43,6 +43,7 @@
   {#if $word && $word.id === params.id}
     <h1 class="title">{$word.english}</h1>
   
+    <p><a href="#/words">&leftarrow;Back to word list</a></p>
     <ItemTagList type="words" item={$word} store={words} />
   
     <section class="details">

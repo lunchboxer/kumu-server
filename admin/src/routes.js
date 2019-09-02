@@ -16,6 +16,7 @@ import Word from './components/words/Word.svelte'
 import Tags from './components/tags/Tags.svelte'
 import Profile from './components/profile/Profile.svelte'
 import Viewer from './components/viewer/Viewer.svelte'
+import ResultsBoard from './components/viewer/ResultsBoard.svelte'
 
 export default {
   '/': Dashboard,
@@ -35,6 +36,7 @@ export default {
   '/tags': Tags,
   '/me': Profile,
   '/viewer': Viewer,
+  '/viewer/results/:id': ResultsBoard,
   '/not-found/:item/:id?': NotFound,
   '*': NotFound
 }

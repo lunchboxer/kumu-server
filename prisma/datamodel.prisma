@@ -136,6 +136,7 @@ type Material {
   title: String
   notes: String
   tags: [Tag!]!
+  imageUrl: String
 }
 
 type Word {

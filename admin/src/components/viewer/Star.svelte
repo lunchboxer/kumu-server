@@ -6,7 +6,6 @@
   export let number = index + 1
 
   const hue = (index) => index * 30
-
 </script>
 
 <style>

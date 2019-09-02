@@ -1,6 +1,5 @@
 <script>
   import { sessions } from './data'
-  import { time } from '../../data/timer'
   import Loading from '../Loading.svelte'
   import SessionListItem from './SessionListItem.svelte'
 </script>

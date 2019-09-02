@@ -32,9 +32,19 @@
     }
   }
 
-  $: tags = $store && [...new Set($store.reduce((tags, item) => {
+  $: tags = $store && $store.reduce((tags, item) => {
     return [...tags, ...item.tags]
-  }, []))]
+  }, [])
+
+  const unique = tags => {
+    if (!tags) return
+    return tags.reduce((uniqueones, tag) => {
+      if (!uniqueones.find(t => t.id === tag.id)) {
+        uniqueones.push(tag)
+      }
+      return uniqueones
+    }, [])
+  }
 </script>
 
 <style>
@@ -67,7 +77,7 @@
         <div class="select">
           <select on:change={getItems} bind:value={tagFilter}>
             <option value="">No tag filter</option>
-            {#each tags as tag (tag.id)}
+            {#each unique(tags) as tag (tag.id)}
               <option value={tag.id}>{tag.name}</option>
             {/each}
           </select>

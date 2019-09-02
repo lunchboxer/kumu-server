@@ -34,5 +34,5 @@
   </main>
   
   {#if location !== '/viewer'}
-  <NotificationList/>
+    <NotificationList/>
   {/if}
