@@ -1,5 +1,5 @@
-export const STUDENT = /* GraphQL */`
-query Student($id: ID!){
+exports.STUDENT = /* GraphQL */`
+query Student($id: ID!, $semesterId: ID!){
   student(id: $id) {
     id
     englishName
@@ -7,7 +7,10 @@ query Student($id: ID!){
     birthdate
     pointsTally
   }
-  attendances(where: { student: { id: $id } }) {
+  attendances(where: { 
+    student: { id: $id }
+    classSession: { group: {semester: {id: $semesterId }}}
+  }) {
     id
     status
     classSession {
@@ -31,17 +34,7 @@ query Student($id: ID!){
   }
 }`
 
-export const STUDENTS = /* GraphQL */ `
- query Students ($searchString: String){
-   students(searchString: $searchString) {
-     id
-     englishName
-     chineseName
-     lastLogin
-   }
- }`
-
-export const SESSION = /* GraphQL */ `
+exports.SESSION = /* GraphQL */ `
   query Session ($id: ID!){
     classSession (id: $id){
       id
@@ -67,6 +60,7 @@ export const SESSION = /* GraphQL */ `
           type
           title
           url
+          notes
         }
         words {
           id

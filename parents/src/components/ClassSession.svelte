@@ -2,9 +2,8 @@
   import { onMount } from 'svelte'
   import marked from 'marked'
   import { formatRelative } from 'date-fns'
+  import { zhCN } from 'date-fns/locale'
   import { title } from './Header.svelte'
-  import { SESSION } from '../data/queries'
-  import { request } from '../data/fetch-client'
   import MaterialList from './MaterialList.svelte'
   import WordList from './WordList.svelte'
 
@@ -15,8 +14,8 @@
 
   onMount(async () => {
     try {
-      const response = await request(SESSION, { id: params.id })
-      session = response.classSession
+      const response = await fetch(`data/session-${params.id}.json`)
+      session = response && await response.json()
       title.set(`${session.group.name}班第${session.number}课`)
       errors = ''
     } catch (error) {
@@ -26,11 +25,11 @@
 
   const format = (date) => {
     if (!date) return
-    return formatRelative(new Date(date), new Date())
+    return formatRelative(new Date(date), new Date(), { locale: zhCN })
   }
 </script>
 
-<a href="#/">&leftarrow;Back to lessons</a>
+<p><a href="#/">&leftarrow;回到全学期课程</a></p>
 
 {#if errors}
   <p class="errors">{errors}</p>
@@ -48,21 +47,21 @@
   {#if session.report && session.report.published}
 
     {#if session.report.summaryZH}
-      <h3>Summary</h3>
+      <h3>课程内容</h3>
       {@html marked(session.report.summaryZH, { breaks: true })}
     {/if}
 
     {#if session.report.homeworkZH}
-      <h3>Homework</h3>
+      <h3>家庭作业</h3>
       {@html marked(session.report.homeworkZH, { breaks: true })}
-    {/if}
-
-    {#if session.report.materials}
-      <MaterialList materials={session.report.materials} />
     {/if}
 
     {#if session.report.words}
       <WordList words={session.report.words} />
+    {/if}
+
+    {#if session.report.materials}
+      <MaterialList materials={session.report.materials} />
     {/if}
 
   {:else}
