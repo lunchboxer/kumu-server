@@ -1,9 +1,9 @@
 <script context="module">
   import { writable } from 'svelte/store'
 
-  export const title = writable('果园英语')
+  export const title = writable('')
 </script>
 
 <header>
-  <h1>{$title}</h1>
+  <h1>果园英语 {$title}</h1>
 </header>

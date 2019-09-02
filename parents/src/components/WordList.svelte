@@ -2,7 +2,7 @@
   export let words
 </script>
 
-<h3>Words</h3>
+<h3>单词</h3>
 
 {#if words}
   {#each words as word (word.id)}

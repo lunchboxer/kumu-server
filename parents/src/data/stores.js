@@ -1,15 +1,24 @@
 import { writable } from 'svelte/store'
-import { STUDENT } from './queries'
-import { request } from './fetch-client'
 
 const createStudentStore = () => {
-  const { subscribe, set } = writable()
+  const myStudent = window.localStorage.getItem('myStudent')
+  const initial = myStudent ? JSON.parse(myStudent) : null
+  const { subscribe, set } = writable(initial)
 
   return {
     subscribe,
     get: async (id) => {
-      const response = await request(STUDENT, { id })
-      set({ ...response.student, attendances: response.attendances })
+      const response = await fetch(`data/student-${id}.json`)
+      const result = response && await response.json()
+      set(result)
+    },
+    login: async (selected) => {
+      window.localStorage.setItem('myStudent', JSON.stringify(selected))
+      set(selected)
+    },
+    logout: () => {
+      window.localStorage.removeItem('myStudent')
+      set()
     }
   }
 }

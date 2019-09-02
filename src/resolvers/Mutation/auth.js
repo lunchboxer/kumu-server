@@ -11,14 +11,14 @@ exports.auth = {
   //     user
   //   }
   // },
-  async createUser (root, args, context) {
+  async createUser (root, arguments_, context) {
     // The first user is made admin by default
-    const password = await bcrypt.hash(args.password, 10)
+    const password = await bcrypt.hash(arguments_.password, 10)
     const usersAlready = await context.prisma.$exists.user()
     if (!usersAlready) {
-      args.role = 'Admin'
+      arguments_.role = 'Admin'
     }
-    return context.prisma.createUser({ ...args, password })
+    return context.prisma.createUser({ ...arguments_, password })
   },
   async updateUser (root, { input, id }, context) {
     return context.prisma.updateUser({ data: { ...input }, where: { id } })
@@ -45,35 +45,6 @@ exports.auth = {
     return {
       token: jwt.sign({ userId: user.id }, process.env.APP_SECRET),
       user
-    }
-  },
-  async createStudentPassword (_, args, { prisma }) {
-    const password = await bcrypt.hash(args.password, 10)
-    const student = prisma.updateStudent({
-      where: { id: args.studentId },
-      data: { password, lastLogin: new Date() }
-    })
-    return {
-      token: jwt.sign({ studentId: student.id }, process.env.APP_SECRET),
-      student
-    }
-  },
-  async studentLogin (_, { studentId, password }, { prisma }) {
-    const student = await prisma.student({ id: studentId })
-    if (!student) {
-      throw new Error(`No user found for student id: studentId`)
-    }
-    const passwordValid = await bcrypt.compare(password, student.password)
-    if (!passwordValid) {
-      throw new Error('Invalid password')
-    }
-    const loggedInStudent = await prisma.updateStudent({
-      where: { id: studentId },
-      data: { lastLogin: new Date() }
-    })
-    return {
-      token: jwt.sign({ studentId: student.id }, process.env.APP_SECRET),
-      student: loggedInStudent
     }
   }
 }
