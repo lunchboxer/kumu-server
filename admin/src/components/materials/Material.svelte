@@ -64,7 +64,11 @@
   <section class="details">
     <h2 class="title is-4">Material Details</h2>
     <p>URL: <a href={$material.url}>{truncate($material.url)}</a></p>
+    {#if $material.imageUrl}
+      <img src={$material.imageUrl} alt="image related to material"/>
+    {/if}
     {#if $material.notes}
+    <h3>Notes</h3>
       {@html marked($material.notes, { breaks: true })}
     {/if}
   </section>

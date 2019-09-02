@@ -1513,6 +1513,7 @@ type Material {
   title: String
   notes: String
   tags(where: TagWhereInput, orderBy: TagOrderByInput, skip: Int, after: String, before: String, first: Int, last: Int): [Tag!]
+  imageUrl: String
 }
 
 type MaterialConnection {
@@ -1528,6 +1529,7 @@ input MaterialCreateInput {
   title: String
   notes: String
   tags: TagCreateManyWithoutMaterialsInput
+  imageUrl: String
 }
 
 input MaterialCreateManyInput {
@@ -1546,6 +1548,7 @@ input MaterialCreateWithoutTagsInput {
   url: String
   title: String
   notes: String
+  imageUrl: String
 }
 
 type MaterialEdge {
@@ -1564,6 +1567,8 @@ enum MaterialOrderByInput {
   title_DESC
   notes_ASC
   notes_DESC
+  imageUrl_ASC
+  imageUrl_DESC
 }
 
 type MaterialPreviousValues {
@@ -1572,6 +1577,7 @@ type MaterialPreviousValues {
   url: String
   title: String
   notes: String
+  imageUrl: String
 }
 
 input MaterialScalarWhereInput {
@@ -1645,6 +1651,20 @@ input MaterialScalarWhereInput {
   notes_not_starts_with: String
   notes_ends_with: String
   notes_not_ends_with: String
+  imageUrl: String
+  imageUrl_not: String
+  imageUrl_in: [String!]
+  imageUrl_not_in: [String!]
+  imageUrl_lt: String
+  imageUrl_lte: String
+  imageUrl_gt: String
+  imageUrl_gte: String
+  imageUrl_contains: String
+  imageUrl_not_contains: String
+  imageUrl_starts_with: String
+  imageUrl_not_starts_with: String
+  imageUrl_ends_with: String
+  imageUrl_not_ends_with: String
   AND: [MaterialScalarWhereInput!]
   OR: [MaterialScalarWhereInput!]
   NOT: [MaterialScalarWhereInput!]
@@ -1674,6 +1694,7 @@ input MaterialUpdateDataInput {
   title: String
   notes: String
   tags: TagUpdateManyWithoutMaterialsInput
+  imageUrl: String
 }
 
 input MaterialUpdateInput {
@@ -1682,6 +1703,7 @@ input MaterialUpdateInput {
   title: String
   notes: String
   tags: TagUpdateManyWithoutMaterialsInput
+  imageUrl: String
 }
 
 input MaterialUpdateManyDataInput {
@@ -1689,6 +1711,7 @@ input MaterialUpdateManyDataInput {
   url: String
   title: String
   notes: String
+  imageUrl: String
 }
 
 input MaterialUpdateManyInput {
@@ -1708,6 +1731,7 @@ input MaterialUpdateManyMutationInput {
   url: String
   title: String
   notes: String
+  imageUrl: String
 }
 
 input MaterialUpdateManyWithoutTagsInput {
@@ -1732,6 +1756,7 @@ input MaterialUpdateWithoutTagsDataInput {
   url: String
   title: String
   notes: String
+  imageUrl: String
 }
 
 input MaterialUpdateWithWhereUniqueNestedInput {
@@ -1830,6 +1855,20 @@ input MaterialWhereInput {
   tags_every: TagWhereInput
   tags_some: TagWhereInput
   tags_none: TagWhereInput
+  imageUrl: String
+  imageUrl_not: String
+  imageUrl_in: [String!]
+  imageUrl_not_in: [String!]
+  imageUrl_lt: String
+  imageUrl_lte: String
+  imageUrl_gt: String
+  imageUrl_gte: String
+  imageUrl_contains: String
+  imageUrl_not_contains: String
+  imageUrl_starts_with: String
+  imageUrl_not_starts_with: String
+  imageUrl_ends_with: String
+  imageUrl_not_ends_with: String
   AND: [MaterialWhereInput!]
   OR: [MaterialWhereInput!]
   NOT: [MaterialWhereInput!]
