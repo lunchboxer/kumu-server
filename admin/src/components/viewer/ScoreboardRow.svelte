@@ -1,5 +1,5 @@
 <script>
-  import { fly, fade } from 'svelte/transition'
+  import { fly } from 'svelte/transition'
   import { points } from './data'
   import Star from './Star.svelte'
   export let student
@@ -84,12 +84,12 @@
 
 <li>
   <div class="content">
-    <span class="name" class:glow class:absent={!student.attendance || student.attendance.status==="Absent" }>
+    <span class="name" class:glow class:absent={!student.attendance || student.attendance.status === 'Absent' }>
       {student.englishName || student.chineseName}
     </span>
-    {#if student.attendance && student.attendance.status !== "Absent"}
-          {#each {length: pointsTally} as point, i}
-            <div in:fly="{{x:-400}}" out:fade >
+    {#if student.attendance && student.attendance.status !== 'Absent'}
+          {#each { length: pointsTally } as point, i}
+            <div in:fly="{{ x: -400 }}" >
               <Star index={i} size="5rem" />
             </div>
           {/each}

@@ -2,14 +2,13 @@
   import { createEventDispatcher } from 'svelte'
   import { notifications } from '../notifications'
   import Input from '../Input.svelte'
-  import DatePicker from '../DatePicker.svelte'
   import Error from '../Error.svelte'
 
   export let title = ''
   export let url = ''
   export let notes = ''
   export let type = ''
-  export let id
+  export let id = ''
   export let errors
   export let loading
   let saveButton
@@ -35,10 +34,6 @@
 <style>
   .buttons {
     padding-top: 1rem;
-  }
-
-  form {
-    max-width: 308px;
   }
 </style>
 
