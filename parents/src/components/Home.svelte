@@ -3,7 +3,7 @@
   import ClassSessionList from './ClassSessionList.svelte'
   import { title } from './Header.svelte'
 
-  title.set('果园英语')
+  title.set('')
 </script>
 
 {#if $student && $student.attendances}

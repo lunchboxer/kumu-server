@@ -5,8 +5,21 @@
   import Header from './components/Header.svelte'
   import Login from './components/Login.svelte'
 
-  $: if (!$student.attendances && $student.id) student.get($student.id)
+  $: if ($student && !$student.attendances && $student.id) student.get($student.id)
 </script>
+
+<style>
+  main {
+    padding: 3rem 2rem;
+  }
+
+  @media only screen and (min-width: 768px) {
+    main {
+      width: 80%;
+      margin: auto;
+    }
+  }
+</style>
 
 <Header />
 
