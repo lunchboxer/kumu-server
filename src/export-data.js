@@ -30,6 +30,7 @@ const request = async (query, variables) => {
 }
 
 exports.exportData = async () => {
+  const exportResult = []
   const now = new Date()
   const semester = await prisma.semesters({ where: { startDate_lt: now, endDate_gt: now } })
   if (!semester || semester.length === 0) return
@@ -41,15 +42,16 @@ exports.exportData = async () => {
   fs.writeFile('./parents/public/data/students.json', JSON.stringify(miniStudentList), 'utf8', error => {
     if (error) throw error
   })
+  exportResult.push(`${miniStudentList.length} students exported to list`)
 
   // export data for each student
-  miniStudentList.forEach(async student => {
+  await miniStudentList.forEach(async student => {
     const response = await request(STUDENT, { id: student.id, semesterId })
       .catch(error => console.error(error))
     student = { ...student, ...response.student, attendances: response.attendances }
     fs.writeFile(`./parents/public/data/student-${student.id}.json`, JSON.stringify(student), 'utf8', error => {
       if (error) throw error
-      console.log(`${student.englishName}'s student data writen`)
+      exportResult.push(`${student.englishName}'s student data exported`)
     })
   })
 
@@ -61,8 +63,13 @@ exports.exportData = async () => {
       `./parents/public/data/session-${session.id}.json`,
       JSON.stringify(response.classSession),
       'utf8',
-      error => { if (error) throw error }
-    )
+      error => {
+        if (error) {
+          throw error
+        } else {
+          exportResult.push(`classSession '${session.id}' exported`)
+        }
+      })
   })
-  return miniStudentList
+  return exportResult.join('\n')
 }

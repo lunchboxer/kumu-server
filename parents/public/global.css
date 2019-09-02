@@ -653,7 +653,7 @@ header {
 }
 header h1 {
   color: white;
-  font-size: 3.5rem;
+  font-size: 2.5rem;
 }
 div.content {
   padding: 2rem;
@@ -699,5 +699,21 @@ li.links {
 }
 main.container {
   margin-top: 1rem;
+}
+.materialitem {
+  list-style: none;
+}
+.materialitem .icon {
+  width: 3rem;
+  margin-right: 0.5rem;
+}
+.materialitem .notes {
+  padding-left: 3.5rem;
+  font-size: 1.4rem;
+}
+.materialitem .itemtitle {
+  display: flex;
+  align-items: center;
+  font-weight: bold;
 }
 
