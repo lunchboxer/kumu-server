@@ -3,6 +3,7 @@
   import DeleteItem from '../DeleteItem.svelte'
   import EditSemester from './EditSemester.svelte'
   import Modal from '../Modal.svelte'
+  import IconButton from '../IconButton.svelte'
 
   let confirmDelete = false
   let showEdit = false
@@ -30,7 +31,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0.3rem 0;
+    padding: 0.5rem 0;
     width: 100%;
   }
 
@@ -53,19 +54,6 @@
     width: 8rem;
     justify-content: space-between;
   }
-
-  i.butt {
-    padding: 0.5rem;
-    cursor: pointer;
-    border: none;
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 50%;
-    margin-bottom: 8px;
-  }
-
-  i.butt:hover {
-    background: #cb2d6f;
-  }
 </style>
 
 <li>
@@ -75,8 +63,8 @@
       <span class="date">{startDate} to {endDate}</span>
     </div>
     <div class="buttons">
-      <i class="fas fa-minus-circle butt" on:click={showDeleteDialog}></i>
-      <i class="fas fa-pencil-alt butt" on:click={ () => { showEdit = true }}></i>
+      <IconButton name="minus" on:click={showDeleteDialog} />
+      <IconButton name="edit" on:click={ () => { showEdit = true }} />
     </div>
   </div>
 

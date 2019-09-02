@@ -29,7 +29,6 @@
     <EndedSession id={params.id} />
   {/if}
   
-
 {:else if $session && $session.classSession === null}
   <NotFound />
 {:else}

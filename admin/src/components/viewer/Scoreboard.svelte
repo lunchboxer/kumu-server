@@ -8,10 +8,18 @@
 
   let newPoint = null
 
+  const yay = new Audio('sounds/ui-confirmation-alert-a5min.wav')
+  const boo = new Audio('sounds/quick-fart.wav')
+  const opening = new Audio('sounds/gamelan_glissando_upward_002_538.mp3')
+
+  $: console.log($sessionStudents)
   onMount(() => {
-    const opening = new Audio('sounds/gamelan_glissando_upward_002_538.mp3')
     opening.play()
-    const subscription = ws.request({ query: POINTS_SUB, variables: { classSessionId: $session.id } })
+    const subscription = ws
+      .request({
+        query: POINTS_SUB,
+        variables: { classSessionId: $session.id }
+      })
       .subscribe({
         next (message) {
           if (message.data && message.data.points) {
@@ -27,18 +35,18 @@
       })
     return () => subscription && subscription.unsubscribe()
   })
-  const setNewPoint = (point) => {
+  const setNewPoint = point => {
     newPoint = point
-    setTimeout(() => { newPoint = null }, 1000)
+    setTimeout(() => {
+      newPoint = null
+    }, 1000)
   }
 
-  const pointAdded = (point) => {
+  const pointAdded = point => {
     setNewPoint(point)
     if (point.value > 0) {
-      const yay = new Audio('sounds/ui-confirmation-alert-a5min.wav')
       yay.play()
     } else {
-      const boo = new Audio('sounds/quick-fart.wav')
       boo.play()
     }
 
@@ -61,28 +69,14 @@
   }
 </style>
 
-<audio preload>
-  <source type='audio/wav' src='sounds/ui-confirmation-alert-a5min.wav'>
-</audio>
-<audio preload>
-  <source type='audio/mp3' src='sounds/gamelan_glissando_upward_002_538.mp3'>
-</audio>
-<audio preload>
-  <source type='audio/wav' src='sounds/quick-fart.wav'>
-</audio>
-
 <h2 class="title">{$session.group.name} class lesson {$session.number}</h2>
 
 {#if $sessionStudents}
 <section class="scoreboard">
   <ul>
-    {#each $sessionStudents as student (student.id)}
-      <ScoreboardRow 
-        {student} 
-        sessionId={$sessionId} 
-        glow={newPoint && newPoint.student.id === student.id}
-      />
-    {/each}
-    </ul>
+    {#each $sessionStudents as student (student.id)} <ScoreboardRow {student}
+    sessionId={$sessionId} glow={newPoint && newPoint.student.id === student.id}
+    /> {/each}
+  </ul>
 </section>
 {/if}

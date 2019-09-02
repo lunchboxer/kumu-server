@@ -30,7 +30,7 @@
     console.log(detail)
     loading = true
     try {
-      await lessons.patch(detail, params.id)
+      await lessons.patch({ input: detail, id: params.id })
       notifications.add({ text: `Saved edits to lesson '${detail.name}'`, type: 'success' })
       reset()
     } catch (error) {

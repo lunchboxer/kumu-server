@@ -4,9 +4,10 @@
   import AddGroup from './AddGroup.svelte'
 
   $: sortedGroups = $groups.slice().sort((a, b) => {
-    const date1 = a.semester.startDate
-    const date2 = b.semester.startDate
-    return (date1 > date2) - (date1 < date2)
+    if (a.semester.startDate > b.semester.startDate) return -1
+    if (a.semester.startDate < b.semester.startDate) return 1
+    if (a.name < b.name) return -1
+    if (a.name > b.name) return 1
   })
 </script>
 
