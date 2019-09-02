@@ -3,13 +3,15 @@
   import Modal from '../Modal.svelte'
   import DeleteSession from './DeleteSession.svelte'
   import EditSession from './EditSession.svelte'
+  import IconButton from '../IconButton.svelte'
 
   export let session
   let showDelete = false
   let showEdit = false
   let showActions = false
+  export let time = new Date()
 
-  const relativeDate = (date) => {
+  const relativeDate = (date, time) => {
     if (!date) return
     return formatDistance(new Date(date), new Date(), { addSuffix: true })
   }
@@ -70,18 +72,18 @@
   {#if isCurrentOrPast(session.startsAt)}
   <a href="#/session/{session.id}">
     <span on:click={() => { showActions = !showActions }}>
-    {session.group.name} class {relativeDate(session.startsAt)}, {maybeDate(session.startsAt) || formatTime(session.startsAt)} to {formatTime(session.endsAt)}
+    {session.group.name} class {relativeDate(session.startsAt, time)}, {maybeDate(session.startsAt) || formatTime(session.startsAt)} to {formatTime(session.endsAt)}
   </span>
 </a>
 {:else}
 <span on:click={() => { showActions = !showActions }}>
-    {session.group.name} class {relativeDate(session.startsAt)}, {maybeDate(session.startsAt) || formatTime(session.startsAt)} to {formatTime(session.endsAt)}
+    {session.group.name} class {relativeDate(session.startsAt, time)}, {maybeDate(session.startsAt) || formatTime(session.startsAt)} to {formatTime(session.endsAt)}
   </span>
 {/if}
 
   <div class="buttons">
-    <button class="button is-small" on:click={() => showEdit = true}><i class="fas fa-edit"></button>
-    <button class="button is-small" on:click={() => showDelete = true}><i class="fas fa-minus"></button>
+    <IconButton on:click={ () => { showEdit = true }} name="edit" />
+    <IconButton on:click={ () => { showDelete = true }} name="minus" />
   </div>
   </li>
 {/if}

@@ -17,7 +17,7 @@
     // subscribe to above
     const subscription = ws.request({ query: ACTIVE_SESSION_SUB })
       .subscribe({
-        next (message) {
+        next(message) {
           if (!message.data || !message.data.classSessions) return
           sessionId.set(message.data.classSessions.node.id)
         }
@@ -25,8 +25,6 @@
     return () => {
       subscription && subscription.unsubscribe()
     }
-    // this is all basically identical to the controller's session data
-    // reuse it here?
   })
 </script>
 
@@ -56,7 +54,9 @@
     <PreclassBoard />
   {:else if $session.stage === 'Started'}
     <Scoreboard />
-  {:else if $session.stage === 'Ended'}
+  {/if}
+
+  {#if $session && $session.stage === 'Ended'}
     <ResultsBoard />
   {/if}
 </div>

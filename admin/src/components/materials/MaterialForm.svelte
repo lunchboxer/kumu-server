@@ -2,14 +2,14 @@
   import { createEventDispatcher } from 'svelte'
   import { notifications } from '../notifications'
   import Input from '../Input.svelte'
-  import DatePicker from '../DatePicker.svelte'
   import Error from '../Error.svelte'
 
   export let title = ''
   export let url = ''
   export let notes = ''
   export let type = ''
-  export let id
+  export let id = ''
+  export let imageUrl = ''
   export let errors
   export let loading
   let saveButton
@@ -28,17 +28,13 @@
       })
       return
     }
-    dispatch('submit', { title, url, notes, type })
+    dispatch('submit', { title, url, notes, type, imageUrl })
   }
 </script>
 
 <style>
   .buttons {
     padding-top: 1rem;
-  }
-
-  form {
-    max-width: 308px;
   }
 </style>
 
@@ -50,6 +46,7 @@
       <Input bind:value={title} label="Title" placeholder="e.g. 'Song: Teacher on the bookcase'" required />
       <Input bind:value={url} label="Complete URL" required />
       <Input bind:value={type} label="Filetype" placeholder="e.g. 'audio/mp3'" required />
+      <Input bind:value={imageUrl} label="Url of related Image" />
 
       <textarea class="textarea" bind:value={notes}></textarea>
 

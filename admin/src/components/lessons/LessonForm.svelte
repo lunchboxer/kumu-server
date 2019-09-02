@@ -51,6 +51,7 @@
     <Input bind:value={name} label="Name" placeholder="i.e. 'My Body part 3'" required />
   </div>
 
+  <p>To make report writting easier write the summary in <strong>past tense</strong>.</p>
   <div class="field">
     <label class="label">Summary in English</label>
     <textarea class="textarea is-primary" bind:value={summaryEN}></textarea>

@@ -22,7 +22,11 @@
   {#if words.length > 0}
     <p>{words.length} words found:</p>
     {#each words as word (word.id)}
-      <li><a href="#/word/{word.id}">{word.english} ({word.chinese})</a>
+      <li><a href="#/word/{word.id}">{word.english}
+        {#if word.chinese} 
+          ({word.chinese})
+        {/if}
+        </a>
         {#if word.tags && word.tags.length > 0}
         <div class="tags">
           {#each word.tags as tag (tag.id)}

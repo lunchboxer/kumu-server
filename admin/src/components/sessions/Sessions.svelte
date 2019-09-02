@@ -45,20 +45,20 @@
 
 <AddSession />
 
-<button class="button" on:click={sessions.get}><i class="fas fa-sync"></i></button>
+<button class="button" on:click={sessions.get}><i class="fas fa-sync"></i>Reload sessions</button>
 
 <nav class="buttons has-addons is-centered">
-  <button class="button is-link" class:is-outlined={active!=='upcoming' } on:click={()=>
+  <button class="button is-link" class:is-outlined={active !== 'upcoming' } on:click={() =>
     switchTab('upcoming')}>
     24 hours
   </button>
-  <button class="button is-link" class:is-outlined={active!=='past' } on:click={()=> switchTab('past')
+  <button class="button is-link" class:is-outlined={active !== 'past' } on:click={() => switchTab('past')
     }>
     Past
   </button>
-  <button class="button is-link" class:is-outlined={active!=='future' } on:click={()=>
+  <button class="button is-link" class:is-outlined={active !== 'future' } on:click={() =>
     switchTab('future')}>Future</button>
-  <button class="button is-link" class:is-outlined={active!=='all' } on:click={()=> switchTab('all')}>All</button>
+  <button class="button is-link" class:is-outlined={active !== 'all' } on:click={() => switchTab('all')}>All</button>
 </nav>
 
 <svelte:component this={activeComponent} />

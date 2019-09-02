@@ -1,5 +1,6 @@
 <script>
   import { onMount } from 'svelte'
+  import marked from 'marked'
   import { push } from 'svelte-spa-router'
   import { notifications } from '../notifications'
   import { material, materials } from './data'
@@ -8,6 +9,7 @@
   import ItemTagList from '../tags/ItemTagList.svelte'
   import DeleteItem from '../DeleteItem.svelte'
   import EditMaterial from './EditMaterial.svelte'
+  import AudioPlayer from './AudioPlayer.svelte'
 
   export let params = {}
   let errors = ''
@@ -45,6 +47,10 @@
   section {
     margin: 1rem;
   }
+
+  img {
+    max-width: 300px;
+  }
 </style>
 
 <svelte:head>
@@ -60,10 +66,26 @@
 
   <ItemTagList item={$material} type="materials" store={material} />
 
+  {#if $material.type.split('/')[0] === 'audio'}
+    <AudioPlayer audio={$material} />
+  {/if}
+
   <section class="details">
-    <h2 class="title is-4">Material Details</h2>
+    <h2 class="title is-4">Material details</h2>
+    <p>Type: {$material.type}</p>
     <p>URL: <a href={$material.url}>{truncate($material.url)}</a></p>
+    {#if $material.imageUrl}
+      <h3 class="title is-5">Related image</h3>
+      <a href={$material.imageUrl}>
+        <img src={$material.imageUrl} alt="image related to material">
+      </a>
+    {/if}
+    {#if $material.notes}
+    <h3 class="title is-5">Notes</h3>
+      {@html marked($material.notes, { breaks: true })}
+    {/if}
   </section>
+
 
   <section class="buttons">
     <EditMaterial material={$material} />
