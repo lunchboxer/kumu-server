@@ -5,6 +5,7 @@ export const MaterialFields = /* GraphQL */`
     url
     title
     notes
+    imageUrl
     tags {
        id
        name
