@@ -1,0 +1,22 @@
+{
+  "https": {
+    "port": 4433
+  },
+  "http": {
+    "redirect": true
+  },
+  "hosts": [
+    {
+      "domain": "oe.commons.host",
+      "root": "parents/public",
+      "directories": {
+        "trailingSlash": "never"
+      },
+      "manifest": "parents/public/serverpush.json",
+      "fallback": {
+        "200": "index.html",
+        "404": "index.html"
+      }
+    }
+  ]
+}
