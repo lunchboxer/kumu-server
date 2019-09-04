@@ -2,6 +2,5 @@
 node_modules
 package-lock.json
 yarn.lock
-public/bundle
 public/font-awesome
 public/nunito

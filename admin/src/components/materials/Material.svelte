@@ -70,6 +70,10 @@
     <AudioPlayer audio={$material} />
   {/if}
 
+  {#if $material.type.split('/')[0] === 'image'}
+    <img src={$material.url} alt={$material.title}>
+  {/if}
+
   <section class="details">
     <h2 class="title is-4">Material details</h2>
     <p>Type: {$material.type}</p>

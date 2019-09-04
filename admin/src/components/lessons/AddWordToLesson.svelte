@@ -22,10 +22,6 @@
   .buttons {
     padding: 1rem 0;
   }
-
-  .add {
-    margin-top: 1rem;
-  }
 </style>
 
 <button class="button add" on:click={() => { open = true }}>add words</button>

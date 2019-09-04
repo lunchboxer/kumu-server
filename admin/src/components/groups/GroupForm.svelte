@@ -26,7 +26,6 @@
     }
     dispatch('submit', { id, name, semesterId })
   }
-
 </script>
 
 

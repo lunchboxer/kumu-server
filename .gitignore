@@ -9,4 +9,6 @@ yarn.lock
 .openode
 parents/public/data
 .import
-
+parents/public/bundle.*
+admin/public/bundle.css
+.netlify

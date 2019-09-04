@@ -53,7 +53,11 @@
     <ul class="words-list">
       {#each report.words as word (word.id)}
       <li>
-        <a href="#/word/{word.id}">{word.english} ({word.chinese})</a>
+        <a href="#/word/{word.id}">{word.english}
+          {#if word.chinese} 
+            ({word.chinese})
+          {/if}
+        </a>
         <RemoveWordButton wordId={word.id} {classSessionId} />
       </li> 
       {/each}
