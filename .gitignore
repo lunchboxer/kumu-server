@@ -10,5 +10,5 @@ yarn.lock
 parents/public/data
 .import
 parents/public/bundle.*
-admin/public/bundle.css
+admin/public/bundle.*
 .netlify
