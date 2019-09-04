@@ -11,13 +11,13 @@
 <style>
   main {
     height: calc(100% - 5rem);
-    padding: 1rem;
+    padding: 2rem;
     margin: 0;
   }
 </style>
 
 {#if $location !== '/viewer'}
-<Navbar />
+  <Navbar />
 {/if}
 
 <main>
@@ -31,8 +31,8 @@
     <Login />
   {/if}
         
-  </main>
+</main>
   
-  {#if location !== '/viewer'}
-    <NotificationList/>
-  {/if}
+{#if location !== '/viewer'}
+  <NotificationList/>
+{/if}

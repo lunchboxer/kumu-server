@@ -2,8 +2,12 @@
   import { groups } from './data'
   import GroupsListItem from './GroupsListItem.svelte'
   import AddGroup from './AddGroup.svelte'
+  import SemesterSelect from './SemesterSelect.svelte'
 
-  $: sortedGroups = $groups.slice().sort((a, b) => {
+  let semesterId = ''
+
+  $: filteredGroups = !semesterId ? $groups : $groups.filter(group => group.semester.id === semesterId)
+  $: sortedGroups = filteredGroups.slice().sort((a, b) => {
     if (a.semester.startDate > b.semester.startDate) return -1
     if (a.semester.startDate < b.semester.startDate) return 1
     if (a.name < b.name) return -1
@@ -23,6 +27,8 @@
     margin: 1rem 0;
   }
 </style>
+
+<SemesterSelect bind:value={semesterId} />
 
 <p class='groups-count'>Showing {$groups && $groups.length} groups sorted by semester.</p>
 

@@ -16,7 +16,14 @@
   })
 
   $: currentTags = item.tags.length > 0 ? item.tags.map(t => t.id) : []
-  $: otherTags = ($tags && $tags.length > 0) ? $tags.filter(t => !currentTags.includes(t.id)) : []
+  $: otherTags = ($tags && $tags.length > 0)
+    ? $tags.filter(t => !currentTags.includes(t.id)).sort((a, b) => {
+      const nameA = a.name.toUpperCase()
+      const nameB = b.name.toUpperCase()
+      if (nameA < nameB) return -1
+      if (nameA > nameB) return 1
+    })
+    : []
 
   const add = async kind => {
     const input = {}
@@ -63,7 +70,7 @@
       <option value="">Add existing tag</option>
       {#each otherTags as tag (tag.id)}
         <option value={tag.id}>{tag.name}</option>
-        {/each}
+      {/each}
     </select>
   </div>
 {/if}

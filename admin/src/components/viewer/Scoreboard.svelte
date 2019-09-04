@@ -21,7 +21,7 @@
         variables: { classSessionId: $session.id }
       })
       .subscribe({
-        next (message) {
+        next(message) {
           if (message.data && message.data.points) {
             const { node, mutation, previousValues } = message.data.points
             if (mutation === 'CREATED') pointAdded(node)
@@ -58,7 +58,7 @@
 
 <style>
   section {
-    height: calc(100vh - 6rem);
+    height: calc(100vh - 10rem);
   }
 
   ul {

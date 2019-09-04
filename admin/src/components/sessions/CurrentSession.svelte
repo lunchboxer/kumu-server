@@ -1,11 +1,9 @@
 <script>
   import { formatDistance } from 'date-fns'
+  import { location } from 'svelte-spa-router'
   import { todaysSessions } from './data'
   import Warning from '../Warning.svelte'
   import DL from '../DL.svelte'
-
-  export let active = '/'
-  export let uri = location.pathname
 
   const dateString = (date) => {
     const dateTime = new Date(date)
@@ -25,7 +23,7 @@
 </style>
 
 {#if $todaysSessions && $todaysSessions.now && $todaysSessions.now.stage !== 'Ended'}
-{#if uri !== `/session/${$todaysSessions.now.id}`}
+{#if $location !== `/session/${$todaysSessions.now.id}`}
   <Warning title="{$todaysSessions.now.group.name} class is on right now!">
     <div class="warning">
       <DL>

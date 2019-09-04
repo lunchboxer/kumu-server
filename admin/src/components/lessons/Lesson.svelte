@@ -29,7 +29,8 @@
 </script>
 
 <style>
-  .materials-list {
+  .materials-list,
+  .words-list {
     margin-bottom: 1rem;
   }
 
