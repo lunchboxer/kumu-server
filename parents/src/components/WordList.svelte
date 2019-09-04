@@ -6,6 +6,7 @@
 
 {#if words}
   {#each words as word (word.id)}
-    <li>{word.english} - {word.chinese}</li>
+    <li>{word.english}
+      {#if word.chinese} - {word.chinese}{/if}</li>
   {/each}
 {/if}
