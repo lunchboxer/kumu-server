@@ -1,21 +1,21 @@
 const { getUserId } = require('../utils')
 
 exports.Query = {
-  me (_, args, context) {
+  me (_, arguments_, context) {
     const id = getUserId(context)
     return context.prisma.user({ id })
   },
-  users (_, args, context) {
+  users (_, arguments_, context) {
     return context.prisma.users()
   },
-  user (_, args, context) {
-    return context.prisma.user({ id: args.id })
+  user (_, arguments_, context) {
+    return context.prisma.user({ id: arguments_.id })
   },
-  student (_, args, context) {
-    return context.prisma.student({ id: args.id })
+  student (_, arguments_, context) {
+    return context.prisma.student({ id: arguments_.id })
   },
-  students (_, args, context) {
-    const { orderBy, searchString, where } = args
+  students (_, arguments_, context) {
+    const { orderBy, searchString, where } = arguments_
     if (searchString) {
       return context.prisma.students({
         orderBy,
@@ -30,20 +30,20 @@ exports.Query = {
     }
     return context.prisma.students({ orderBy, where })
   },
-  group (_, args, context) {
-    return context.prisma.group({ id: args.id })
+  group (_, input, context) {
+    return context.prisma.group({ id: input.id })
   },
   groups (_, { where, orderBy }, context) {
     return context.prisma.groups({ orderBy, where })
   },
-  semester (_, args, context) {
-    return context.prisma.group({ id: args.id })
+  semester (_, arguments_, context) {
+    return context.prisma.group({ id: arguments_.id })
   },
-  semesters (_, args, context) {
-    return context.prisma.semesters({ orderBy: 'startDate_ASC' })
+  semesters (_, arguments_, context) {
+    return context.prisma.semesters({ orderBy: 'startDate_DESC' })
   },
-  classSession (_, args, context) {
-    return context.prisma.classSession({ id: args.id })
+  classSession (_, arguments_, context) {
+    return context.prisma.classSession({ id: arguments_.id })
   },
   classSessions (_, { orderBy = 'startsAt_DESC', where }, context) {
     return context.prisma.classSessions({ orderBy, where })
@@ -55,7 +55,7 @@ exports.Query = {
     return context.prisma.attendances({ orderBy: 'createdAt_DESC', where })
   },
   // All the groups from the current and upcoming semester
-  async activeGroups (_, args, context) {
+  async activeGroups (_, arguments_, context) {
     const now = new Date().toJSON()
     const current = await context.prisma.semesters({
       where: { startDate_lt: now, endDate_gt: now }
@@ -67,21 +67,21 @@ exports.Query = {
         startDate_gt: now
       }
     })
-    let ids = []
+    const ids = []
     current[0] && ids.push(current[0].id)
     next[0] && ids.push(next[0].id)
     return context.prisma.groups({
       where: { semester: { id_in: ids } }
     })
   },
-  async currentSemester (_, args, context) {
+  async currentSemester (_, arguments_, context) {
     const now = new Date().toJSON()
     const current = await context.prisma.semesters({
       where: { startDate_lt: now, endDate_gt: now }
     })
     return current[0]
   },
-  async nextSemester (_, args, context) {
+  async nextSemester (_, arguments_, context) {
     const now = new Date().toJSON()
     const next = await context.prisma.semesters({
       orderBy: 'startDate_ASC',
@@ -113,7 +113,7 @@ exports.Query = {
   tag (_, { id }, { prisma }) {
     return prisma.tag({ id })
   },
-  tags (_, args, { prisma }) {
-    return prisma.tags()
+  tags (_, arguments_, { prisma }) {
+    return prisma.tags({ orderBy: 'name_ASC' })
   }
 }
