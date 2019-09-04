@@ -3,6 +3,8 @@ const fs = require('fs')
 const fetch = require('node-fetch')
 const { STUDENT, SESSION } = require('./export-queries')
 
+const fsPromises = fs.promises
+
 const limitedStudentFragment = /* GraphQL */`
   fragment LimitedStudentFragment on Student {
     id
@@ -28,48 +30,51 @@ const request = async (query, variables) => {
     throw result.errors
   }
 }
+const writeSession = async sessionId => {
+  const response = await request(SESSION, { id: sessionId })
+  await fsPromises.writeFile(
+    `./parents/public/data/session-${sessionId}.json`,
+    JSON.stringify(response.classSession),
+    'utf8')
+}
+const writeSessions = async semesterId => {
+  const sessions = await prisma.classSessions({ where: { group: { semester: { id: semesterId } } } })
+  await sessions.forEach(async session => writeSession(session.id))
+}
 
-exports.exportData = async () => {
-  const exportResult = []
+const writeStudent = async (studentId, semesterId) => {
+  const response = await request(STUDENT, { id: studentId, semesterId })
+    .catch(error => console.error(error))
+  const student = { ...response.student, attendances: response.attendances }
+  await fsPromises.writeFile(
+    `./parents/public/data/student-${studentId}.json`,
+    JSON.stringify(student),
+    'utf8')
+}
+
+const writeStudentList = (list) => fsPromises.writeFile(
+  './parents/public/data/students.json',
+  JSON.stringify(list),
+  'utf8')
+
+const exportData = async () => {
   const now = new Date()
   const semester = await prisma.semesters({ where: { startDate_lt: now, endDate_gt: now } })
   if (!semester || semester.length === 0) return
   const semesterId = semester[0].id
   const where = { groups_some: { semester: { id: semesterId } } }
 
-  // export the list of students
   const miniStudentList = await prisma.students({ where }).$fragment(limitedStudentFragment)
-  fs.writeFile('./parents/public/data/students.json', JSON.stringify(miniStudentList), 'utf8', error => {
-    if (error) throw error
-  })
-  exportResult.push(`${miniStudentList.length} students exported to list`)
 
-  // export data for each student
-  await miniStudentList.forEach(async student => {
-    const response = await request(STUDENT, { id: student.id, semesterId })
-      .catch(error => console.error(error))
-    student = { ...student, ...response.student, attendances: response.attendances }
-    await fs.writeFile(`./parents/public/data/student-${student.id}.json`, JSON.stringify(student), 'utf8', error => {
-      if (error) throw error
-      exportResult.push(`${student.englishName}'s student data exported`)
-    })
-  })
-
-  // export data for each classSession
-  const sessions = await prisma.classSessions({ where: { group: { semester: { id: semesterId } } } })
-  sessions.forEach(async session => {
-    const response = await request(SESSION, { id: session.id })
-    fs.writeFile(
-      `./parents/public/data/session-${session.id}.json`,
-      JSON.stringify(response.classSession),
-      'utf8',
-      error => {
-        if (error) {
-          throw error
-        } else {
-          exportResult.push(`classSession '${session.id}' exported`)
-        }
-      })
-  })
-  return exportResult
+  await Promise.all([
+    writeStudentList(miniStudentList),
+    miniStudentList.forEach(async student => writeStudent(student.id, semesterId)),
+    writeSessions(semesterId)
+  ])
+  console.log('Exported data successfully')
+  return true
 }
+
+module.exports = { exportData, writeSession, writeStudent, writeStudentList }
+
+exportData()
