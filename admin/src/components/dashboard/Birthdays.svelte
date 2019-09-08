@@ -1,10 +1,8 @@
 <script>
   import { onMount } from 'svelte'
   import { request } from '../../data/fetch-client'
-  import { BIRTHDAYS } from '../../data/queries'
-  import { isValid } from 'date-fns'
+  import { BIRTHDAYS } from './queries'
 
-  window.isValid = isValid
   let bdays
 
   onMount(async () => {
@@ -13,7 +11,6 @@
     bdays = bdays.filter(student => student.daysToBirthday <= 7)
       .sort((a, b) => a.daysToBirthday - b.daysToBirthday)
   })
-  $: console.log(bdays)
 </script>
 
 {#if bdays && bdays.length > 0}

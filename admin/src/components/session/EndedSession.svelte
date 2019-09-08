@@ -73,7 +73,7 @@
     <p>No lesson has been selected yet.</p>
     <AddLessonToSession id={$session.id} />
     {:else}
-    <p>{$session.lesson.name}</p>
+    <a href="#/lesson/{$session.lesson.id}">{$session.lesson.name}</a>
   {/if}
 </setion>
 

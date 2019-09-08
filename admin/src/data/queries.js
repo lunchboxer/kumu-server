@@ -54,15 +54,3 @@ export const CURRENT_NEXT_SEMESTER_GROUPS = /* GraphQL */`
   }
 }
 `
-
-export const BIRTHDAYS = /* GraphQL */ `
- query {
-   students(where: {birthdate_not: null}){
-     id
-     englishName
-     chineseName
-     pinyinName
-     birthdate
-     daysToBirthday
-   }
- }`
