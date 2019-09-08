@@ -18,7 +18,7 @@ type Student {
   chineseName: String
   englishName: String
   pinyinName: String
-  birthdate: DateTime
+  birthdate: String
   gender: Gender
   groups: [Group!]!
   points: [Point!]! @relation(onDelete: CASCADE)

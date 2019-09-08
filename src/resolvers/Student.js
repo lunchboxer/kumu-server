@@ -1,3 +1,5 @@
+const { isLeapYear, isPast, differenceInCalendarDays } = require('date-fns')
+
 exports.Student = {
   groups (root, args, context) {
     return context.prisma.student({ id: root.id }).groups()
@@ -10,5 +12,30 @@ exports.Student = {
     return points.reduce((sum, point) => {
       return sum + point.value
     }, 0)
+  },
+  async daysToBirthday (root, args, { prisma }) {
+    const student = await prisma.student({ id: root.id })
+    if (!student.birthdate) return null
+    // check if the date is before or after earliest limmit
+    const now = new Date()
+    const birthdate = new Date(student.birthdate)
+    const birthMonth = birthdate.getMonth() + 1
+    const birthDay = birthdate.getDay()
+    let nextBirthDay
+    let isLeapBaby = false
+    if (birthMonth === 2 && birthDay === 29) isLeapBaby = true
+    if (isLeapBaby && !isLeapYear(now)) {
+      nextBirthDay = new Date(now.getFullYear(), 2, 1)
+    } else {
+      nextBirthDay = new Date(student.birthdate).setFullYear(now.getFullYear())
+    }
+    if (isPast(nextBirthDay)) {
+      if (isLeapBaby && !isLeapYear(new Date(now.getFullYear() + 1))) {
+        nextBirthDay = new Date(now.getFullYear() + 1, 2, 1)
+      } else {
+        nextBirthDay = new Date(student.birthdate).setFullYear(now.getFullYear() + 1)
+      }
+    }
+    return differenceInCalendarDays(nextBirthDay, now)
   }
 }

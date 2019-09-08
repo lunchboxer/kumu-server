@@ -152,6 +152,7 @@ type Student {
   groups: [Group!]!
   points: [Point!]!
   pointsTally: Int
+  daysToBirthday: Int
 }
 
 type Group {

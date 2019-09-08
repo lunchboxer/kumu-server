@@ -30,4 +30,4 @@
 </script>
 
 <StudentForm on:reset={reset} on:submit={save} {errors} {loading} {...student} birthdate={student.birthdate &&
-  student.birthdate.slice(0,10)} />
+  student.birthdate.slice(0, 10)} />
