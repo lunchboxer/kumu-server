@@ -12,3 +12,4 @@ parents/public/data
 parents/public/bundle.*
 admin/public/bundle.*
 .netlify
+src/generated
