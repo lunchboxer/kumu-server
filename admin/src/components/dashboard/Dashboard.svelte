@@ -1,7 +1,9 @@
 <script>
   import Birthdays from './Birthdays.svelte'
   import IncompleteSessionsList from './IncompleteSessionsList.svelte'
+  import UnpublishedReports from './UnpublishedReports.svelte'
 </script>
+
 <svelte:head>
   <title>Dashboard</title>
 </svelte:head>
@@ -11,3 +13,5 @@
 <Birthdays />
 
 <IncompleteSessionsList />
+
+<UnpublishedReports />

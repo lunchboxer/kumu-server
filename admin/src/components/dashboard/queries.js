@@ -26,3 +26,23 @@ export const INCOMPLETE_SESSIONS = /* GraphQL */ `
       }
     }
   }`
+
+export const UNPUBLISHED = /* GraphQL */ `{
+  classSessions(where: {report: {published: false}}){
+    id
+    startsAt
+    endsAt
+    number
+    group {
+      name
+    }
+    lesson {
+      id
+      name
+    }
+    report {
+      id
+      published
+    }
+  }
+}`
