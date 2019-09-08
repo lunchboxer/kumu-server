@@ -46,3 +46,12 @@ export const UNPUBLISHED = /* GraphQL */ `{
     }
   }
 }`
+
+export const UNTRANSLATED = /* GraphQL */ `{
+  lessons(where: {summaryEN_not: null, summaryZH: ""}) {
+    id
+    name
+    summaryEN
+    summaryZH
+  }
+}`
