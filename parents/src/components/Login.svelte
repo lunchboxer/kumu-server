@@ -8,7 +8,7 @@
   $: filteredStudents = students.filter(s => {
     if (searchString === '') return false
     return (
-      s.englishName === searchString ||
+      (s.englishName && s.englishName.toUpperCase() === searchString.toUpperCase()) ||
       s.chineseName === searchString
     )
   })
