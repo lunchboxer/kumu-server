@@ -16,7 +16,7 @@
     <section>
       <h2 class="title is-4">Untranslated lessons</h2>
       {#each lessons as lesson (lesson.id)}
-        <li><a href="#/lessson/{lesson.id}">
+        <li><a href="#/lesson/{lesson.id}">
           {lesson.name}
         </a></li>
       {/each}
