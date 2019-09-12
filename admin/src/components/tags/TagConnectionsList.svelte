@@ -37,7 +37,7 @@
   <section class="materials">
     <h2 class="title is-4">Materials</h2>
     {#each $tag.materials as material (material.id)}
-      <a href="#/material/{material.id}">{material.title}</a>
+      <li><a href="#/material/{material.id}">{material.title}</a></li>
     {/each}
   </section>
   {/if}
@@ -46,7 +46,7 @@
   <section class="lessons">
     <h2 class="title is-4">Lessons</h2>
     {#each $tag.lessons as lesson (lesson.id)}
-      <a href="#/lesson/{lesson.id}">{lesson.name}</a>
+      <li><a href="#/lesson/{lesson.id}">{lesson.name}</a></li>
     {/each}
   </section>
   {/if}
@@ -55,7 +55,7 @@
   <section class="words">
     <h2 class="title is-4">Words</h2>
     {#each $tag.words as word (word.id)}
-      <a href="#/word/{word.id}">{word.english}</a>
+      <li><a href="#/word/{word.id}">{word.english}</a></li>
     {/each}
   </section>
   {/if}
