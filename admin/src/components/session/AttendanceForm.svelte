@@ -15,6 +15,8 @@
       errors = error
     }
   }
+
+  $: console.log($sessionStudents)
 </script>
 
 <style>

@@ -45,10 +45,16 @@ export const session = readable(null, set => {
 })
 
 const createSessionStudentStore = () => {
+  const sortStudents = students => {
+    return students.sort((a, b) => {
+      if (a.englishName < b.englishName) return -1
+      if (a.englishName > b.englishName) return 1
+    })
+  }
   const mapAttendanceToStudents = (attendances, students) => {
-    if (attendances && attendances.length === 0) return students
+    if (attendances && attendances.length === 0) return sortStudents(students)
     attendances = Array.isArray(attendances) ? attendances : [attendances]
-    return students.map(student => {
+    return sortStudents(students.map(student => {
       const attendance = attendances.find(a => {
         if (!a.student) return false
         return a.student.id === student.id
@@ -57,10 +63,7 @@ const createSessionStudentStore = () => {
         student.attendance = attendance
       }
       return student
-    }).sort((a, b) => {
-      if (a.englishName < b.englishName) return -1
-      if (a.englishName > b.englishName) return 1
-    })
+    }))
   }
   const { subscribe, update } = writable(null, set => {
     let subscription
