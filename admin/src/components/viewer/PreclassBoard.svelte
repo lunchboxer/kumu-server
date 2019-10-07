@@ -23,6 +23,7 @@
     width: 100%;
     height: 100%;
     text-align: center;
+    padding: 1rem;
   }
 
   @media only screen and (min-width: 700px) {

@@ -27,7 +27,6 @@
   }
 
   const save = async ({ detail }) => {
-    console.log(detail)
     loading = true
     try {
       await lessons.patch({ input: detail, id: params.id })

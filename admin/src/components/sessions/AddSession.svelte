@@ -16,7 +16,6 @@
 
   const save = async ({ detail }) => {
     const { groupId, lessonId, startsAt, endsAt } = detail
-    console.log(detail)
     const startsAtUTC = new Date(startsAt).toISOString()
     const endsAtUTC = new Date(endsAt).toISOString()
     loading = true

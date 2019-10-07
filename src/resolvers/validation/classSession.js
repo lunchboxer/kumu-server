@@ -1,7 +1,6 @@
 exports.checkOrder = async (startsAt, endsAt, id, { prisma }) => {
   if (!startsAt && !endsAt) return false
   if (id && (!startsAt || !endsAt)) {
-    console.log('id', id)
     const thisSession = prisma.classSession({ id })
     startsAt = !startsAt ? thisSession.startsAt : startsAt
     endsAt = !endsAt ? thisSession.endsAt : endsAt

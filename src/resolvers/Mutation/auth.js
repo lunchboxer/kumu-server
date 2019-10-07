@@ -31,13 +31,10 @@ exports.auth = {
     return context.prisma.updateUser({ data: { password }, where: { id } })
   },
   async login (_, { username, password }, context) {
-    const hrstart = process.hrtime()
     const user = await context.prisma.user({ username })
     if (!user) {
       throw new Error(`No user found for username: ${username}`)
     }
-    const hrend = process.hrtime(hrstart)
-    console.log('Execution time (hr): %ds %dms', hrend[0], hrend[1] / 1000000)
     const passwordValid = await bcrypt.compare(password, user.password)
     if (!passwordValid) {
       throw new Error('Invalid password')
