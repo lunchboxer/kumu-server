@@ -20,7 +20,7 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
         id_not: id
       }
     })
-    if (startConflicts.length) {
+    if (startConflicts.length > 0) {
       const startDate = new Date(startConflicts[0].startsAt)
       const endDate = new Date(startConflicts[0].endsAt)
       throw new Error(
@@ -32,7 +32,7 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
     const endConflicts = await prisma.classSessions({
       where: { startsAt_lte: endsAt, endsAt_gte: endsAt, id_not: id }
     })
-    if (endConflicts.length) {
+    if (endConflicts.length > 0) {
       const startDate = new Date(endConflicts[0].startsAt)
       const endDate = new Date(endConflicts[0].endsAt)
       throw new Error(
@@ -56,7 +56,7 @@ exports.checkConflicts = async (startsAt, endsAt, id, { prisma }) => {
         id_not: id
       }
     })
-    if (insideConflicts.length) {
+    if (insideConflicts.length > 0) {
       const startDate = new Date(insideConflicts[0].startsAt)
       const endDate = new Date(insideConflicts[0].endsAt)
       throw new Error(
