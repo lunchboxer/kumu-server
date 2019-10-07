@@ -17,7 +17,7 @@
     // subscribe to above
     const subscription = ws.request({ query: ACTIVE_SESSION_SUB })
       .subscribe({
-        next(message) {
+        next (message) {
           if (!message.data || !message.data.classSessions) return
           sessionId.set(message.data.classSessions.node.id)
         }

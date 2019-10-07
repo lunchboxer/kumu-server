@@ -25,6 +25,13 @@
     text-align: center;
   }
 
+  @media only screen and (min-width: 700px) {
+    main {
+      padding: 2rem 12rem 2rem 12rem;
+    }
+  }
+
+
   .late {
     color: #ff3344;
   }

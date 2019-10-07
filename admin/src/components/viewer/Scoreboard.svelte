@@ -12,7 +12,6 @@
   const boo = new Audio('sounds/quick-fart.wav')
   const opening = new Audio('sounds/gamelan_glissando_upward_002_538.mp3')
 
-  $: console.log($sessionStudents)
   onMount(() => {
     opening.play()
     const subscription = ws
@@ -21,7 +20,7 @@
         variables: { classSessionId: $session.id }
       })
       .subscribe({
-        next(message) {
+        next (message) {
           if (message.data && message.data.points) {
             const { node, mutation, previousValues } = message.data.points
             if (mutation === 'CREATED') pointAdded(node)
