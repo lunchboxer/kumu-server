@@ -20,10 +20,11 @@ exports.Student = {
     const now = new Date()
     const birthdate = new Date(student.birthdate)
     const birthMonth = birthdate.getMonth() + 1
-    const birthDay = birthdate.getDay()
+    const birthDate = birthdate.getDate()
     let nextBirthDay
     let isLeapBaby = false
-    if (birthMonth === 2 && birthDay === 29) isLeapBaby = true
+    if (birthMonth === now.getMonth() + 1 && birthDate === now.getDate()) return 0
+    if (birthMonth === 2 && birthDate === 29) isLeapBaby = true
     if (isLeapBaby && !isLeapYear(now)) {
       nextBirthDay = new Date(now.getFullYear(), 2, 1)
     } else {
