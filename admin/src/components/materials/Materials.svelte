@@ -12,7 +12,7 @@
 
   onMount(async () => {
     try {
-      await materials.get({})
+      await materials.get({ orderBy: 'createdAt_DESC' })
     } catch (error) {
       errors = error
       notifications.add({ text: "Couldn't get materials from server.", type: 'danger' })

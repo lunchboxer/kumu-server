@@ -11,7 +11,7 @@
 
   onMount(async () => {
     try {
-      await lessons.get()
+      await lessons.get({ orderBy: 'createdAt_DESC' })
     } catch (error) {
       errors = error
       notifications.add({ text: "Couldn't get lessons from server.", type: 'danger' })

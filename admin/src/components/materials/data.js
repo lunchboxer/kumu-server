@@ -21,7 +21,7 @@ const createMaterialsStore = () => {
     create: async (input) => {
       const response = await request(CREATE_MATERIAL, { input })
       update(previous => !previous ? [response.createMaterial]
-        : [...previous, response.createMaterial])
+        : [response.createMaterial, ...previous])
     },
     remove: async id => {
       await request(DELETE_MATERIAL, { id })

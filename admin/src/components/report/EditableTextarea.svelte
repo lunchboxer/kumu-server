@@ -12,7 +12,6 @@
   let edit = true
   let alreadySet = false
   let loading = false
-  let errors = ''
 
   const inputHandler = event => {
     input.style.height = 'auto'
@@ -31,10 +30,8 @@
     try {
       await sessions.patch($session.id, input)
       notifications.add({ text: 'Successfuly saved changes', type: 'success' })
-      errors = ''
       original = text.slice(0)
     } catch (error) {
-      errors = error
       notifications.add({ text: "Couldn't save changes", type: 'danger' })
     } finally {
       loading = false
