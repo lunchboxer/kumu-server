@@ -23,7 +23,7 @@ const createWordsStore = () => {
     create: async (input) => {
       const response = await request(CREATE_WORD, { input })
       update(previous => !previous ? [response.createWord]
-        : [...previous, response.createWord])
+        : [response.createWord, ...previous])
     },
     remove: async id => {
       await request(DELETE_WORD, { id })

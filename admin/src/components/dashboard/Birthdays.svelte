@@ -8,11 +8,9 @@
   onMount(async () => {
     const response = await request(BIRTHDAYS)
     bdays = response.students
-    console.log(response.students)
     bdays = bdays.filter(student => student.daysToBirthday <= 7)
       .sort((a, b) => a.daysToBirthday - b.daysToBirthday)
-
- })
+  })
 </script>
 
 {#if bdays && bdays.length > 0}

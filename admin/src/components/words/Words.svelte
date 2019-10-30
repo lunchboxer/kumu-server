@@ -12,7 +12,7 @@
 
   onMount(async () => {
     try {
-      await words.get()
+      await words.get({ orderBy: 'createdAt_DESC' })
     } catch (error) {
       errors = error
       notifications.add({ text: "Couldn't get words from server.", type: 'danger' })

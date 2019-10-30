@@ -150,6 +150,8 @@ type Word {
   audio: String
   lessons: [Lesson!]!
   tags: [Tag!]!
+  createdAt: DateTime! @createdAt
+  updatedAt: DateTime! @updatedAt
 }
 
 # used in Attendance
