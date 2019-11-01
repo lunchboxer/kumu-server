@@ -1,6 +1,5 @@
-export const GET_SESSIONS = /* GraphQL */`
- query getSessions($where: ClassSessionWhereInput){
-  classSessions (where: $where) {
+export const SessionFields = /* GraphQL */`
+  fragment SessionFields on ClassSession {
     id
     startsAt
     endsAt
@@ -12,9 +11,18 @@ export const GET_SESSIONS = /* GraphQL */`
     }
     lesson {
       id
+      name
     }
   }
-}`
+`
+
+export const GET_SESSIONS = /* GraphQL */`
+ query getSessions($where: ClassSessionWhereInput){
+  classSessions (where: $where) {
+    ...SessionFields
+  }
+}
+${SessionFields}`
 
 export const GET_CURRENT_SESSION = /* GraphQL */`
 query currentSession($now: DateTime){
@@ -22,17 +30,10 @@ query currentSession($now: DateTime){
     startsAt_lt: $now,
     endsAt_gt: $now
   }) {
-    id
-    startsAt
-    endsAt
-    stage
-    number
-    group {
-      id
-      name
-    }
+    ...SessionFields
   }
-}`
+}
+${SessionFields}`
 
 export const GET_TODAYS_SESSIONS = /* GraphQL */`
 query todaysSessions($now: DateTime, $latest: DateTime){
@@ -40,17 +41,10 @@ query todaysSessions($now: DateTime, $latest: DateTime){
     startsAt_lt: $latest,
     endsAt_gt: $now
   }) {
-    id
-    startsAt
-    endsAt
-    stage
-    number
-    group {
-      id
-      name
-    }
+    ...SessionFields
   }
-}`
+}
+${SessionFields}`
 
 export const SESSIONS_SUB = /* GraphQL */`
 subscription {
@@ -63,19 +57,12 @@ subscription {
       startsAt
       endsAt
     }
-      node {
-        id
-        stage
-        startsAt
-        endsAt
-        number
-        group {
-          id
-          name
-        }
-      }
+    node {
+      ...SessionFields
+    }
   }
-}`
+}
+${SessionFields}`
 
 export const TODAYS_SESSIONS_SUB = /* GraphQL */`
 subscription {
@@ -89,15 +76,8 @@ subscription {
       endsAt
     }
     node {
-      id
-      stage
-      startsAt
-      endsAt
-      number
-      group {
-        id
-        name
-      }
+      ...SessionFields
     }
   }
-}`
+}
+${SessionFields}`
