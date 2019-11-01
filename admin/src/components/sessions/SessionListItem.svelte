@@ -62,7 +62,7 @@
 
   @media only screen and (min-width: 600px) {
     li {
-      padding: 1rem;
+      padding: 0 1rem;
     }
   }
 </style>
