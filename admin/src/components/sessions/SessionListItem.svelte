@@ -68,23 +68,32 @@
 </style>
 
 {#if session}
-<li>
-  {#if isCurrentOrPast(session.startsAt)}
-  <a href="#/session/{session.id}">
-    <span on:click={() => { showActions = !showActions }}>
-    {session.group.name} class {relativeDate(session.startsAt, time)}, {maybeDate(session.startsAt) || formatTime(session.startsAt)} to {formatTime(session.endsAt)}
-  </span>
-</a>
-{:else}
-<span on:click={() => { showActions = !showActions }}>
-    {session.group.name} class {relativeDate(session.startsAt, time)}, {maybeDate(session.startsAt) || formatTime(session.startsAt)} to {formatTime(session.endsAt)}
-  </span>
-{/if}
+  <li>
 
-  <div class="buttons">
-    <IconButton on:click={ () => { showEdit = true }} name="edit" />
-    <IconButton on:click={ () => { showDelete = true }} name="minus" />
-  </div>
+    <p>
+    {#if isCurrentOrPast(session.startsAt)}
+      <a href="#/session/{session.id}">
+        <span on:click={() => { showActions = !showActions }}>
+          {session.group.name} class {relativeDate(session.startsAt, time)}, {maybeDate(session.startsAt) || formatTime(session.startsAt)} to {formatTime(session.endsAt)}
+        </span>
+      </a>
+    {:else}
+      <span on:click={() => { showActions = !showActions }}>
+        {session.group.name} class {relativeDate(session.startsAt, time)}, {maybeDate(session.startsAt) || formatTime(session.startsAt)} to {formatTime(session.endsAt)}
+      </span>
+    {/if}
+    
+    {#if session.lesson && session.lesson.name}
+      <br>
+    <span>{session.lesson.name}&nbsp;<a href="#/lesson/{session.lesson.id}"><i class="fas fa-link"></i></a></span>
+    {/if}
+  </p>
+
+    <div class="buttons">
+      <IconButton on:click={ () => { showEdit = true }} name="edit" />
+      <IconButton on:click={ () => { showDelete = true }} name="minus" />
+    </div>
+
   </li>
 {/if}
 
