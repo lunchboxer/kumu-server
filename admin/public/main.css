@@ -9142,7 +9142,7 @@ label.panel-block:hover {
 }
 
 /*!
- * Font Awesome Free 5.10.2 by @fontawesome - https://fontawesome.com
+ * Font Awesome Free 5.12.1 by @fontawesome - https://fontawesome.com
  * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
  */
 .fa,
@@ -9687,6 +9687,10 @@ readers do not read off random characters that represent icons */
   content: "\f7e5";
 }
 
+.fa-bahai:before {
+  content: "\f666";
+}
+
 .fa-balance-scale:before {
   content: "\f24e";
 }
@@ -10015,6 +10019,10 @@ readers do not read off random characters that represent icons */
   content: "\f64a";
 }
 
+.fa-buy-n-large:before {
+  content: "\f8a6";
+}
+
 .fa-buysellads:before {
   content: "\f20d";
 }
@@ -10101,6 +10109,10 @@ readers do not read off random characters that represent icons */
 
 .fa-car-side:before {
   content: "\f5e4";
+}
+
+.fa-caravan:before {
+  content: "\f8ff";
 }
 
 .fa-caret-down:before {
@@ -10515,6 +10527,10 @@ readers do not read off random characters that represent icons */
   content: "\f066";
 }
 
+.fa-compress-alt:before {
+  content: "\f422";
+}
+
 .fa-compress-arrows-alt:before {
   content: "\f78c";
 }
@@ -10685,6 +10701,10 @@ readers do not read off random characters that represent icons */
 
 .fa-d-and-d-beyond:before {
   content: "\f6ca";
+}
+
+.fa-dailymotion:before {
+  content: "\f952";
 }
 
 .fa-dashcube:before {
@@ -11047,6 +11067,10 @@ readers do not read off random characters that represent icons */
   content: "\f065";
 }
 
+.fa-expand-alt:before {
+  content: "\f424";
+}
+
 .fa-expand-arrows-alt:before {
   content: "\f31e";
 }
@@ -11265,6 +11289,10 @@ readers do not read off random characters that represent icons */
 
 .fa-firefox:before {
   content: "\f269";
+}
+
+.fa-firefox-browser:before {
+  content: "\f907";
 }
 
 .fa-first-aid:before {
@@ -11827,12 +11855,16 @@ readers do not read off random characters that represent icons */
   content: "\f292";
 }
 
-.fa-hat-wizard:before {
-  content: "\f6e8";
+.fa-hat-cowboy:before {
+  content: "\f8c0";
 }
 
-.fa-haykal:before {
-  content: "\f666";
+.fa-hat-cowboy-side:before {
+  content: "\f8c1";
+}
+
+.fa-hat-wizard:before {
+  content: "\f6e8";
 }
 
 .fa-hdd:before {
@@ -12015,6 +12047,10 @@ readers do not read off random characters that represent icons */
   content: "\f47f";
 }
 
+.fa-ideal:before {
+  content: "\f913";
+}
+
 .fa-igloo:before {
   content: "\f7ae";
 }
@@ -12057,6 +12093,10 @@ readers do not read off random characters that represent icons */
 
 .fa-instagram:before {
   content: "\f16d";
+}
+
+.fa-instagram-square:before {
+  content: "\f955";
 }
 
 .fa-intercom:before {
@@ -12467,6 +12507,10 @@ readers do not read off random characters that represent icons */
   content: "\f136";
 }
 
+.fa-mdb:before {
+  content: "\f8ca";
+}
+
 .fa-medal:before {
   content: "\f5a2";
 }
@@ -12531,6 +12575,10 @@ readers do not read off random characters that represent icons */
   content: "\f753";
 }
 
+.fa-microblog:before {
+  content: "\f91a";
+}
+
 .fa-microchip:before {
   content: "\f2db";
 }
@@ -12581,6 +12629,10 @@ readers do not read off random characters that represent icons */
 
 .fa-mixcloud:before {
   content: "\f289";
+}
+
+.fa-mixer:before {
+  content: "\f956";
 }
 
 .fa-mizuni:before {
@@ -12649,6 +12701,10 @@ readers do not read off random characters that represent icons */
 
 .fa-mountain:before {
   content: "\f6fc";
+}
+
+.fa-mouse:before {
+  content: "\f8cc";
 }
 
 .fa-mouse-pointer:before {
@@ -12757,6 +12813,10 @@ readers do not read off random characters that represent icons */
 
 .fa-optin-monster:before {
   content: "\f23c";
+}
+
+.fa-orcid:before {
+  content: "\f8d2";
 }
 
 .fa-osi:before {
@@ -12973,6 +13033,10 @@ readers do not read off random characters that represent icons */
 
 .fa-pied-piper-pp:before {
   content: "\f1a7";
+}
+
+.fa-pied-piper-square:before {
+  content: "\f91e";
 }
 
 .fa-piggy-bank:before {
@@ -13213,6 +13277,10 @@ readers do not read off random characters that represent icons */
 
 .fa-receipt:before {
   content: "\f543";
+}
+
+.fa-record-vinyl:before {
+  content: "\f8d9";
 }
 
 .fa-recycle:before {
@@ -13505,6 +13573,10 @@ readers do not read off random characters that represent icons */
 
 .fa-shoe-prints:before {
   content: "\f54b";
+}
+
+.fa-shopify:before {
+  content: "\f957";
 }
 
 .fa-shopping-bag:before {
@@ -13999,6 +14071,10 @@ readers do not read off random characters that represent icons */
   content: "\f5c3";
 }
 
+.fa-swift:before {
+  content: "\f8e1";
+}
+
 .fa-swimmer:before {
   content: "\f5c4";
 }
@@ -14263,6 +14339,10 @@ readers do not read off random characters that represent icons */
   content: "\f637";
 }
 
+.fa-trailer:before {
+  content: "\f941";
+}
+
 .fa-train:before {
   content: "\f238";
 }
@@ -14379,6 +14459,10 @@ readers do not read off random characters that represent icons */
   content: "\f403";
 }
 
+.fa-umbraco:before {
+  content: "\f8e8";
+}
+
 .fa-umbrella:before {
   content: "\f0e9";
 }
@@ -14401,6 +14485,10 @@ readers do not read off random characters that represent icons */
 
 .fa-uniregistry:before {
   content: "\f404";
+}
+
+.fa-unity:before {
+  content: "\f949";
 }
 
 .fa-universal-access:before {
@@ -14912,7 +15000,7 @@ readers do not read off random characters that represent icons */
 }
 
 /*!
- * Font Awesome Free 5.10.2 by @fontawesome - https://fontawesome.com
+ * Font Awesome Free 5.12.1 by @fontawesome - https://fontawesome.com
  * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
  */
 @font-face {

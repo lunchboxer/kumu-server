@@ -1,5 +1,7 @@
 # Specifies the HTTP endpoint of your Prisma API (deployed to a Prisma Demo server).
-endpoint: http://localhost:4466
+# endpoint: http://localhost:4466
+endpoint: ${env:PRISMA_ENDPOINT}
+# endpoint: https://481c5693a700.jp.ngrok.io
 # endpoint: https://us1.prisma.sh/james-6ee4db/kumu-server/dev
 
 # Defines your models, each model is mapped to the database as a table.
